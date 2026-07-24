@@ -1,0 +1,12 @@
+Khac
+Copyright (c) 2026 Nhan Nguyen (nhannht)
+Licensed under the MIT License (see LICENSE).
+
+Prior art and test oracle
+--------------------------
+Khac is an independent Swift implementation. Its natural-language parsing
+behavior is informed by, and its test suite is validated against, the test
+cases of chrono (https://github.com/wanasit/chrono), which is MIT licensed.
+Locale vocabulary for languages not natively validated by this project draws
+on chrono's locale data. Khac does not copy chrono's source code; it
+reimplements the behavior with an independent, data-driven architecture.
