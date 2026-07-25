@@ -117,15 +117,13 @@ final class ITOracleTests: XCTestCase {
     /// one of these pass; remove the entry only once the underlying fix lands
     /// and the case goes green on its own.
     private static let knownDeferrals: [String: String] = [
-        // chrono's own "now" carries an environment-specific timezoneOffset
-        // (420 = UTC+7) baked into its test fixture from whatever machine the
-        // chrono test suite was authored/run on. Khac's CasualDateParser
-        // "now" branch never sets .timezoneOffset at all - a genuine
-        // engine-shape gap (does "now" expose a reference timezone offset
-        // field?), not locale data, and not reproducible without knowing
-        // chrono's original test environment.
-        "La scadenza è adesso":
-            "KHAC-6 deferral: chrono's \"now\" bakes in an environment-specific timezoneOffset Khac's CasualDateParser \"now\" branch does not expose",
+        // The "La scadenza è adesso" timezoneOffset:420 case that used to be
+        // deferred here was an ORACLE DEFECT (the extraction machine's own
+        // UTC+7 offset frozen into the fixture), not a Khac gap - confirmed by
+        // cjk independently (same defect hit a ZH case and germanic's NL
+        // case) and fixed at the source in commit f3a7c6a on master. Removed
+        // once the fix landed; the case passes on its own now.
+        //
         // chrono's own ITCasualTimeParser regex only recognizes FEMININE
         // "questa" as the this-prefix (`(questa\s*)?(mattina|pomeriggio|...)`),
         // never masculine "questo" - even before a masculine noun like
@@ -240,10 +238,10 @@ final class ITOracleTests: XCTestCase {
 /// The progress instrument, mirroring ENOracleScoreboardTests.
 final class ITOracleScoreboardTests: XCTestCase {
     /// Cases known to pass. Raise this after every improvement; never lower it
-    /// to accommodate a regression. 22 of 168 are deferred (KHAC-6, see
+    /// to accommodate a regression. 21 of 168 are deferred (KHAC-6, see
     /// ITOracleTests.knownDeferrals) pending engine fixes outside this
     /// locale's own data - see checkpoint reports to main.
-    static let floor = 146
+    static let floor = 147
 
     func testScoreboard() {
         let runner = ITOracleRunner()

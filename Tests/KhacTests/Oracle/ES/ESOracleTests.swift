@@ -117,48 +117,13 @@ final class ESOracleTests: XCTestCase {
     /// Never edit the oracle itself to make one of these pass; remove the
     /// entry only once the underlying engine fix lands and the case goes
     /// green on its own.
-    private static let knownDeferrals: [String: String] = [
-        // MonthNameParser.swift's day-month connector is hardcoded to English
-        // "of" and never reads context.locale.patterns.dateConnectorWords, so
-        // "de" (declared in ESLocale.patterns.dateConnectorWords) has no
-        // effect. Confirmed by direct build+test: "10 de Agosto" degrades to a
-        // bare-month match plus an unrelated merge with a stray "10", never a
-        // real day+month construct. Reported to main at checkpoint 1.
-        "La fecha límite es el martes, 10 de enero":
-            "KHAC-6 deferral: MonthNameParser's day-month connector is hardcoded to \"of\", ignores patterns.dateConnectorWords",
-        "La fecha límite es el miércoles, 10 de enero ":
-            "KHAC-6 deferral: MonthNameParser's day-month connector is hardcoded to \"of\", ignores patterns.dateConnectorWords",
-        "10 de Agosto de 2012":
-            "KHAC-6 deferral: MonthNameParser's day-month connector is hardcoded to \"of\", ignores patterns.dateConnectorWords",
-        "12 de julio a las 19:00":
-            "KHAC-6 deferral: MonthNameParser's day-month connector is hardcoded to \"of\", ignores patterns.dateConnectorWords",
-        "Algo pasó el 10 de Agosto de 2012 10:12:59 pm":
-            "KHAC-6 deferral: MonthNameParser's day-month connector is hardcoded to \"of\", ignores patterns.dateConnectorWords",
-        // MonthNameParser.swift's internal day-range connector (the <lday> to
-        // <lday2> slot, "10 - 22 Agosto") is hardcoded to English words
-        // ("to|-|until|through|till") and never reads
-        // patterns.rangeConnectorWords, so "a" (ES's real day-range word) has
-        // no effect there. Reported to main at checkpoint 1.
-        "10 a 22 Agosto 2012":
-            "KHAC-6 deferral: MonthNameParser's internal day-range connector is hardcoded to English words, ignores patterns.rangeConnectorWords",
-        // TimeExpressionParser.swift's notTimezoneOffset guard rejects a range
-        // whose second side is a bare 3-4 digit run ("930am"), meant to keep a
-        // real signed timezone offset ("-0500") from being misread as a range
-        // end. The guard does not check for a trailing meridiem/letter, so it
-        // also fires on a genuine compact time range ("630-930am"), and the
-        // abandoned first side ("630") is then dropped outright by
-        // passesLoneNumberFilters' 3+-digit bare-number rule - the match
-        // degrades to the unrelated, coincidentally-valid "930am" alone.
-        // Confirmed empirically (isolated parse of "630-930am" and
-        // "1-230 pm"); EN's own oracle does not exercise this exact shape, so
-        // this is a latent gap, not something EN already solved differently.
-        "lunes 4/29/2013 630-930am":
-            "KHAC-6 deferral: TimeExpressionParser's notTimezoneOffset guard misreads a compact HHMM-HHMM range end as a timezone offset",
-        "lunes 5/13/2013 630-930am":
-            "KHAC-6 deferral: TimeExpressionParser's notTimezoneOffset guard misreads a compact HHMM-HHMM range end as a timezone offset",
-        "martes 7/2/2013 1-230 pm":
-            "KHAC-6 deferral: TimeExpressionParser's notTimezoneOffset guard misreads a compact HHMM-HHMM range end as a timezone offset",
-    ]
+    /// Empty as of KHAC-6 landing on master: dateConnectorWords is now read,
+    /// rangeConnectorWords now feeds the day-range connector, and
+    /// notTimezoneOffset checks what follows a candidate offset - all three
+    /// walls this locale hit are fixed centrally. ES is 75/75. See git
+    /// history for the prior deferral list and its reasoning if any of these
+    /// ever regress.
+    private static let knownDeferrals: [String: String] = [:]
 
     private func run(_ cases: [OracleCase]) {
         for c in cases {
@@ -185,10 +150,9 @@ final class ESOracleTests: XCTestCase {
 /// The progress instrument, mirroring ENOracleScoreboardTests.
 final class ESOracleScoreboardTests: XCTestCase {
     /// Cases known to pass. Raise this after every improvement; never lower it
-    /// to accommodate a regression. 9 of 75 are deferred (KHAC-6, see
-    /// ESOracleTests.knownDeferrals) pending an engine fix outside this
-    /// locale's own data - see checkpoint 1/2 reports to main.
-    static let floor = 66
+    /// to accommodate a regression. All 75 pass now that KHAC-6 landed - see
+    /// checkpoint 1/2 reports to main and knownDeferrals' doc comment above.
+    static let floor = 75
 
     func testScoreboard() {
         let runner = ESOracleRunner()

@@ -116,33 +116,12 @@ final class PTOracleTests: XCTestCase {
     /// these small per-file case lists. Never edit the oracle itself to make
     /// one of these pass; remove the entry only once the underlying fix lands
     /// and the case goes green on its own.
-    private static let knownDeferrals: [String: String] = [
-        // MonthNameParser's day-month connector is hardcoded to "of" and never
-        // reads patterns.dateConnectorWords - the same wall reported from ES
-        // and FR.
-        "O prazo é terça-feira, 10 de janeiro":
-            "KHAC-6 deferral: MonthNameParser's day-month connector is hardcoded to \"of\", ignores patterns.dateConnectorWords",
-        "10 de Agosto de 2012":
-            "KHAC-6 deferral: MonthNameParser's day-month connector is hardcoded to \"of\", ignores patterns.dateConnectorWords",
-        "12 de Julho às 19:00":
-            "KHAC-6 deferral: MonthNameParser's day-month connector is hardcoded to \"of\", ignores patterns.dateConnectorWords",
-        "Algo passou em 10 de Agosto de 2012 10:12:59 pm":
-            "KHAC-6 deferral: MonthNameParser's day-month connector is hardcoded to \"of\", ignores patterns.dateConnectorWords",
-        // MonthNameParser's internal day-range connector is hardcoded to
-        // English words and never reads patterns.rangeConnectorWords - same
-        // wall reported from ES and FR.
-        "10 a 22 Agosto 2012":
-            "KHAC-6 deferral: MonthNameParser's internal day-range connector is hardcoded to English words, ignores patterns.rangeConnectorWords",
-        // TimeExpressionParser's notTimezoneOffset guard misreads a compact
-        // HHMM-HHMM range end as a timezone offset - same wall reported from
-        // ES and FR.
-        "segunda 4/29/2013 630-930am":
-            "KHAC-6 deferral: TimeExpressionParser's notTimezoneOffset guard misreads a compact HHMM-HHMM range end as a timezone offset",
-        "segunda-feira 5/13/2013 630-930am":
-            "KHAC-6 deferral: TimeExpressionParser's notTimezoneOffset guard misreads a compact HHMM-HHMM range end as a timezone offset",
-        "terça-feira 7/2/2013 1-230 pm":
-            "KHAC-6 deferral: TimeExpressionParser's notTimezoneOffset guard misreads a compact HHMM-HHMM range end as a timezone offset",
-    ]
+    /// Empty as of KHAC-6 landing on master (dateConnectorWords now read,
+    /// rangeConnectorWords now feeds the day-range connector, and
+    /// notTimezoneOffset checks what follows) - all three walls this locale
+    /// hit are fixed centrally. PT is 60/60. See git history for the prior
+    /// deferral list and its reasoning if any of these ever regress.
+    private static let knownDeferrals: [String: String] = [:]
 
     private func run(_ cases: [OracleCase]) {
         for c in cases {
@@ -168,10 +147,9 @@ final class PTOracleTests: XCTestCase {
 /// The progress instrument, mirroring ENOracleScoreboardTests.
 final class PTOracleScoreboardTests: XCTestCase {
     /// Cases known to pass. Raise this after every improvement; never lower it
-    /// to accommodate a regression. 8 of 60 are deferred (KHAC-6, see
-    /// PTOracleTests.knownDeferrals) pending engine fixes outside this
-    /// locale's own data - see checkpoint reports to main.
-    static let floor = 52
+    /// to accommodate a regression. All 60 pass now that KHAC-6 landed - see
+    /// checkpoint reports to main and knownDeferrals' doc comment above.
+    static let floor = 60
 
     func testScoreboard() {
         let runner = PTOracleRunner()

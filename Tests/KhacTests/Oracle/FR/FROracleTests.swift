@@ -121,15 +121,6 @@ final class FROracleTests: XCTestCase {
         // EN's documented "last night" deferral) - see FRLocale.dayReferences.
         "La deadline était la veille":
             "KHAC-6 deferral: \"la veille\" (the day before/eve) has no compositional home in Vocabulary",
-        // MonthNameParser's day-ordinal suffix is hardcoded to English
-        // st/nd/rd/th and never reads any locale field for French "er"
-        // ("1er Août").
-        "1er Août 2012":
-            "KHAC-6 deferral: MonthNameParser's day-ordinal suffix is hardcoded to English st/nd/rd/th, no field for French \"er\"",
-        // Same day-range-connector wall reported from ES (MonthNameParser
-        // hardcodes English words, ignores patterns.rangeConnectorWords).
-        "10 au 22 août 2012":
-            "KHAC-6 deferral: MonthNameParser's internal day-range connector is hardcoded to English words, ignores patterns.rangeConnectorWords",
         // Bare month name (no day) matching when chrono's real FR output does
         // not. Suspected either a genuine chrono FR behavioral difference from
         // EN (which DOES accept a bare month name alone) or a mode-tagging
@@ -194,14 +185,6 @@ final class FROracleTests: XCTestCase {
             "KHAC-6 deferral: named timezone abbreviation resolution is out of v1 scope, same class EN's own port excluded",
         "Vendredi à 2 pm est":
             "KHAC-6 deferral: named timezone abbreviation resolution is out of v1 scope, same class EN's own port excluded",
-        // Same notTimezoneOffset-misreads-a-compact-range wall reported from
-        // ES.
-        "lundi 29/4/2013 630-930am":
-            "KHAC-6 deferral: TimeExpressionParser's notTimezoneOffset guard misreads a compact HHMM-HHMM range end as a timezone offset",
-        "lundi 13/5/2013 630-930am":
-            "KHAC-6 deferral: TimeExpressionParser's notTimezoneOffset guard misreads a compact HHMM-HHMM range end as a timezone offset",
-        "mardi 7/2/2013 1-230 pm":
-            "KHAC-6 deferral: TimeExpressionParser's notTimezoneOffset guard misreads a compact HHMM-HHMM range end as a timezone offset",
         // chrono's own FRWeekdayParser trailing boundary is `(?=\W|\d|$)` -
         // it explicitly permits a DIGIT to follow ("Jeudi6/5/2013" with no
         // space). Khac's generic WeekdayParser.swift boundary is
@@ -283,10 +266,10 @@ final class FROracleTests: XCTestCase {
 /// The progress instrument, mirroring ENOracleScoreboardTests.
 final class FROracleScoreboardTests: XCTestCase {
     /// Cases known to pass. Raise this after every improvement; never lower it
-    /// to accommodate a regression. 39 of 154 are deferred (KHAC-6, see
+    /// to accommodate a regression. 34 of 154 are deferred (KHAC-6, see
     /// FROracleTests.knownDeferrals) pending engine fixes outside this
     /// locale's own data - see checkpoint reports to main.
-    static let floor = 115
+    static let floor = 120
 
     func testScoreboard() {
         let runner = FROracleRunner()

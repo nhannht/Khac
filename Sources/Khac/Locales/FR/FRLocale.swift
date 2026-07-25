@@ -85,6 +85,12 @@ public struct FRLocale: KhacLocale {
             // English words.
             rangeConnectorWords: ["à", "a", "au"],
             nowWords: ["maintenant"],
+            // "1er Août": chrono's ORDINAL_NUMBER_PATTERN is `[0-9]{1,2}(?:er)?`
+            // - the day-ordinal suffix, glued to the digits with no whitespace.
+            // MonthNameParser's own ordinalSuffix used to be hardcoded to
+            // English st/nd/rd/th; reading this field is the fix, not a new
+            // one - reported to main at checkpoint 3, landed on master.
+            dayOrdinalSuffixes: ["er"],
             // "cet après-midi" (this afternoon): "cet"/"ce"/"cette" anchor the
             // phrase via relativeModifiers' value-0 entries (see below); the
             // particle itself needs no PatternSet field, since
