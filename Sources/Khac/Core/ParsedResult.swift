@@ -60,6 +60,22 @@ public struct ParsedResult {
     /// End offset (exclusive) of the match in the original text.
     public var rangeEnd: Int { index + matchLength }
 
+    /// The matched substring in the engine's MATCHING coordinates (NFC).
+    ///
+    /// `text` is a slice of the ORIGINAL input, so on macOS it is routinely NFD:
+    /// text fields, dictation, and any path read off HFS+ all deliver decomposed
+    /// accents. Every pattern in the engine is built from NFC-folded locale
+    /// vocabulary, so matching NFD text against one silently finds nothing - for
+    /// Vietnamese that means a whole accented word like `tháng` simply fails to
+    /// match, with no error.
+    ///
+    /// So any refiner that RE-PARSES a result must read this, never `text`.
+    /// Derived rather than stored, so it cannot fall out of step with `text`.
+    ///
+    /// Never use it for offsets. `index`, `matchLength`, and `rangeEnd` are all
+    /// ORIGINAL-text coordinates, and normalizing changes UTF-16 lengths.
+    public var normalizedText: String { text.precomposedStringWithCanonicalMapping }
+
     // MARK: Deterministic total ordering
 
     /// A stable signature that makes overlap resolution TOTAL: no two distinct

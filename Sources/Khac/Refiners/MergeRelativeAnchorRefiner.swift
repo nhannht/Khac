@@ -41,10 +41,16 @@ struct MergeRelativeAnchorRefiner: Refiner {
         // must carry a real date to anchor it on.
         let relative: RelativeDuration
         let anchor: ParsedResult
-        if let duration = DurationExpression.relative(in: a.text, context), hasDate(b) {
+        // normalizedText, not text: this re-parses a result, and DurationExpression
+        // builds its patterns from NFC-folded vocabulary. Feeding it the original
+        // slice makes every accented Vietnamese unit and direction word fail to
+        // match, which does not fail loudly - the duration comes back nil, the
+        // re-anchor is skipped, and the caller gets a confident date that is off by
+        // the whole duration.
+        if let duration = DurationExpression.relative(in: a.normalizedText, context), hasDate(b) {
             relative = duration
             anchor = b
-        } else if let duration = DurationExpression.relative(in: b.text, context), hasDate(a) {
+        } else if let duration = DurationExpression.relative(in: b.normalizedText, context), hasDate(a) {
             relative = duration
             anchor = a
         } else {
