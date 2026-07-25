@@ -1,0 +1,30 @@
+{
+  "locale": "pt",
+  "files": 4,
+  "seen": 60,
+  "ported": 60,
+  "excluded": [],
+  "reasons": {},
+  "tables": [
+    {
+      "file": "pt_casual.test.ts",
+      "table": "ptCasualCases",
+      "cases": 21
+    },
+    {
+      "file": "pt_month_name_little_endian.test.ts",
+      "table": "ptMonthNameLittleEndianCases",
+      "cases": 17
+    },
+    {
+      "file": "pt_slash.test.ts",
+      "table": "ptSlashCases",
+      "cases": 2
+    },
+    {
+      "file": "pt_time_exp.test.ts",
+      "table": "ptTimeExpCases",
+      "cases": 20
+    }
+  ]
+}

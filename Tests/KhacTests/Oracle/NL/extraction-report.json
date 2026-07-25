@@ -1,0 +1,105 @@
+{
+  "locale": "nl",
+  "files": 11,
+  "seen": 221,
+  "ported": 214,
+  "excluded": [
+    {
+      "where": "nl_relative.test.ts",
+      "input": "komend uur",
+      "reason": "unrecognised argument: refDate"
+    },
+    {
+      "where": "nl_relative.test.ts",
+      "input": "volgende maand",
+      "reason": "unrecognised argument: refDate"
+    },
+    {
+      "where": "nl_slash.test.ts",
+      "input": "31/5",
+      "reason": "uses chrono's default (English) parser, not this locale"
+    },
+    {
+      "where": "nl_time_units_ago.test.ts",
+      "input": "15 uur 29 min",
+      "reason": "uses chrono's default (English) parser, not this locale"
+    },
+    {
+      "where": "nl_time_units_ago.test.ts",
+      "input": "een paar uur",
+      "reason": "uses chrono's default (English) parser, not this locale"
+    },
+    {
+      "where": "nl_time_units_ago.test.ts",
+      "input": "5 dagen",
+      "reason": "uses chrono's default (English) parser, not this locale"
+    },
+    {
+      "where": "nl_time_units_within.test.ts",
+      "input": "Binnen de 30 dagen",
+      "reason": "the source test asserted nothing portable"
+    }
+  ],
+  "reasons": {
+    "unrecognised argument": 2,
+    "uses chrono's default (English) parser, not this locale": 4,
+    "the source test asserted nothing portable": 1
+  },
+  "tables": [
+    {
+      "file": "nl_casual.test.ts",
+      "table": "nlCasualCases",
+      "cases": 41
+    },
+    {
+      "file": "nl_month.test.ts",
+      "table": "nlMonthCases",
+      "cases": 16
+    },
+    {
+      "file": "nl_month_name_little_endian.test.ts",
+      "table": "nlMonthNameLittleEndianCases",
+      "cases": 28
+    },
+    {
+      "file": "nl_relative.test.ts",
+      "table": "nlRelativeCases",
+      "cases": 13
+    },
+    {
+      "file": "nl_slash.test.ts",
+      "table": "nlSlashCases",
+      "cases": 20
+    },
+    {
+      "file": "nl_time_exp.test.ts",
+      "table": "nlTimeExpCases",
+      "cases": 8
+    },
+    {
+      "file": "nl_time_units_ago.test.ts",
+      "table": "nlTimeUnitsAgoCases",
+      "cases": 21
+    },
+    {
+      "file": "nl_time_units_casual_relative.test.ts",
+      "table": "nlTimeUnitsCasualRelativeCases",
+      "cases": 13
+    },
+    {
+      "file": "nl_time_units_later.test.ts",
+      "table": "nlTimeUnitsLaterCases",
+      "cases": 21
+    },
+    {
+      "file": "nl_time_units_within.test.ts",
+      "table": "nlTimeUnitsWithinCases",
+      "cases": 21
+    },
+    {
+      "file": "nl_weekday.test.ts",
+      "table": "nlWeekdayCases",
+      "cases": 12
+    }
+  ]
+}

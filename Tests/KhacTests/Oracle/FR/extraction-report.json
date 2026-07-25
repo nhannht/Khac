@@ -1,0 +1,50 @@
+{
+  "locale": "fr",
+  "files": 8,
+  "seen": 154,
+  "ported": 154,
+  "excluded": [],
+  "reasons": {},
+  "tables": [
+    {
+      "file": "fr_casual.test.ts",
+      "table": "frCasualCases",
+      "cases": 18
+    },
+    {
+      "file": "fr_little_endian.test.ts",
+      "table": "frLittleEndianCases",
+      "cases": 33
+    },
+    {
+      "file": "fr_slash.test.ts",
+      "table": "frSlashCases",
+      "cases": 5
+    },
+    {
+      "file": "fr_time_exp.test.ts",
+      "table": "frTimeExpCases",
+      "cases": 54
+    },
+    {
+      "file": "fr_time_units_ago.test.ts",
+      "table": "frTimeUnitsAgoCases",
+      "cases": 8
+    },
+    {
+      "file": "fr_time_units_casual_relative.test.ts",
+      "table": "frTimeUnitsCasualRelativeCases",
+      "cases": 13
+    },
+    {
+      "file": "fr_time_units_within.test.ts",
+      "table": "frTimeUnitsWithinCases",
+      "cases": 15
+    },
+    {
+      "file": "fr_weekday.test.ts",
+      "table": "frWeekdayCases",
+      "cases": 8
+    }
+  ]
+}

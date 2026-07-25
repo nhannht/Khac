@@ -1,0 +1,50 @@
+{
+  "locale": "fi",
+  "files": 8,
+  "seen": 77,
+  "ported": 77,
+  "excluded": [],
+  "reasons": {},
+  "tables": [
+    {
+      "file": "fi_casual.test.ts",
+      "table": "fiCasualCases",
+      "cases": 14
+    },
+    {
+      "file": "fi_casual_time.test.ts",
+      "table": "fiCasualTimeCases",
+      "cases": 8
+    },
+    {
+      "file": "fi_month_name_little_endian.test.ts",
+      "table": "fiMonthNameLittleEndianCases",
+      "cases": 7
+    },
+    {
+      "file": "fi_time_exp.test.ts",
+      "table": "fiTimeExpCases",
+      "cases": 5
+    },
+    {
+      "file": "fi_time_units_ago.test.ts",
+      "table": "fiTimeUnitsAgoCases",
+      "cases": 8
+    },
+    {
+      "file": "fi_time_units_casual_relative.test.ts",
+      "table": "fiTimeUnitsCasualRelativeCases",
+      "cases": 13
+    },
+    {
+      "file": "fi_time_units_within.test.ts",
+      "table": "fiTimeUnitsWithinCases",
+      "cases": 9
+    },
+    {
+      "file": "fi_weekday.test.ts",
+      "table": "fiWeekdayCases",
+      "cases": 13
+    }
+  ]
+}

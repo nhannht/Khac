@@ -1,0 +1,150 @@
+{
+  "locale": "zh",
+  "files": 13,
+  "seen": 182,
+  "ported": 168,
+  "excluded": [
+    {
+      "where": "hans/zh_hans_casual.test.ts",
+      "input": "我明天要打游戏",
+      "reason": "the source test asserted nothing portable"
+    },
+    {
+      "where": "hans/zh_hans_casual.test.ts",
+      "input": "我后天凌晨要打游戏",
+      "reason": "the source test asserted nothing portable"
+    },
+    {
+      "where": "hans/zh_hans_casual.test.ts",
+      "input": "我大前天凌晨要打游戏",
+      "reason": "the source test asserted nothing portable"
+    },
+    {
+      "where": "hans/zh_hans_casual.test.ts",
+      "input": "星期四",
+      "reason": "unrecognised argument: new Date()"
+    },
+    {
+      "where": "hans/zh_hans_weekday.test.ts",
+      "input": "text",
+      "reason": "input is not a plain string literal"
+    },
+    {
+      "where": "hans/zh_hans_weekday.test.ts",
+      "input": "text2",
+      "reason": "input is not a plain string literal"
+    },
+    {
+      "where": "hans/zh_hans_weekday.test.ts",
+      "input": "text3",
+      "reason": "input is not a plain string literal"
+    },
+    {
+      "where": "hans/zh_hans_weekday.test.ts",
+      "input": "text4",
+      "reason": "input is not a plain string literal"
+    },
+    {
+      "where": "hans/zh_hans_weekday.test.ts",
+      "input": "text5",
+      "reason": "input is not a plain string literal"
+    },
+    {
+      "where": "hans/zh_hans_weekday.test.ts",
+      "input": "text6",
+      "reason": "input is not a plain string literal"
+    },
+    {
+      "where": "hant/zh_hant_casual.test.ts",
+      "input": "雞明天全部都係雞",
+      "reason": "the source test asserted nothing portable"
+    },
+    {
+      "where": "hant/zh_hant_casual.test.ts",
+      "input": "雞後天凌晨全部都係雞",
+      "reason": "the source test asserted nothing portable"
+    },
+    {
+      "where": "hant/zh_hant_casual.test.ts",
+      "input": "雞大前天凌晨全部都係雞",
+      "reason": "the source test asserted nothing portable"
+    },
+    {
+      "where": "hant/zh_hant_casual.test.ts",
+      "input": "星期四",
+      "reason": "unrecognised argument: new Date()"
+    }
+  ],
+  "reasons": {
+    "the source test asserted nothing portable": 6,
+    "unrecognised argument": 2,
+    "input is not a plain string literal": 6
+  },
+  "tables": [
+    {
+      "file": "hans/zh_hans_ago.test.ts",
+      "table": "zhHansAgoCases",
+      "cases": 6
+    },
+    {
+      "file": "hans/zh_hans_casual.test.ts",
+      "table": "zhHansCasualCases",
+      "cases": 14
+    },
+    {
+      "file": "hans/zh_hans_date.test.ts",
+      "table": "zhHansDateCases",
+      "cases": 6
+    },
+    {
+      "file": "hans/zh_hans_deadline.test.ts",
+      "table": "zhHansDeadlineCases",
+      "cases": 18
+    },
+    {
+      "file": "hans/zh_hans_time_exp.test.ts",
+      "table": "zhHansTimeExpCases",
+      "cases": 45
+    },
+    {
+      "file": "hans/zh_hans_weekday.test.ts",
+      "table": "zhHansWeekdayCases",
+      "cases": 9
+    },
+    {
+      "file": "hant/zh_hant_ago.test.ts",
+      "table": "zhHantAgoCases",
+      "cases": 6
+    },
+    {
+      "file": "hant/zh_hant_casual.test.ts",
+      "table": "zhHantCasualCases",
+      "cases": 15
+    },
+    {
+      "file": "hant/zh_hant_date.test.ts",
+      "table": "zhHantDateCases",
+      "cases": 6
+    },
+    {
+      "file": "hant/zh_hant_deadline.test.ts",
+      "table": "zhHantDeadlineCases",
+      "cases": 13
+    },
+    {
+      "file": "hant/zh_hant_time_exp.test.ts",
+      "table": "zhHantTimeExpCases",
+      "cases": 18
+    },
+    {
+      "file": "hant/zh_hant_weekday.test.ts",
+      "table": "zhHantWeekdayCases",
+      "cases": 9
+    },
+    {
+      "file": "zh.test.ts",
+      "table": "zhRootCases",
+      "cases": 3
+    }
+  ]
+}

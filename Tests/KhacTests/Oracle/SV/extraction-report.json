@@ -1,0 +1,30 @@
+{
+  "locale": "sv",
+  "files": 4,
+  "seen": 41,
+  "ported": 41,
+  "excluded": [],
+  "reasons": {},
+  "tables": [
+    {
+      "file": "sv_casual.test.ts",
+      "table": "svCasualCases",
+      "cases": 11
+    },
+    {
+      "file": "sv_month_name_little_endian.test.ts",
+      "table": "svMonthNameLittleEndianCases",
+      "cases": 6
+    },
+    {
+      "file": "sv_time_units_casual_relative.test.ts",
+      "table": "svTimeUnitsCasualRelativeCases",
+      "cases": 16
+    },
+    {
+      "file": "sv_weekday.test.ts",
+      "table": "svWeekdayCases",
+      "cases": 8
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "locale": "uk",
+  "files": 9,
+  "seen": 131,
+  "ported": 131,
+  "excluded": [],
+  "reasons": {},
+  "tables": [
+    {
+      "file": "uk_casual.test.ts",
+      "table": "ukCasualCases",
+      "cases": 26
+    },
+    {
+      "file": "uk_month.test.ts",
+      "table": "ukMonthCases",
+      "cases": 10
+    },
+    {
+      "file": "uk_month_name_little_endian.test.ts",
+      "table": "ukMonthNameLittleEndianCases",
+      "cases": 23
+    },
+    {
+      "file": "uk_relative.test.ts",
+      "table": "ukRelativeCases",
+      "cases": 11
+    },
+    {
+      "file": "uk_time_exp.test.ts",
+      "table": "ukTimeExpCases",
+      "cases": 25
+    },
+    {
+      "file": "uk_time_units_ago.test.ts",
+      "table": "ukTimeUnitsAgoCases",
+      "cases": 9
+    },
+    {
+      "file": "uk_time_units_casual_relative.test.ts",
+      "table": "ukTimeUnitsCasualRelativeCases",
+      "cases": 17
+    },
+    {
+      "file": "uk_time_units_within.test.ts",
+      "table": "ukTimeUnitsWithinCases",
+      "cases": 3
+    },
+    {
+      "file": "uk_weekday.test.ts",
+      "table": "ukWeekdayCases",
+      "cases": 7
+    }
+  ]
+}
