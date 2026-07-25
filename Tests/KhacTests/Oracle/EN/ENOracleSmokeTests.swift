@@ -7,7 +7,10 @@ import XCTest
 
 final class ENOracleSmokeTests: XCTestCase {
     func testOracleCasesLoad() {
-        XCTAssertEqual(enOracleCases.count, 563)
+        // 562, not the 563 originally extracted: one duplicate "Dec. 21" case was
+        // removed because it and its twin assert contradictory results for the
+        // same input and reference. See MonthNameMiddleEndianCases.swift.
+        XCTAssertEqual(enOracleCases.count, 562)
     }
 
     func testNoMatchCasesArePresent() {

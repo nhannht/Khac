@@ -201,12 +201,21 @@ public let monthNameMiddleEndianCases: [OracleCase] = [
         reference: OracleDate(2023, 13, 10),
         expectation: .match(start: OracleComponents(year: 2023, month: 12, day: 21))
     ),
-    OracleCase(
-        sourceFile: "en_month_name_middle_endian.test.ts",
-        input: "Dec. 21",
-        reference: OracleDate(2023, 13, 10),
-        expectation: .match(start: OracleComponents(year: 2021, month: 12))
-    ),
+    // REMOVED, deliberately: a second "Dec. 21" case with this same input and
+    // this same reference expected year 2021, month 12, no day - reading "21" as
+    // a YEAR rather than a day. Both cannot hold at once for a deterministic
+    // parser, so this is a defect in the ported fixture, not in the engine.
+    //
+    // In chrono's source test the two assertions run against two DIFFERENT
+    // Chrono instances: createCasualConfiguration(false) yields the 2023 reading
+    // kept above, and createCasualConfiguration(true) - a day-first English
+    // variant - yields the 2021 reading, via an ambiguity guard that exists only
+    // in that configuration. extract.py flattened both into one table without
+    // recording which configuration each came from.
+    //
+    // Khac's ENLocale is monthDay, so only the first reading is in scope, and
+    // day-first English (en.GB) is ALREADY a documented deferral on KHAC-3. Do
+    // not re-add this case without also modelling that configuration.
     OracleCase(
         sourceFile: "en_month_name_middle_endian.test.ts",
         input: "August 32, 2014",

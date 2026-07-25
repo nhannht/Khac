@@ -107,6 +107,17 @@ public struct Vocabulary {
     public var meridiemHourRules: [String: MeridiemHourRule]
     /// Era markers applied to a year: "bc"/"tcn": -1, "ad"/"scn": +1.
     public var eraMarkers: [String: Int]
+    /// Which keys of `months` are FULL month names rather than abbreviations,
+    /// lowercased. A bare abbreviation is too weak to be a date on its own: in
+    /// running English prose "mar" or "jan" is far more often a name or a typo
+    /// than a month, while "may" is a real word people do write alone.
+    ///
+    /// Leave EMPTY to switch the filter off entirely, which is the right choice
+    /// for a locale whose month words are long enough not to collide (Vietnamese
+    /// "tháng 3" is never mistaken for anything else). A locale that fills this
+    /// opts IN to rejecting a bare month-only match of at most three characters
+    /// unless the word appears here.
+    public var fullMonthNames: Set<String>
 
     public init(
         weekdays: [String: Int] = [:],
@@ -119,7 +130,8 @@ public struct Vocabulary {
         meridiem: [String: Meridiem] = [:],
         timeOfDay: [String: (hour: Int, meridiem: Meridiem?)] = [:],
         meridiemHourRules: [String: MeridiemHourRule] = [:],
-        eraMarkers: [String: Int] = [:]
+        eraMarkers: [String: Int] = [:],
+        fullMonthNames: Set<String> = []
     ) {
         self.weekdays = weekdays
         self.months = months
@@ -132,6 +144,7 @@ public struct Vocabulary {
         self.timeOfDay = timeOfDay
         self.meridiemHourRules = meridiemHourRules
         self.eraMarkers = eraMarkers
+        self.fullMonthNames = fullMonthNames
     }
 }
 

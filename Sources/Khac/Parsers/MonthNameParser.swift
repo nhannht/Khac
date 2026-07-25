@@ -19,12 +19,18 @@ struct MonthNameParser: Parser {
         // engine re-splits "tháng 12" into "tháng 1" + a stray "2" day. Locking
         // the longest match keeps "tháng 12" whole. Harmless for alphabetic
         // months (no shorter month is a prefix that leaves a usable day digit).
-        let months = "(?>" + WordTable(vocab.months).alternation + ")"
-        let era = WordTable(vocab.eraMarkers).alternation
+        //
+        // The trailing digit guard covers the case the atomic group cannot: a
+        // valid short key that prefixes an INVALID longer one. "tháng 13" is not
+        // a month, but "tháng 1" is, and without this guard it matches 7 of those
+        // 9 characters and leaves a stray "3" for the year group to swallow.
+        let months = "(?>" + WordTable(vocab.months).alternation + ")(?![0-9])"
         let ordinalSuffix = "(?:st|nd|rd|th)?"
-        let day = "[0-9]{1,2}" + ordinalSuffix
+        // chrono's ORDINAL_NUMBER_PATTERN: a spelled-out ordinal, or digits with
+        // an optional ordinal suffix. The locale already carries the words.
+        let ordinalWords = WordTable(vocab.ordinals).alternation
+        let day = "(?:" + ordinalWords + "|[0-9]{1,2}(?![0-9])" + ordinalSuffix + ")"
         let rangeConnector = "(?:to|-|\\u2013|until|through|till)"
-        let year = "[0-9]{1,4}"
         // Optional locale year-marker word before the year, e.g. VI "năm" in
         // "tháng 4 năm 1975". Empty for locales without one (English keeps its
         // built-in "of"), so this adds nothing to their patterns.
@@ -33,11 +39,11 @@ struct MonthNameParser: Parser {
 
         let little =
             "(?:on\\s{0,3})?" +
-            "(?<lday>[0-9]{1,2})(?![0-9])" + ordinalSuffix +
-            "(?:\\s{0,3}" + rangeConnector + "\\s{0,3}" + day + ")?" +
+            "(?<lday>" + day + ")" +
+            "(?:\\s{0,3}" + rangeConnector + "\\s{0,3}(?<lday2>" + day + "))?" +
             "(?:-|/|\\s{0,3}(?:of\\s{0,3})?)" +
             "(?<lmonth>" + months + ")" +
-            "(?:(?:-|/|,?\\s{0,3})" + yearMarkerGroup + "(?<lyear>" + year + ")(?:\\s*(?<lera>" + era + "))?(?![\\p{L}\\p{N}]))?"
+            "(?:(?:-|/|,?\\s{0,3})" + yearMarkerGroup + yearGroup(prefix: "l", context) + "(?![\\p{L}\\p{N}]))?"
 
         // Month-then-day requires a real separator (space, hyphen, slash, or
         // comma), never a zero-width one. Otherwise a numeric month with an
@@ -47,54 +53,105 @@ struct MonthNameParser: Parser {
         let middle =
             "(?<mmonth>" + months + ")" +
             "(?:\\s*[-/,]\\s*|\\s+)" +
-            "(?<mday>[0-9]{1,2})(?![0-9])" + ordinalSuffix + "(?![:.][0-9])(?!\\s*(?:am|pm))" +
-            "(?:\\s*" + rangeConnector + "\\s*" + day + "\\s*)?" +
-            "(?:(?:-|/|\\s*,\\s*|\\s+)" + yearMarkerGroup + "(?<myear>" + year + ")(?:\\s*(?<mera>" + era + "))?)?"
+            "(?<mday>" + day + ")(?![:.][0-9])(?!\\s*(?:am|pm))" +
+            "(?:\\s*" + rangeConnector + "\\s*(?<mday2>" + day + ")\\s*)?" +
+            "(?:(?:-|/|\\s*,\\s*|\\s+)" + yearMarkerGroup + yearGroup(prefix: "m", context) + ")?"
 
-        // Month with an optional 4-digit year, no day: "September 2012",
-        // "Sep. 2012", "Sep-2012", "in June of 2022", "in August".
+        // Month with an optional year, no day: "September 2012", "Sep. 2012",
+        // "Sep-2012", "in June of 2022", "in August", "Aug 96".
         let monthOnly =
             "(?<omonth>" + months + ")" +
-            "(?:(?:\\s*[.,/\\-]\\s*|\\s+)(?:of\\s+)?" + yearMarkerGroup + "(?<oyear>[0-9]{4})(?:\\s*(?<oera>" + era + "))?)?"
+            "(?:(?:\\s*[.,/\\-]\\s*|\\s+)(?:of\\s+)?" + yearMarkerGroup + yearGroup(prefix: "o", context) + ")?"
 
         return makeRegex(
             boundaryBefore + "(?:" + little + "|" + middle + "|" + monthOnly + ")" + "(?=[^\\p{L}\\p{N}_]|$)"
         )
     }
 
+    /// The year part of a month-name date, as two alternatives sharing one
+    /// prefix. An era marker vouches for any 1-4 digit year ("234 BCE"). A BARE
+    /// year has to earn it: exactly 2 or 4 digits, never 1 or 3, and a 2-digit
+    /// one must not be followed by anything showing it is really something else.
+    /// Without that guard the year group eats the head of a following clock time
+    /// ("5 May 12:00" becomes the year 12) or a meridiem hour ("24 October, 9 am"
+    /// becomes the year 9), stranding the rest of the time expression.
+    ///
+    /// The exclusion list is built from locale DATA - meridiem words, clock-hour
+    /// words, month names - rather than hardcoded English, so it serves every
+    /// locale on the same engine.
+    private func yearGroup(prefix: String, _ context: ParsingContext) -> String {
+        let vocab = context.locale.vocabulary
+        let era = WordTable(vocab.eraMarkers).alternation
+        let meridiemWords = WordTable(vocab.meridiem).alternation
+        let monthWords = WordTable(vocab.months).alternation
+        let clockWords = regexAlternation(context.locale.patterns.clockHourWords) ?? "(?!)"
+        let followers = [meridiemWords, clockWords, monthWords].joined(separator: "|")
+        let bare = "(?:[1-9][0-9]{3}|[0-9]{2}(?![\\p{L}\\p{N}_]|:[0-9]|\\s{1,3}(?:" + followers + ")))"
+        return "(?:(?<\(prefix)yearEra>[1-9][0-9]{0,3})\\s{0,2}(?<\(prefix)era>" + era + ")"
+            + "|(?<\(prefix)year>" + bare + "))"
+    }
+
     func extract(_ context: ParsingContext, _ match: TextMatch) -> ParserResult? {
         let vocab = context.locale.vocabulary
         let monthTable = WordTable(vocab.months)
         let eraTable = WordTable(vocab.eraMarkers)
+        let ordinalTable = WordTable(vocab.ordinals)
 
         let monthText: String
         var dayText: String?
+        var day2Text: String?
         let yearText: String?
         let eraText: String?
+        var isMonthOnly = false
+
+        func year(_ prefix: String) -> String? {
+            match.string(named: prefix + "yearEra") ?? match.string(named: prefix + "year")
+        }
 
         if let m = match.string(named: "lmonth") {
             monthText = m
             dayText = match.string(named: "lday")
-            yearText = match.string(named: "lyear")
+            day2Text = match.string(named: "lday2")
+            yearText = year("l")
             eraText = match.string(named: "lera")
         } else if let m = match.string(named: "mmonth") {
             monthText = m
             dayText = match.string(named: "mday")
-            yearText = match.string(named: "myear")
+            day2Text = match.string(named: "mday2")
+            yearText = year("m")
             eraText = match.string(named: "mera")
         } else if let m = match.string(named: "omonth") {
             monthText = m
             dayText = nil
-            yearText = match.string(named: "oyear")
+            yearText = year("o")
             eraText = match.string(named: "oera")
+            isMonthOnly = true
         } else {
             return nil
         }
 
         guard let month = monthTable.value(for: monthText) else { return nil }
+
+        // A bare month that is only an ABBREVIATION is too weak to be a date on
+        // its own: "mar" and "jan" in running prose are far more often a name or
+        // a typo than a month. chrono rejects a month-only match of at most three
+        // characters unless the word is a full month name, which is why bare
+        // "may" survives and bare "mar" does not. Only applies to a locale that
+        // declares its full month names; one that does not is unaffected.
+        if isMonthOnly, !vocab.fullMonthNames.isEmpty, match.text.count <= 3,
+           !vocab.fullMonthNames.contains(WordTable<Int>.fold(monthText)) {
+            return nil
+        }
+
+        func dayValue(_ text: String?) -> Int? {
+            guard let text = text else { return nil }
+            if let word = ordinalTable.value(for: text) { return word }
+            return Int(text.trimmingCharacters(in: CharacterSet.decimalDigits.inverted))
+        }
+
         var day: Int? = nil
-        if let dayText = dayText {
-            guard let d = Int(dayText), d >= 1, d <= 31 else { return nil }
+        if dayText != nil {
+            guard let d = dayValue(dayText), d >= 1, d <= 31 else { return nil }
             day = d
         }
 
@@ -104,9 +161,7 @@ struct MonthNameParser: Parser {
         // when the engine resumes one char past the rejected match. Non-strict
         // deliberately does NOT reject: the EN oracle "96 Aug 96" surfaces the
         // bare "Aug 96", so an out-of-range plain-number day drops and the month
-        // stands. (VI "ngày 0 tháng 4 nam 2000" wants no result, but that hinges
-        // on the explicit "ngay" day-marker, which is a VI StandardParser concern,
-        // not the generic month grammar - tracked as a cross-cutting item.)
+        // stands.
         if context.options.mode == .strict && day == nil { return nil }
 
         var comps = context.createParsingComponents()
@@ -117,18 +172,46 @@ struct MonthNameParser: Parser {
             comps.imply(.day, 1)
         }
 
-        if let yearText = yearText, var year = Int(yearText) {
+        var resolvedYear: Int
+        if let yearText = yearText, var value = Int(yearText) {
             let hasEra = eraText != nil
             if !hasEra && yearText.count <= 2 {
-                year = year + (year > 50 ? 1900 : 2000)
+                value = value + (value > 50 ? 1900 : 2000)
             }
             if let eraText = eraText, let sign = eraTable.value(for: eraText), sign < 0 {
-                year = -year
+                value = -value
             }
-            comps.certain(.year, year)
+            comps.certain(.year, value)
+            resolvedYear = value
         } else {
-            comps.imply(.year, yearClosestToReference(month: month, day: day ?? 1, context: context))
+            resolvedYear = yearClosestToReference(month: month, day: day ?? 1, context: context)
+            comps.imply(.year, resolvedYear)
         }
+
+        // A named month makes an impossible day impossible outright: there is no
+        // 29 February 2014. NumericDateParser already rejects these; the same
+        // shared check belongs here. chrono does not hunt for a nearby year that
+        // would make a bare "29 February" valid - it simply rejects.
+        //
+        // Only for a year in the common era. Foundation splits BC years into a
+        // separate era rather than negative years, so a negative year cannot
+        // round-trip through `isRealDate` and every BC date would be rejected as
+        // impossible ("10 August 234 BCE" would lose its day and surface as a
+        // bare "August 234 BCE"). No oracle case validates a BC day-of-month.
+        if let day = day, resolvedYear > 0,
+           !isRealDate(year: resolvedYear, month: month, day: day, calendar: context.reference.calendar) {
+            return nil
+        }
+
+        // A day range inside one month-name date ("August 10 - 22, 2012"): the
+        // end shares everything with the start and overrides the day alone.
+        if let day2 = dayValue(day2Text), day2 >= 1, day2 <= 31,
+           isRealDate(year: resolvedYear, month: month, day: day2, calendar: context.reference.calendar) {
+            var end = comps
+            end.certain(.day, day2)
+            return .result(context.createResult(match: match, start: comps, end: end))
+        }
+
         return .components(comps)
     }
 

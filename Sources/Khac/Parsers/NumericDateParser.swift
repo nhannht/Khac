@@ -12,9 +12,12 @@ struct NumericDateParser: Parser {
 
     func pattern(_ context: ParsingContext) -> NSRegularExpression {
         // Same separator on both sides (backreference), so "8/10-2012" is rejected.
+        // `b` allows 4 digits so a two-field month/year ("04/2016") can match at
+        // all; in the three-field form the greedy run still stops at the next
+        // separator, so "8/10/2012" keeps b = "10".
         makeRegex(
             "(?<![0-9])" +
-            "(?<a>[0-9]{1,4})(?<sep>[/.])(?<b>[0-9]{1,2})" +
+            "(?<a>[0-9]{1,4})(?<sep>[/.])(?<b>[0-9]{1,4})" +
             "(?:\\k<sep>(?<c>[0-9]{1,4}))?" +
             "(?![0-9])"
         )
@@ -41,19 +44,22 @@ struct NumericDateParser: Parser {
         if let c = match.int(named: "c") {
             // Three fields.
             if aText.count == 4 || a > 31 {
-                // Year-first: YYYY/MM/DD.
+                // Year-first: YYYY/MM/DD. Here `c` is the DAY, so it carries no
+                // digit-count rule - only a year field does.
+                guard let resolved = resolvedMonthDay(month: b, day: c, context) else { return nil }
                 year = a
-                month = b
-                day = c
+                month = resolved.month
+                day = resolved.day
             } else {
-                switch context.locale.options.dateOrder {
-                case .monthDay:
-                    month = a
-                    day = b
-                case .dayMonth:
-                    day = a
-                    month = b
-                }
+                // A slash-date's YEAR field is exactly 2 or 4 digits in chrono
+                // ("4/13/1" is not a date). This is a rule about the year, which
+                // is why it lives here and not in the pattern: in the year-first
+                // branch above the same group holds a day.
+                guard let cText = cText, cText.count == 2 || cText.count == 4 else { return nil }
+                let ordered = orderedMonthDay(first: a, second: b, context)
+                guard let resolved = resolvedMonthDay(month: ordered.month, day: ordered.day, context) else { return nil }
+                month = resolved.month
+                day = resolved.day
                 year = expandYear(c)
             }
         } else {
@@ -65,14 +71,10 @@ struct NumericDateParser: Parser {
                 day = nil
             } else {
                 // Day/month (or month/day) with the year left implied.
-                switch context.locale.options.dateOrder {
-                case .monthDay:
-                    month = a
-                    day = b
-                case .dayMonth:
-                    day = a
-                    month = b
-                }
+                let ordered = orderedMonthDay(first: a, second: b, context)
+                guard let resolved = resolvedMonthDay(month: ordered.month, day: ordered.day, context) else { return nil }
+                month = resolved.month
+                day = resolved.day
                 year = nil
             }
         }
@@ -97,6 +99,26 @@ struct NumericDateParser: Parser {
             comps.certain(.year, year)
         }
         return .components(comps)
+    }
+
+    /// Assign two numeric fields to month and day per the locale's declared order.
+    private func orderedMonthDay(first: Int, second: Int, _ context: ParsingContext) -> (month: Int, day: Int) {
+        switch context.locale.options.dateOrder {
+        case .monthDay: return (month: first, day: second)
+        case .dayMonth: return (month: second, day: first)
+        }
+    }
+
+    /// chrono's ambiguity rule: when the field the order assigned to the month
+    /// cannot BE a month but the other one can, the two swap - "14/4" is the 14th
+    /// of April even in a month-first locale, because there is no 14th month.
+    ///
+    /// Strict mode does not guess. It takes the declared order at face value and
+    /// rejects, which is why "2024/13/1" matches casually but not strictly.
+    private func resolvedMonthDay(month: Int, day: Int, _ context: ParsingContext) -> (month: Int, day: Int)? {
+        if (1...12).contains(month) { return (month, day) }
+        guard context.options.mode != .strict, (1...12).contains(day) else { return nil }
+        return (month: day, day: month)
     }
 
     /// Expand a two-digit year the way chrono does: <100 becomes 19xx when > 50,

@@ -31,7 +31,8 @@ public struct ENLocale: KhacLocale {
             dayReferences: Self.dayReferences,
             meridiem: Self.meridiem,
             timeOfDay: Self.timeOfDay,
-            eraMarkers: Self.eraMarkers
+            eraMarkers: Self.eraMarkers,
+            fullMonthNames: Self.fullMonthNames
         )
     }
 
@@ -235,6 +236,15 @@ private extension ENLocale {
         "night": (20, .pm),
         "tonight": (22, .pm),
         "midnight": (0, nil),
+    ]
+
+    /// The twelve full month names, so a bare ABBREVIATION can be rejected as a
+    /// date on its own. "may" is here and survives standing alone; "mar", "jan"
+    /// and the rest are abbreviations and do not. Source: chrono's
+    /// FULL_MONTH_NAME_DICTIONARY, used by the same length-based guard.
+    static let fullMonthNames: Set<String> = [
+        "january", "february", "march", "april", "may", "june",
+        "july", "august", "september", "october", "november", "december",
     ]
 
     /// Both dotted and undotted forms kept even though the oracle only exercises
