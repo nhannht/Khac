@@ -36,14 +36,27 @@ struct CasualDateParser: Parser {
             .map { "(?:" + $0 + "\\s{0,3})?" } ?? ""
         let timesOfDay = WordTable(vocab.timeOfDay).alternation
         let now = regexAlternation(context.locale.patterns.nowWords) ?? "(?!)"
-        // A day-shift word attaches only DIRECTLY AFTER a time-of-day word, which
-        // is what keeps it from matching on its own: Vietnamese "mai" is also a
-        // very common given name. Absent for locales without the pattern, in which
-        // case the fragment is empty and the branch is exactly what it was.
+        // A day-shift word attaches only DIRECTLY AFTER a time-of-day word, and is
+        // matched CASE-SENSITIVELY via ICU's scoped (?-i:) against this pattern's
+        // otherwise case-insensitive matching.
+        //
+        // Adjacency alone is not enough, because the position right after a fronted
+        // time adverbial is exactly where a SUBJECT sits in ordinary Vietnamese:
+        // "chiều Mai đến" (Mai arrives in the afternoon) has the same shape as
+        // "chiều mai đến" (arriving tomorrow afternoon) and differs only in the
+        // capital. Vietnamese capitalizes proper nouns and never capitalizes this
+        // suffix mid-sentence, so case is the only signal that separates them -
+        // review-vi looked for a syntactic one and reported a negative result,
+        // since pro-drop lets the temporal reading omit its subject too.
+        //
+        // The limitation this leaves is deliberate and was chosen explicitly: in
+        // all-lowercase text the two readings are genuinely ambiguous to a native
+        // reader as well, and there a stated date wins. That direction is the one
+        // this codebase takes every time - a loud miss beats a quiet wrong answer.
         let dayShift = WordTable(vocab.dayShiftSuffixes)
         let shiftSuffix = dayShift.isEmpty
             ? ""
-            : "(?:\\s{1,3}(?<btodshift>" + dayShift.alternation + "))?"
+            : "(?:\\s{1,3}(?<btodshift>(?-i:" + dayShift.alternation + ")))?"
 
         // Order matters: NSRegularExpression takes the first matching alternative
         // at a position, so the day-anchored time-of-day combo must precede the

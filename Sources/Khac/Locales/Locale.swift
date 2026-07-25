@@ -102,12 +102,23 @@ public struct Vocabulary {
     /// Day-shift words that attach as a SUFFIX to a time-of-day word: Vietnamese
     /// "sáng mai" (tomorrow morning) is "sáng" + the shift "mai": +1.
     ///
-    /// A shift word is recognized ONLY directly after a time-of-day word, never
-    /// on its own. That adjacency is the whole point of the field. Vietnamese
-    /// "Mai" is an extremely common given name and matching is case-insensitive,
-    /// so a bare day-reference entry would read "Mai ơi, đợi tôi với" as
-    /// "tomorrow"; gating on the preceding time-of-day word closes that surface
-    /// without enumerating compounds.
+    /// A shift word is recognized ONLY directly after a time-of-day word, and
+    /// ONLY in the exact case written here. Both conditions are load-bearing, and
+    /// keys must therefore be lowercase.
+    ///
+    /// Adjacency alone is not sufficient. The slot right after a fronted time
+    /// adverbial is where a SUBJECT sits in ordinary Vietnamese, so "chiều Mai
+    /// đến" (Mai arrives in the afternoon) presents exactly as "chiều mai đến"
+    /// (arriving tomorrow afternoon). Since Vietnamese capitalizes proper nouns
+    /// and never capitalizes these suffixes mid-sentence, case is the only signal
+    /// that separates a name from a date here - there is no syntactic one, because
+    /// pro-drop lets the temporal reading omit its subject as well.
+    ///
+    /// The residue is deliberate: in all-lowercase text the two readings are
+    /// ambiguous to a native reader too, and a stated date wins. That trade is
+    /// chosen, not overlooked - a missed date fails loudly and the user retypes
+    /// it, while a misread name creates a plausible wrong entry nobody is told
+    /// about.
     ///
     /// Encoding those compounds as whole `dayReferences` keys instead is what
     /// this field replaces, and it could not work: `dayReferences` carries a day

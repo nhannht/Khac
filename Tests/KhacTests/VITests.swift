@@ -180,10 +180,67 @@ final class VITests: XCTestCase {
     }
 
     // The false-positive surface the whole adjacency gate exists to close. "Mai"
-    // here is a name in a vocative, not a date, and matching is case-insensitive.
+    // here is a name in a vocative, not a date.
     func testBareMaiIsNotADate() {
         XCTAssertTrue(parseVI("Mai ơi, đợi tôi với", ref(2012, 8, 10, 12)).isEmpty)
         XCTAssertTrue(parseVI("hoa mai nở rất đẹp", ref(2012, 8, 10, 12)).isEmpty)
+    }
+
+    // The harder surface, and the reason the shift word is matched case-sensitively.
+    // A fronted time adverbial is followed by the SUBJECT in ordinary Vietnamese
+    // word order, so a person named Mai lands in exactly the slot the shift suffix
+    // occupies. Every time-of-day word was affected, and this predates the suffix
+    // mechanism - the compound dayReferences keys it replaced had the identical
+    // exposure, measured at 357cb20.
+    //
+    // Capitalization is the only signal that separates the readings: "chiều mai
+    // đến" and "chiều Mai đến" are otherwise identical, and pro-drop means the
+    // temporal reading can omit its subject too, so there is no syntactic test.
+    // The correct outcome is NOT an empty result. "chiều Mai đến" really does say
+    // something temporal - "in the afternoon" - so parsing the time-of-day word
+    // alone, on the reference day, is the right reading. What must not happen is
+    // the name being swallowed into the match or the day being shifted to tomorrow,
+    // which is precisely what both earlier designs did.
+    func testCapitalizedMaiIsANameNotAShift() {
+        let r0 = ref(2012, 8, 10, 12)
+        for sentence in [
+            "chiều Mai đến",
+            "sáng Mai đi học",
+            "trưa Mai nấu cơm",
+            "tối Mai hát rất hay",
+            "đêm Mai thức khuya",
+            "buổi tối Mai đến",
+        ] {
+            let r = single(sentence, r0)
+            XCTAssertEqual(r?.start.get(.day), 10, "\(sentence) must not shift the day; Mai is a name")
+            XCTAssertEqual(
+                r?.text.localizedCaseInsensitiveContains("mai"), false,
+                "\(sentence) must not swallow the name into the match"
+            )
+        }
+    }
+
+    // The other half of that trade: lowercase stays a date, including after a
+    // sentence-initial capital on the time-of-day word, which is how the phrase is
+    // actually written at the start of a sentence.
+    func testLowercaseMaiStillShifts() {
+        let r0 = ref(2012, 8, 10, 20)
+        XCTAssertEqual(single("chiều mai đến", r0)?.start.get(.day), 11)
+        XCTAssertEqual(single("Sáng mai tôi đi làm", r0)?.start.get(.day), 11)
+        XCTAssertEqual(single("Sáng mai tôi đi làm", r0)?.start.get(.hour), 9)
+    }
+
+    // "kia" = +2, a deliberate forward default rather than a verified fact; see
+    // VILocale's dayShiftSuffixes note. Before this it parsed as bare "sáng" and
+    // answered TODAY, which was wrong under either reading.
+    func testCasualCompoundKia() {
+        let sang = single("sáng kia", ref(2012, 8, 10, 20))
+        XCTAssertEqual(sang?.start.get(.day), 12)
+        XCTAssertEqual(sang?.start.get(.hour), 9)
+
+        let chieu = single("chiều kia", ref(2012, 8, 10, 20))
+        XCTAssertEqual(chieu?.start.get(.day), 12)
+        XCTAssertEqual(chieu?.start.get(.hour), 15)
     }
 
     // "ngày mai" stays an ordinary dayReferences entry and must not be disturbed

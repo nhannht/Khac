@@ -181,18 +181,29 @@ public struct VILocale: KhacLocale {
                 // day, and adjacency keeps bare "Mai" (a very common given name)
                 // from ever matching alone.
                 //
-                // "kia" (+2, "sáng kia" = day-after-tomorrow morning) is NOT here
-                // yet, and adding it is a one-line change once decided. It is
-                // deliberately pending a product decision, not an oversight:
-                // unlike "ngày kia"/"hôm kia", where the head noun lexicalizes the
-                // direction, "sáng"/"chiều"/"tối" carry no direction of their own
-                // (compare "hôm qua buổi sáng", "sáng nay", "sáng mai"), so a
-                // forward reading is a defensible default rather than a verified
-                // fact, and chrono has no precedent to follow. Today "sáng kia"
-                // parses as bare "sáng" and answers TODAY, which is wrong; the
-                // options are to reject the phrase or to take a documented
-                // forward default.
+                // Keys are lowercase and matched case-sensitively; see the field's
+                // own documentation for why case is load-bearing here.
                 "mai": 1,
+                // "sáng kia" = day-after-tomorrow morning. The FORWARD reading is a
+                // deliberate product decision, not a verified linguistic fact, and
+                // it is recorded as such. Unlike "ngày kia" / "hôm kia", where the
+                // head noun lexicalizes direction, "sáng"/"chiều"/"tối" carry none
+                // of their own - compare "hôm qua buổi sáng", "sáng nay", "sáng
+                // mai" - and chrono has no equivalent to follow. review-vi leaned
+                // forward at moderate confidence and declined to rule it alone.
+                // Chosen because it matches the "mai" symmetry a reader already
+                // expects; the phrase previously parsed as bare "sáng" and
+                // answered TODAY, which was wrong under either reading.
+                "kia": 2,
+                // NOT added: "qua" (-1). "tối qua" / "đêm qua" ("last night") are
+                // more frequent than the "kia" family, so the gap is real and
+                // worth closing - but "qua" is also an ordinary movement verb ("đi
+                // qua", "qua nhà ai đó"), and Vietnamese drops subjects freely, so
+                // "chiều qua nhà bạn chơi" (in the afternoon, went over to a
+                // friend's place) has the identical shape to the temporal reading.
+                // The case-sensitivity that separates "Mai" from "mai" does NOT
+                // transfer, because "qua" is not a proper noun and is lowercase in
+                // both readings. Needs its own analysis, not a copy of this entry.
             ]
         )
     }
