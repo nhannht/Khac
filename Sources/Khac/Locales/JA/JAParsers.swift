@@ -176,6 +176,12 @@ private func weekdayComponents(
 /// `木曜日`, `前の水曜日`, `次の土曜日`. The 曜 form without 日 is accepted too,
 /// as chrono accepts it.
 ///
+/// NO word boundary, deliberately, as in chrono: the oracle expects 水曜日 to match
+/// inside `前の水曜日`, where the preceding の is a \p{L} and any letter-based guard
+/// would refuse it. 曜日 is what makes the match unambiguous instead. In an
+/// alphabetic script a boundary guard stops false positives inside words; in a
+/// space-free one it forbids every true positive.
+///
 /// Source: chrono's JPWeekdayParser, including its unhandled cases: 先週 (last
 /// week) and 来週 (next week) are NOT synonyms of last/next in Japanese, chrono
 /// carries a TODO saying so, and neither guesses at them.
@@ -205,6 +211,10 @@ struct JAWeekdayParser: Parser {
 
 /// `(水)`, `（土）` - the abbreviated weekday a Japanese calendar prints beside a
 /// date. Source: chrono's JPWeekdayWithParenthesesParser. Both bracket widths.
+///
+/// NO word boundary, deliberately, as in chrono: the brackets ARE the boundary,
+/// and they are stronger than a letter-class guard because a bare 水 outside them
+/// is never a weekday.
 struct JAWeekdayParenthesesParser: Parser {
     static let overlapRank = 43
 
@@ -228,6 +238,10 @@ struct JAWeekdayParenthesesParser: Parser {
 
 /// `今日`, `きょう`, `本日`, `昨日`, `明日`, `今夜`, `今朝` and their kana
 /// spellings. Source: chrono's JPCasualDateParser.
+///
+/// NO word boundary, deliberately, as in chrono. Every one of these words appears
+/// flush against the next kanji in real Japanese, so a letter-class guard forbids
+/// all of them - which is the same reason they cannot be Vocabulary data.
 ///
 /// These are day and time-of-day WORDS, so `Vocabulary.dayReferences` and
 /// `Vocabulary.timeOfDay` look like their natural home. They cannot go there:

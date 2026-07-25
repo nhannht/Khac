@@ -137,26 +137,7 @@ struct ZHOracleRunner {
 /// never be skipped in one line. XCTExpectFailure is strict, so an entry whose
 /// case starts passing fails the suite until the entry is removed - the table
 /// cannot rot silently.
-let zhDeferrals: [String: String] = [
-    // NOT a locale gap. The oracle case itself is wrong, and Khac already agrees
-    // with chrono on it.
-    //
-    // chrono asserts this input's instant as a raw epoch, `new Date(784043130000)`,
-    // which is 1994-11-05T13:45:30Z. The input's own offset says the same thing:
-    // 08:15:30 at UTC-05:30 is 13:45:30Z. Khac produces exactly 13:45:30Z, and the
-    // case's OWN component assertions (hour 8, minute 15, second 30,
-    // timezoneOffset -330) all pass. Only its `startDate` disagrees, claiming
-    // 20:45:30 - later by exactly 7 hours, which is the extraction machine's UTC+7
-    // offset. The epoch was rendered into an OracleDate in LOCAL time while the
-    // runner reads OracleDate as UTC.
-    //
-    // Corrected value is `startDate: OracleDate(1994, 11, 5, 13, 45, 30)`. Reported
-    // to engine; the oracle is generated and not ours to edit, so this deferral
-    // holds until it is regenerated, at which point XCTExpectFailure's strictness
-    // fails the suite until the entry is removed.
-    "1994-11-05T08:15:30-05:30":
-        "oracle bug, not a locale gap - expected startDate is 7h late (extraction machine's UTC+7); chrono's own epoch and Khac both say 1994-11-05T13:45:30Z",
-]
+let zhDeferrals: [String: String] = [:]
 
 final class ZHOracleTests: XCTestCase {
     private let runner = ZHOracleRunner()
@@ -201,10 +182,7 @@ final class ZHOracleScoreboardTests: XCTestCase {
     /// Cases known to pass. Raise this after every improvement; never lower it to
     /// accommodate a regression.
     ///
-    /// 167 rather than 168 because of the single entry in `zhDeferrals`, which is a
-    /// defect in the generated oracle case rather than a gap in this locale. Raise
-    /// to 168 in the same change that regenerates that case.
-    static let floor = 167
+    static let floor = 168
 
     func testScoreboard() {
         let runner = ZHOracleRunner()

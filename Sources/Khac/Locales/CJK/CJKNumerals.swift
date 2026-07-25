@@ -1,10 +1,12 @@
 // CJKNumerals.swift - reading numbers written in CJK characters and full-width digits.
 //
-// Shared by JA and ZH. It lives under Locales/JA/ only because JA was built
-// first; the type is deliberately named for the script family, not the locale,
-// and it holds no locale data of its own - the digit table is passed in, because
-// the tables genuinely differ (ja has no 廿, chrono's zh hant table has no 〇).
-// Flagged to engine as a placement question; one file move settles it.
+// Shared by JA and ZH, which is why it sits in its own Locales/CJK/ directory
+// rather than inside either locale. The type is named for the script family, not
+// a locale, and it holds no locale data of its own: the digit table is passed in,
+// because the tables genuinely differ (ja has no 廿, and chrono's zh hant table
+// has no 〇). Duplicating the algorithm into two locale directories was the
+// alternative, and this codebase has already paid for two hand-synced copies of a
+// shared regex fragment once - see the comment on weekPostfixModifierGroup.
 //
 // TWO readings, and which one applies is decided by the SLOT the number sits in,
 // never by inspecting the characters:
