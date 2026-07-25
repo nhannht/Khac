@@ -11,9 +11,16 @@ public struct ParsedResult {
     public var start: ParsingComponents
     /// Components of the end date, present for ranges.
     public var end: ParsingComponents?
-    /// Number of CERTAIN (explicitly parsed) components across start and end.
-    /// This is the FIRST overlap key - never summed with match length (a long
-    /// vague match must not outscore a short precise one). Higher wins.
+    /// Number of CERTAIN components across start and end. This is the FIRST
+    /// overlap key - never summed with match length, since the units differ and
+    /// length would swamp it. Higher wins.
+    ///
+    /// "Certain" means a parser ASSIGNED the value rather than inheriting it from
+    /// the reference. It is NOT a count of what the writer wrote, and reading it
+    /// that way has already cost one wrong answer: a casual day word resolving its
+    /// date off the reference marks year, month and day certain without a single
+    /// character stating any of them, which is three, against two for a hand-typed
+    /// hour and meridiem. See SPEC 3a-H0.
     public var score: Int
     /// Static per-parser-TYPE rank, the FINAL overlap tiebreak. Lower wins. It
     /// makes the ordering provably total (independent of registration order) when
@@ -91,8 +98,13 @@ public struct ParsedResult {
     /// Total preference order for overlap resolution. Returns true when self
     /// should be preferred over other. A LEXICOGRAPHIC tuple, never a scalar sum:
     /// (certainCount desc, matchLength desc, index asc, parserRank asc, signature
-    /// asc). Certain-component count outranks length outright, so a long vague
-    /// match never beats a short precise one; parserRank guarantees totality.
+    /// asc). Certain-component count outranks length outright; parserRank
+    /// guarantees totality.
+    ///
+    /// Ours, not chrono's - chrono keeps the longer text and nothing else - and
+    /// the EN oracle does not constrain the key ORDER, only its output. Read the
+    /// caveats in SPEC 3a-H0 before reordering these on the strength of a green
+    /// suite.
     func isPreferred(over other: ParsedResult) -> Bool {
         if score != other.score { return score > other.score }
         if matchLength != other.matchLength { return matchLength > other.matchLength }
