@@ -3,24 +3,27 @@
 // Oracle/README.md for the prior-art credit - the case DATA is ported from
 // wanasit/chrono (MIT) test/en/*.test.ts, never chrono's test code.
 //
-// EXPECTED STATE (as of writing): the 8 generic parsers in Sources/Khac/Parsers/
-// are stubs ("STUB: interface frozen; real implementation follows") that never
-// match, so every case below currently reports zero results and fails. That is
-// a parser-implementation gap (Phase 1, still in progress), not an EN locale or
-// oracle-data defect. This suite is the regression bar those parsers must clear;
-// re-run after they land.
+// Reporting is PER CASE, not per asserted field: one oracle case that gets four
+// components wrong is one failure carrying four reasons, not four failures. A
+// field-level count cannot be read as progress (fixing a parser changes how many
+// fields each broken case even reaches), so the case count is the only honest
+// measure of how much of chrono's behavior the engine reproduces. testScoreboard
+// prints that count per source file and holds the ratchet floor.
 
 import Foundation
 import XCTest
 import Khac
 
-final class ENOracleTests: XCTestCase {
-    private let khac = Khac(localeInstances: [ENLocale()])
+/// Evaluates one oracle case against the real engine and reports why it failed.
+/// Shared by the per-group tests and the scoreboard so there is exactly one
+/// judgement of what "passing" means.
+struct ENOracleRunner {
+    let khac = Khac(localeInstances: [ENLocale()])
 
     /// All oracle dates (reference and expected) are interpreted against one
     /// fixed Gregorian/UTC calendar, so cases are deterministic regardless of the
     /// machine running them - independent of what ReferencePoint.now would use.
-    private let fixedCalendar: Calendar = {
+    let fixedCalendar: Calendar = {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(identifier: "UTC")!
         return cal
@@ -47,61 +50,83 @@ final class ENOracleTests: XCTestCase {
         fixedCalendar.date(from: dateComponents(d)) ?? Date()
     }
 
-    private func assertComponents(_ expected: OracleComponents, _ actual: ParsingComponents, _ message: String) {
-        if let v = expected.year { XCTAssertEqual(actual.get(.year), v, "\(message) year") }
-        if let v = expected.month { XCTAssertEqual(actual.get(.month), v, "\(message) month") }
-        if let v = expected.day { XCTAssertEqual(actual.get(.day), v, "\(message) day") }
-        if let v = expected.hour { XCTAssertEqual(actual.get(.hour), v, "\(message) hour") }
-        if let v = expected.minute { XCTAssertEqual(actual.get(.minute), v, "\(message) minute") }
-        if let v = expected.second { XCTAssertEqual(actual.get(.second), v, "\(message) second") }
-        if let v = expected.millisecond { XCTAssertEqual(actual.get(.millisecond), v, "\(message) millisecond") }
-        if let v = expected.weekday { XCTAssertEqual(actual.get(.weekday), v, "\(message) weekday") }
-        if let v = expected.timezoneOffset { XCTAssertEqual(actual.get(.timezoneOffset), v, "\(message) timezoneOffset") }
+    private func componentReasons(_ expected: OracleComponents, _ actual: ParsingComponents, _ side: String) -> [String] {
+        var reasons: [String] = []
+        func compare(_ name: String, _ want: Int?, _ component: ParsingComponents.Component) {
+            guard let want = want else { return }
+            let got = actual.get(component)
+            if got != want {
+                reasons.append("\(side).\(name) want \(want) got \(got.map(String.init(describing:)) ?? "nil")")
+            }
+        }
+        compare("year", expected.year, .year)
+        compare("month", expected.month, .month)
+        compare("day", expected.day, .day)
+        compare("hour", expected.hour, .hour)
+        compare("minute", expected.minute, .minute)
+        compare("second", expected.second, .second)
+        compare("millisecond", expected.millisecond, .millisecond)
+        compare("weekday", expected.weekday, .weekday)
+        compare("timezoneOffset", expected.timezoneOffset, .timezoneOffset)
+        return reasons
     }
 
-    private func run(_ cases: [OracleCase]) {
-        for c in cases {
-            let mode: Options.Mode = c.mode == .strict ? .strict : .casual
-            let options = Options(mode: mode, forwardDate: c.forwardDate)
-            let results = khac.parse(c.input, reference: reference(c.reference), options: options)
-            let label = "[\(c.sourceFile)] \(c.input.debugDescription)"
+    /// Every way this case failed. Empty means the case passes.
+    func reasons(for c: OracleCase) -> [String] {
+        let mode: Options.Mode = c.mode == .strict ? .strict : .casual
+        let options = Options(mode: mode, forwardDate: c.forwardDate)
+        let results = khac.parse(c.input, reference: reference(c.reference), options: options)
 
-            switch c.expectation {
-            case .noMatch:
-                XCTAssertTrue(results.isEmpty, "\(label) expected no match, got \(results.count)")
+        switch c.expectation {
+        case .noMatch:
+            guard !results.isEmpty else { return [] }
+            return ["want no match, got \(results.count): \(results.map(\.text))"]
 
-            case .match(let text, let index, let start, let startDate, let end, let endDate):
-                guard let result = results.first else {
-                    XCTFail("\(label) expected a match, got none")
-                    continue
-                }
-                if let text = text {
-                    XCTAssertEqual(result.text, text, "\(label) text")
-                }
-                if let index = index {
-                    XCTAssertEqual(result.index, index, "\(label) index")
-                }
-                if !start.isEmpty {
-                    assertComponents(start, result.start, "\(label) start")
-                }
-                if let startDate = startDate {
-                    XCTAssertEqual(result.start.date(), resolvedDate(startDate), "\(label) startDate")
-                }
-                if !end.isEmpty {
-                    if let endComponents = result.end {
-                        assertComponents(end, endComponents, "\(label) end")
-                    } else {
-                        XCTFail("\(label) expected end components, got none")
-                    }
-                }
-                if let endDate = endDate {
-                    if let endComponents = result.end {
-                        XCTAssertEqual(endComponents.date(), resolvedDate(endDate), "\(label) endDate")
-                    } else {
-                        XCTFail("\(label) expected an end date, got none")
-                    }
+        case .match(let text, let index, let start, let startDate, let end, let endDate):
+            guard let result = results.first else { return ["want a match, got none"] }
+            var reasons: [String] = []
+            if let text = text, result.text != text {
+                reasons.append("text want \(text.debugDescription) got \(result.text.debugDescription)")
+            }
+            if let index = index, result.index != index {
+                reasons.append("index want \(index) got \(result.index)")
+            }
+            if !start.isEmpty {
+                reasons += componentReasons(start, result.start, "start")
+            }
+            if let startDate = startDate, result.start.date() != resolvedDate(startDate) {
+                reasons.append("startDate want \(resolvedDate(startDate)) got \(result.start.date())")
+            }
+            if !end.isEmpty {
+                if let endComponents = result.end {
+                    reasons += componentReasons(end, endComponents, "end")
+                } else {
+                    reasons.append("want end components, got none")
                 }
             }
+            if let endDate = endDate {
+                if let endComponents = result.end {
+                    if endComponents.date() != resolvedDate(endDate) {
+                        reasons.append("endDate want \(resolvedDate(endDate)) got \(endComponents.date())")
+                    }
+                } else {
+                    reasons.append("want an end date, got none")
+                }
+            }
+            return reasons
+        }
+    }
+}
+
+final class ENOracleTests: XCTestCase {
+    private let runner = ENOracleRunner()
+
+    /// Fails once per failing CASE, listing every reason that case failed.
+    private func run(_ cases: [OracleCase]) {
+        for c in cases {
+            let reasons = runner.reasons(for: c)
+            guard !reasons.isEmpty else { continue }
+            XCTFail("[\(c.sourceFile)] \(c.input.debugDescription) - " + reasons.joined(separator: "; "))
         }
     }
 
@@ -123,4 +148,41 @@ final class ENOracleTests: XCTestCase {
     func testYearCases() { run(yearCases) }
     func testYearMonthDayCases() { run(yearMonthDayCases) }
     func testNegativeCases() { run(negativeCases) }
+}
+
+/// The progress instrument. Prints how many of the 563 oracle cases the engine
+/// reproduces, broken down by chrono source file, and holds a ratchet floor so
+/// the number can only go up. Raise `floor` whenever it does.
+final class ENOracleScoreboardTests: XCTestCase {
+    /// Cases known to pass. Raise this after every improvement; never lower it
+    /// to accommodate a regression.
+    static let floor = 338
+
+    func testScoreboard() {
+        let runner = ENOracleRunner()
+        var passedByFile: [String: Int] = [:]
+        var totalByFile: [String: Int] = [:]
+        var passed = 0
+
+        for c in enOracleCases {
+            totalByFile[c.sourceFile, default: 0] += 1
+            if runner.reasons(for: c).isEmpty {
+                passedByFile[c.sourceFile, default: 0] += 1
+                passed += 1
+            }
+        }
+
+        var lines = ["EN ORACLE SCOREBOARD  \(passed)/\(enOracleCases.count) cases"]
+        for file in totalByFile.keys.sorted() {
+            let total = totalByFile[file] ?? 0
+            let ok = passedByFile[file] ?? 0
+            lines.append(String(format: "  %-42s %3d/%3d", (file as NSString).utf8String!, ok, total))
+        }
+        print(lines.joined(separator: "\n"))
+
+        XCTAssertGreaterThanOrEqual(
+            passed, Self.floor,
+            "EN oracle regressed below the ratchet floor - \(passed) passing, floor is \(Self.floor)"
+        )
+    }
 }
