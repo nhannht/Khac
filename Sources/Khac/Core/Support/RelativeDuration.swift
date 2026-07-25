@@ -235,10 +235,17 @@ enum DurationExpression {
 
         return matches.compactMap { raw in
             let match = TextMatch(result: raw, normalizedNS: ns, normalization: NormalizedText(original: text))
-            guard let unitText = match.string(named: "dunit") ?? match.string(named: "dunitw"),
-                  let component = units.value(for: unitText),
-                  let countText = match.string(named: "dcount") ?? match.string(named: "dcountw")
+            guard let unitText = match.string(named: "dunit") ?? match.string(named: "dunitw")
+                    ?? match.string(named: "dunite"),
+                  let component = units.value(for: unitText)
             else { return nil }
+
+            // No count group at all is the ELIDED form, and it means one. Only a
+            // locale that opted in can produce this alternative, so an absent count
+            // here is never an English bare unit word slipping through.
+            guard let countText = match.string(named: "dcount") ?? match.string(named: "dcountw") else {
+                return DurationClause(component, 1)
+            }
 
             let amount: Double
             if let digits = Double(countText) {
@@ -260,6 +267,7 @@ enum DurationExpression {
         return "(?:" + p.filler + "(?:"
             + "(?:" + p.digits + ")\\s{0,3}(?:" + p.units + ")"
             + "|(?:" + p.words + ")\\s{1,3}(?:" + p.units + ")"
+            + p.elided
             + "))"
     }
 
@@ -271,6 +279,7 @@ enum DurationExpression {
         return p.filler + "(?:"
             + "(?<dcount>" + p.digits + ")\\s{0,3}(?<dunit>" + p.units + ")"
             + "|(?<dcountw>" + p.words + ")\\s{1,3}(?<dunitw>" + p.units + ")"
+            + (p.elided.isEmpty ? "" : "|(?<dunite>" + p.units + ")")
             + ")"
     }
 
@@ -285,7 +294,7 @@ enum DurationExpression {
     private static func clauseParts(
         _ context: ParsingContext,
         abbreviations: Bool
-    ) -> (filler: String, digits: String, words: String, units: String) {
+    ) -> (filler: String, digits: String, words: String, units: String, elided: String) {
         let vocab = context.locale.vocabulary
         // Strict mode refuses shorthand units, matching RelativeUnitParser. The
         // modifier-word form refuses them in either mode.
@@ -299,6 +308,12 @@ enum DurationExpression {
         // Approximation words carry no value and may repeat ("about ~5 hours").
         let filler = regexAlternation(context.locale.patterns.durationFillerWords)
             .map { "(?:" + $0 + "\\s{0,3}){0,2}" } ?? ""
-        return (filler, "[0-9]{1,4}(?:\\.[0-9]{1,3})?", quantifiers + "|" + integers, units)
+        // A locale that ELIDES the count writes the unit alone and means one:
+        // Russian "через неделю" has nothing standing where English puts "a".
+        // Opt-in per locale, because a bare unit word is otherwise a duration, and
+        // English "week" or "month" alone would silently become one with no oracle
+        // case to catch it.
+        let elided = context.locale.options.elidesDurationCount ? "|(?:" + units + ")" : ""
+        return (filler, "[0-9]{1,4}(?:\\.[0-9]{1,3})?", quantifiers + "|" + integers, units, elided)
     }
 }
