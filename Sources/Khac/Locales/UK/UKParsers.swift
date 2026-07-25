@@ -50,7 +50,9 @@ struct UKCasualNightEveningParser: Parser {
                 target = shifted
             }
             comps.assignDate(target, calendar: calendar)
-            comps.certain(.hour, 0)
+            // chrono's own casualReferences.lastNight uses imply, not assign -
+            // the hour is inferred from the word, never a stated digit.
+            comps.imply(.hour, 0)
             return .components(comps)
         }
 
