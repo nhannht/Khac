@@ -131,8 +131,19 @@ struct MonthNameParser: Parser {
             yearGroup(prefix: "y", context) + dateSeparator + dateConnectorGroup +
             "(?<ymonth>" + months + ")"
 
-        let alternatives = [little, middle, yearFirstDay, yearFirstMonth, monthOnly]
-            .joined(separator: "|")
+        // Only the forms this locale's grammar actually has. A locale that
+        // declines a form is not merely unlikely to match it - it must NOT, or a
+        // rejected day-first match degrades into a bare-month answer where the
+        // language offers none. See MonthNameForms.
+        let forms = context.locale.options.monthNameForms
+        var enabled: [String] = []
+        if forms.contains(.dayFirst) { enabled.append(little) }
+        if forms.contains(.monthFirst) { enabled.append(middle) }
+        if forms.contains(.yearFirst) { enabled += [yearFirstDay, yearFirstMonth] }
+        if forms.contains(.monthOnly) { enabled.append(monthOnly) }
+        // A locale that declines every form gets a pattern that cannot match,
+        // rather than an empty alternation that matches everywhere.
+        let alternatives = enabled.isEmpty ? "(?!)" : enabled.joined(separator: "|")
         return makeRegex(
             boundaryBefore + "(?:" + alternatives + ")" + "(?=[^\\p{L}\\p{N}_]|$)"
         )

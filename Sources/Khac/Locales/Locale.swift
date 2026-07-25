@@ -63,6 +63,38 @@ public struct MeridiemHourRule: Sendable, Hashable {
     }
 }
 
+/// Which month-NAME constructions a locale's grammar actually has.
+///
+/// Every other locale switch in this file turns a construct on by SUPPLYING the
+/// words it needs, and a construct with no words is unreachable. Month-name forms
+/// break that rule: `dayFirst` and `monthOnly` are built from the SAME
+/// vocabulary, so filling `months` at all handed a locale every form at once,
+/// with no lever to decline one.
+///
+/// Finnish is the case that proved it. chrono ships exactly one month-name parser
+/// for Finnish, day-first, and no bare-month form - which its own day>31 guard
+/// makes explicit by skipping the whole span rather than falling back. So
+/// "32 elokuuta" must produce NOTHING, and a shared parser that also offers
+/// monthOnly answers with a bare August instead. That is not a missing data hook,
+/// it is a grammar wider than the locale's.
+///
+/// Default is everything, so a locale that says nothing behaves exactly as before.
+public struct MonthNameForms: OptionSet, Sendable, Hashable {
+    public let rawValue: Int
+    public init(rawValue: Int) { self.rawValue = rawValue }
+
+    /// "10 August 2012", with an optional day range and year.
+    public static let dayFirst = MonthNameForms(rawValue: 1 << 0)
+    /// "August 10, 2012".
+    public static let monthFirst = MonthNameForms(rawValue: 1 << 1)
+    /// "2012 March 18" and "2024-August".
+    public static let yearFirst = MonthNameForms(rawValue: 1 << 2)
+    /// A month with no day: "September 2012", "in August".
+    public static let monthOnly = MonthNameForms(rawValue: 1 << 3)
+
+    public static let all: MonthNameForms = [.dayFirst, .monthFirst, .yearFirst, .monthOnly]
+}
+
 /// Numeric date field order for a locale, e.g. 3/4 as day/month vs month/day.
 public enum DateOrder: Sendable, Hashable {
     case dayMonth
@@ -456,15 +488,21 @@ public struct LocaleOptions {
     /// before reading a dotted triple as a date, which is what keeps "6.5
     /// kilograms" and the version number "1.1.3" out of English results.
     public var dotIsUnambiguousDateSeparator: Bool
+    /// Which month-name constructions this locale accepts. Defaults to all four;
+    /// narrow it for a locale whose real grammar has fewer, so the shared parser
+    /// stops offering a form the language does not use. See `MonthNameForms`.
+    public var monthNameForms: MonthNameForms
 
     public init(dateOrder: DateOrder = .dayMonth, weekStart: Int = 2, weekdaySuffixModifier: Bool = false,
                 elidesDurationCount: Bool = false,
-                dotIsUnambiguousDateSeparator: Bool = false) {
+                dotIsUnambiguousDateSeparator: Bool = false,
+                monthNameForms: MonthNameForms = .all) {
         self.dateOrder = dateOrder
         self.weekStart = weekStart
         self.weekdaySuffixModifier = weekdaySuffixModifier
         self.elidesDurationCount = elidesDurationCount
         self.dotIsUnambiguousDateSeparator = dotIsUnambiguousDateSeparator
+        self.monthNameForms = monthNameForms
     }
 }
 
