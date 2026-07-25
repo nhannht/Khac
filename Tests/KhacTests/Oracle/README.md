@@ -34,10 +34,10 @@ triggers two of these at once: it embeds a timezone abbreviation AND asserts
 nothing else portable):
 
 - **5** - the input text embeds a named timezone abbreviation (UTC, JST, EST,
-  ...). Khac's v1 generic parsers (SPEC.md section 3) do not include a
+  ...). Khac's v1 generic parsers do not include a
   timezone-expression parser, so these are out of scope for now.
 - **4** - `chrono.en.GB`, chrono's day-first English variant. Khac's `ENLocale`
-  is month-day per SPEC.md ("English is month-day order"); day-first is a
+  is month-day order for English; day-first is a
   different locale option, not modeled by this locale. Deferred, not dropped.
 - **4** - the source test asserted nothing portable (a `.toContain()` substring
   check with no reference date and no component assertions).

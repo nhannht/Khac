@@ -1,6 +1,6 @@
 // ENLocale.swift - English locale data for Khac.
 //
-// Pure DATA per SPEC.md section 3 (data-driven locales): Vocabulary, PatternSet,
+// Pure DATA per the data-driven locale design: Vocabulary, PatternSet,
 // LocaleOptions. No parsing logic lives here - the 8 generic parsers in
 // Sources/Khac/Parsers/ consume this data; ENLocale only fills the tables.
 //

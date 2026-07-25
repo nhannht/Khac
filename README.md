@@ -271,8 +271,6 @@ Other load-bearing choices:
 - **Deterministic overlap scoring.** When two matches overlap, the winner is
   chosen by a total order, so results never depend on dictionary iteration order.
 
-See `SPEC.md` for the full contract.
-
 ## Status
 
 Phase 1 is complete: the core engine plus English and Vietnamese, with the
