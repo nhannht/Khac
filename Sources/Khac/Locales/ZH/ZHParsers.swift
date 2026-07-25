@@ -51,7 +51,14 @@ private func zhDayTimeOfDayGroup(_ s: String) -> String {
     return "(?:"
         + "(?<d1\(s)>" + days + ")(?<t1\(s)>" + shortTod + ")"
         + "|(?<t2\(s)>" + tod + ")"
-        + "|(?<d3\(s)>" + days + ")(?:日|天)[\\s,，]*(?<t3\(s)>" + tod + ")?"
+        // The separator belongs INSIDE the optional time-of-day group. chrono writes
+        // it outside, as `(?:日|天)[\s,，]*(?<t3>tod)?`, and because the run is greedy
+        // while t3 can match empty, a trailing space or comma is consumed with no
+        // time-of-day word to justify it: `"明天 "` spans `"明天 "` and `"明天，"`
+        // spans `"明天，"`. This group IS the whole pattern in ZHCasualDateParser, so
+        // that run sits at the match END. See the note on `side` - same shape, and
+        // this is the third and last instance of it in this file.
+        + "|(?<d3\(s)>" + days + ")(?:日|天)(?:[\\s,，]*(?<t3\(s)>" + tod + "))?"
         + ")"
 }
 
@@ -97,11 +104,26 @@ struct ZHDateParser: Parser {
         // hans allows 3 CJK characters for the month and day, hant only 2, because
         // hant can write 26 as 廿六 while hans needs 二十六. The union takes 3.
         let number = "(?:[0-9]{1,2}|" + cjk + "{1,3})"
+        // Every separator run is attached to the optional token that needs it, never
+        // left loose. chrono writes this as
+        //
+        //     (year)?\s*(?:年)?[\s,，]*(month)\s*月\s*(day)?\s*(?:日|号|號)?
+        //
+        // where the two runs before the month are live even when the year and 年 are
+        // both absent, and the two after 月 are live even when the day and its marker
+        // are. So the span both LEADS and TRAILS on whitespace: `" 3月17日"` spans
+        // `" 3月17日"`, and `"3月 "` and `"9月 "` span with the trailing space. The
+        // corpus never sees it because nearly every Chinese date writes its 日/号
+        // marker, which puts the trailing runs behind the match - and a span one
+        // space too wide still resolves to the right instant, so the locale's own
+        // tests cannot fail on it. Under composition it is fatal: the widened span
+        // contains another locale's correct one and the containment pass drops the
+        // correct result. Same shape as the two fixed in `side` and 022dc83.
         return makeRegex(
             cjkWordBoundary
-            + "(?<year>[0-9]{2,4}|" + cjk + "{4}|" + cjk + "{2})?\\s*(?:年)?[\\s,，]*"
-            + "(?<month>" + number + ")\\s*月\\s*"
-            + "(?<day>" + number + ")?\\s*(?:日|号|號)?"
+            + "(?:(?<year>[0-9]{2,4}|" + cjk + "{4}|" + cjk + "{2})\\s*)?(?:年[\\s,，]*)?"
+            + "(?<month>" + number + ")\\s*月"
+            + "(?:\\s*(?<day>" + number + "))?(?:\\s*(?:日|号|號))?"
         )
     }
 
