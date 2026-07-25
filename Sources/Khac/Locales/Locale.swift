@@ -289,12 +289,31 @@ public struct PatternSet {
     /// preposition INSIDE the span, leave empty to have the match start at the day
     /// word. English and Vietnamese leave it empty.
     public var dayReferencePrefixWords: [String]
-    /// Optional prepositions before a bare MONTH NAME that are part of the match,
-    /// e.g. Russian "в" and Ukrainian "в"/"у" ("в январе" -> match text "в
-    /// январе"). Applies to the month-only reading, with or without a trailing
-    /// year; a month sitting in a full date takes its prefix from the surrounding
-    /// form instead. Empty for English and Vietnamese.
+    /// Optional prepositions leading a FULL month-name date (day and month), part
+    /// of the match: English "on" ("on 10 August 2012"), Russian "с" ("с 10 по 22
+    /// августа 2012"). English had this spelled into the parser as a literal.
+    ///
+    /// Deliberately SEPARATE from `bareMonthPrefixWords`, and one shared field was
+    /// tried first and reverted. Sharing broke English: with "on" also leading the
+    /// month-only reading, "on Sept 2" matched as "on Sept". A parser's scan
+    /// advances past its first accepted match, so an alternative that can start
+    /// EARLIER wins over a fuller reading further along, whatever the overlap
+    /// ranking would have said. Splitting them is also what Russian wants
+    /// independently: it takes "с" here and "в" on the bare month.
     public var monthPrefixWords: [String]
+    /// Optional prepositions leading a month with NO day: Russian "в" ("в
+    /// январе"), Ukrainian "в"/"у". Empty for English, which is load-bearing
+    /// rather than incidental - see `monthPrefixWords`.
+    public var bareMonthPrefixWords: [String]
+    /// Suffixes glued DIRECTLY to a day's digits, with no whitespace between:
+    /// English "10th", Dutch "12de"/"1ste", German "10." - the period is an
+    /// ordinal marker there, not punctuation. Written as data because the shape
+    /// differs per language and was previously fixed to the English set.
+    ///
+    /// Distinct from `ordinals` in Vocabulary, which spells a day as a WORD
+    /// ("tenth"). This is the digit form's tail, and it attaches with no
+    /// whitespace tolerance, which is what lets German "15.Sep" parse.
+    public var dayOrdinalSuffixes: [String]
     /// Connectors between a numeric hour and a TRAILING time-of-day word, e.g.
     /// English "at" ("8 at night") and "in the" ("3 in the afternoon"). May be
     /// multi-word (internal spaces match any whitespace run). Leave EMPTY for a
@@ -360,6 +379,8 @@ public struct PatternSet {
         weekdayPrefixWords: [String] = [],
         dayReferencePrefixWords: [String] = [],
         monthPrefixWords: [String] = [],
+        bareMonthPrefixWords: [String] = [],
+        dayOrdinalSuffixes: [String] = [],
         timeOfDayConnectorWords: [String] = [],
         yearMarkerWords: [String] = [],
         weekdaySuffixExclusionWords: [String] = [],
@@ -382,6 +403,8 @@ public struct PatternSet {
         self.weekdayPrefixWords = weekdayPrefixWords
         self.dayReferencePrefixWords = dayReferencePrefixWords
         self.monthPrefixWords = monthPrefixWords
+        self.bareMonthPrefixWords = bareMonthPrefixWords
+        self.dayOrdinalSuffixes = dayOrdinalSuffixes
         self.timeOfDayConnectorWords = timeOfDayConnectorWords
         self.yearMarkerWords = yearMarkerWords
         self.weekdaySuffixExclusionWords = weekdaySuffixExclusionWords

@@ -25,7 +25,12 @@ struct MonthNameParser: Parser {
         // a month, but "tháng 1" is, and without this guard it matches 7 of those
         // 9 characters and leaves a stray "3" for the year group to swallow.
         let months = "(?>" + WordTable(vocab.months).alternation + ")(?![0-9])"
-        let ordinalSuffix = "(?:st|nd|rd|th)?"
+        // Glued to the day's digits, from locale data: English "10th", Dutch
+        // "12de", German "10." where the period IS the ordinal marker. This was
+        // the English set spelled out, which silently made every other locale's
+        // day form unreachable.
+        let ordinalSuffix = regexAlternation(context.locale.patterns.dayOrdinalSuffixes)
+            .map { "(?:" + $0 + ")?" } ?? ""
         // chrono's ORDINAL_NUMBER_PATTERN: a spelled-out ordinal, or digits with
         // an optional ordinal suffix. The locale already carries the words.
         // The numeric form is RANGE-restricted to 1-31 in the pattern itself, so
@@ -33,6 +38,19 @@ struct MonthNameParser: Parser {
         // the alternation falls through to the month-plus-year reading: "Aug 96"
         // is August 1996, not a rejected 96th of August.
         let ordinalWords = WordTable(vocab.ordinals).alternation
+        // The word BETWEEN day and month ("3rd of March"). This field was
+        // declared, documented, and filled by English, but never read: the parser
+        // spelled "of" out instead. Reading it is the fix, not a new field.
+        let dateConnector = regexAlternation(context.locale.patterns.dateConnectorWords)
+        let dateConnectorGroup = dateConnector.map { "(?:" + $0 + "\\s{0,3})?" } ?? ""
+        // The preposition that can LEAD a full month-name date, from data now
+        // rather than a literal "on". Kept separate from the bare-month one below:
+        // sharing one field let the month-only reading start EARLIER than the full
+        // date and turned "on Sept 2" into "on Sept".
+        let monthPrefixGroup = regexAlternation(context.locale.patterns.monthPrefixWords)
+            .map { "(?:" + $0 + "\\s{0,3})?" } ?? ""
+        let bareMonthPrefixGroup = regexAlternation(context.locale.patterns.bareMonthPrefixWords)
+            .map { "(?:" + $0 + "\\s{0,3})?" } ?? ""
         let day = "(?:" + ordinalWords + "|(?:3[01]|[12][0-9]|0?[1-9])(?![0-9])" + ordinalSuffix + ")"
         // The day-to-day connector INSIDE one month-name match ("10 - 22 August
         // 2012"). The WORDS come from the locale, like every other connector in
@@ -61,11 +79,11 @@ struct MonthNameParser: Parser {
         let dayMarkerGroup = dayMarker.map { "(?:" + $0 + "\\s{0,3})?" } ?? ""
 
         let little =
-            "(?:on\\s{0,3})?" +
+            monthPrefixGroup +
             dayMarkerGroup +
             "(?<lday>" + day + ")" +
             "(?:\\s{0,3}" + rangeConnector + "\\s{0,3}(?<lday2>" + day + "))?" +
-            "(?:-|/|\\s{0,3}(?:of\\s{0,3})?)" +
+            "(?:-|/|\\s{0,3}" + dateConnectorGroup + ")" +
             "(?<lmonth>" + months + ")" +
             "(?:(?:-|/|,?\\s{0,3})" + yearMarkerGroup + yearGroup(prefix: "l", context) + "(?![\\p{L}\\p{N}]))?"
 
@@ -92,17 +110,11 @@ struct MonthNameParser: Parser {
         // number means the whole phrase produces nothing, which is correct: the
         // text named a day, and that day is not real.
         let markedDayLookbehind = dayMarker.map { "(?<!" + $0 + "\\s{0,3}[0-9]{1,2}\\s{0,3})" } ?? ""
-        // Optional preposition consumed into the month-only match, e.g. Russian
-        // "в январе". Only this branch takes it: a month inside a full date gets
-        // its lead-in from the surrounding form, and admitting a preposition there
-        // too would let one match start before a day it does not contain.
-        let monthPrefix = regexAlternation(context.locale.patterns.monthPrefixWords)
-            .map { "(?:" + $0 + "\\s{1,3})?" } ?? ""
         let monthOnly =
             markedDayLookbehind +
-            monthPrefix +
+            bareMonthPrefixGroup +
             "(?<omonth>" + months + ")" +
-            "(?:(?:\\s*[.,/\\-]\\s*|\\s+)(?:of\\s+)?" + yearMarkerGroup + yearGroup(prefix: "o", context) + ")?"
+            "(?:(?:\\s*[.,/\\-]\\s*|\\s+)" + dateConnectorGroup + yearMarkerGroup + yearGroup(prefix: "o", context) + ")?"
 
         // Year-first forms, which neither of the above can reach: `little`
         // requires the day first and caps it at two digits, so a four-digit year
@@ -116,7 +128,7 @@ struct MonthNameParser: Parser {
             "(?<zday>" + day + ")"
         // "2024 Aug", "2024-August", "2024 AD August"
         let yearFirstMonth =
-            yearGroup(prefix: "y", context) + dateSeparator + "(?:of\\s{1,3})?" +
+            yearGroup(prefix: "y", context) + dateSeparator + dateConnectorGroup +
             "(?<ymonth>" + months + ")"
 
         let alternatives = [little, middle, yearFirstDay, yearFirstMonth, monthOnly]

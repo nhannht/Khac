@@ -25,11 +25,12 @@ final class LocalePrefixWordsTests: XCTestCase {
         }()
     )
 
-    private func locale(dayRef: [String] = [], month: [String] = []) -> MockLocale {
+    private func locale(dayRef: [String] = [], month: [String] = [], bareMonth: [String] = []) -> MockLocale {
         var l = MockLocale()
         var p = l.patterns
         p.dayReferencePrefixWords = dayRef
         p.monthPrefixWords = month
+        p.bareMonthPrefixWords = bareMonth
         l.patterns = p
         return l
     }
@@ -54,8 +55,8 @@ final class LocalePrefixWordsTests: XCTestCase {
         XCTAssertEqual(ref.calendar.component(.day, from: results[0].date), 11)
     }
 
-    func testMonthPrefixIsConsumedIntoAMonthOnlyMatch() {
-        let results = parse("it happened upon january", locale(month: ["upon"]))
+    func testBareMonthPrefixIsConsumedIntoAMonthOnlyMatch() {
+        let results = parse("it happened upon january", locale(bareMonth: ["upon"]))
         XCTAssertEqual(results.count, 1)
         XCTAssertEqual(results[0].text, "upon january")
         XCTAssertEqual(ref.calendar.component(.month, from: results[0].date), 1)
@@ -67,17 +68,31 @@ final class LocalePrefixWordsTests: XCTestCase {
         XCTAssertEqual(results[0].text, "january")
     }
 
-    /// The month prefix is deliberately scoped to the month-ONLY reading. A month
-    /// inside a full date takes its lead-in from the surrounding form, and letting
-    /// a preposition in there would start one match before a day it does not
-    /// contain.
-    func testMonthPrefixDoesNotEnlargeAFullDateMatch() {
-        let results = parse("upon 10 january 2012", locale(month: ["upon"]))
+    /// The full-date prefix leads a day AND month: "upon 10 january 2012".
+    func testMonthPrefixLeadsAFullDate() {
+        let results = parse("due upon 10 january 2012", locale(month: ["upon"]))
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results[0].text, "10 january 2012", "the full date keeps its own span")
+        XCTAssertEqual(results[0].text, "upon 10 january 2012")
         let d = results[0].date
         XCTAssertEqual(ref.calendar.component(.day, from: d), 10)
-        XCTAssertEqual(ref.calendar.component(.month, from: d), 1)
         XCTAssertEqual(ref.calendar.component(.year, from: d), 2012)
+    }
+
+    /// THE REASON THE TWO FIELDS ARE SEPARATE, pinned so nobody merges them again.
+    ///
+    /// One shared field was tried and English broke: "on Sept 2" came back as "on
+    /// Sept". With the same preposition leading the bare month, the month-only
+    /// alternative can start EARLIER in the string than the full date, and a
+    /// parser's scan advances past its first accepted match - so the earlier,
+    /// poorer reading wins before overlap ranking is ever consulted. Giving the
+    /// bare month its own table, which English leaves empty, is the fix.
+    func testBareMonthPrefixDoesNotPreemptAFullDate() {
+        // "upon" leads full dates only, exactly as English uses "on".
+        let results = parse("meeting upon january 2", locale(month: ["upon"]))
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results[0].text, "january 2",
+                       "the month-day reading must win, not a bare month starting at the preposition")
+        XCTAssertEqual(ref.calendar.component(.day, from: results[0].date), 2)
+        XCTAssertEqual(ref.calendar.component(.month, from: results[0].date), 1)
     }
 }
