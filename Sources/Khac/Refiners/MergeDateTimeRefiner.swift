@@ -51,14 +51,10 @@ struct MergeDateTimeRefiner: Refiner {
             return nil
         }
 
-        // A pure reference-seeded result (nothing certain at all, e.g. a bare
-        // relative shift) may pose as either half; requiring SOME certain or
-        // deliberately-set field on each side keeps "5 days ago" from being
-        // swallowed as a "date" by a stray bare number. The date half must have
-        // a date-ish field or a time-of-day hour; the time half must have an
-        // hour that differs from plain reference seeding or a stated clock.
-        guard hasSubstance(date.start), hasSubstance(time.start) else { return nil }
-
+        // No further shape check, matching chrono: even a result with nothing
+        // certain at all (a bare relative shift, "-5d") serves as the date
+        // half, which is exactly what lets "-5d 00" claim its midnight. The
+        // strict glue set is what keeps unrelated neighbors apart.
         guard glueIsMergeable(between: a, and: b, context) else { return nil }
 
         let mergedStart = mergedComponents(date: date.start, time: time.start)
@@ -145,13 +141,6 @@ struct MergeDateTimeRefiner: Refiner {
         }
 
         return merged
-    }
-
-    /// The side has at least one field a parser actually produced, as opposed to
-    /// pure reference seeding.
-    private func hasSubstance(_ c: ParsingComponents) -> Bool {
-        ParsingComponents.Component.allCases.contains { c.isCertain($0) }
-            || c.get(.meridiem) != nil
     }
 
     /// The text between the two matches must be short glue: whitespace, at most

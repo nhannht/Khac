@@ -85,6 +85,13 @@ public struct ENLocale: KhacLocale {
     public var additionalParsers: [Parser] {
         [ENWeekendParser(), ENCasualCompoundParser()]
     }
+
+    /// English-lexical filtering ("may" the modal verb, "the second" the
+    /// ordinal) - see ENRefiners.swift. Runs after every merge, chrono's slot
+    /// for ENUnlikelyFormatFilter.
+    public var additionalRefiners: [Refiner] {
+        [ENUnlikelyFormatFilter()]
+    }
 }
 
 // MARK: - Vocabulary data
@@ -184,15 +191,15 @@ private extension ENLocale {
     /// "half an hour" is the only fraction any oracle case exercises; it becomes
     /// 30 minutes through the cascade in RelativeDuration.
     ///
-    /// "the" is deliberately ABSENT even though chrono lists it. English "the" is
-    /// a definite article and does not mean one: "the year ended Dec. 2021" and
-    /// "in the second half of 2025" are not durations, and reading them as one
-    /// year and one second is plainly wrong. chrono appears to carry it for the
-    /// idiom "the day after tomorrow", where the +1 comes from "after tomorrow"
-    /// rather than from "the". Revisit only alongside that anchored form, which
-    /// gives a far more constrained context.
+    /// "the" counts as one, as chrono's own NUMBER_PATTERN has it: "the min
+    /// before" is one minute back and "the day after tomorrow" anchors a one-day
+    /// shift. It is safe here ONLY because a duration never stands alone - every
+    /// consuming branch demands a direction marker or prefix, so "the year
+    /// ended Dec. 2021" (no marker) never parses - and because the one
+    /// remaining false positive, "in THE SECOND half of 2025", is culled by
+    /// ENUnlikelyFormatFilter exactly as chrono culls it.
     static let casualQuantifiers: [String: Double] = [
-        "a": 1, "an": 1,
+        "a": 1, "an": 1, "the": 1,
         "half": 0.5, "half a": 0.5, "half an": 0.5,
         "a couple of": 2, "a couple": 2, "couple of": 2, "couple": 2,
         "a few": 3, "few": 3,
@@ -223,8 +230,13 @@ private extension ENLocale {
     /// starting with "after" through the SAME branch as "next", so "after this
     /// year" is next year, NOT this year anchored to its start. Listed as its own
     /// key so the longest-match ordering picks it over bare "this".
+    /// Bare "after" is +1 per ENTimeUnitCasualRelativeFormatParser's prefix set
+    /// `(this|last|past|next|after|\+|-)`: "after a year" is one year out. In
+    /// chrono that reading exists only for counted durations; sharing the table
+    /// lets it reach the weekday parser too ("after Monday" as the coming
+    /// Monday) - KHAC'S OWN harmless superset, same class as "coming".
     static let relativeModifiers: [String: Int] = [
-        "next": 1, "coming": 1, "after this": 1,
+        "next": 1, "coming": 1, "after this": 1, "after": 1,
         "last": -1, "past": -1, "previous": -1,
         "this": 0,
     ]
