@@ -85,4 +85,21 @@ final class ISORejectionTests: XCTestCase {
         XCTAssertEqual(parse("2024-02-29").first?.start.get(.day), 29)
         XCTAssertTrue(parse("2023-02-29").isEmpty)
     }
+
+    /// A timezone offset outside the real -12:00 to +14:00 range used to be stored
+    /// as a CERTAIN component while resolution silently ignored it, since
+    /// Foundation returns no zone for an out-of-range offset. The reported
+    /// component and the resolved instant then disagreed.
+    func testOutOfRangeTimezoneOffsetIsRejected() {
+        XCTAssertTrue(parse("2023-11-06T06:36:02+19:00").isEmpty)
+        XCTAssertTrue(parse("2023-11-06T06:36:02-15:00").isEmpty)
+    }
+
+    /// The real extremes must still parse, including the fractional-hour zones.
+    func testRealTimezoneOffsetExtremes() {
+        XCTAssertEqual(parse("2023-11-06T06:36:02+14:00").first?.start.get(.timezoneOffset), 840)
+        XCTAssertEqual(parse("2023-11-06T06:36:02-12:00").first?.start.get(.timezoneOffset), -720)
+        XCTAssertEqual(parse("2023-11-06T06:36:02+05:45").first?.start.get(.timezoneOffset), 345)
+        XCTAssertEqual(parse("2023-11-06T06:36:02Z").first?.start.get(.timezoneOffset), 0)
+    }
 }

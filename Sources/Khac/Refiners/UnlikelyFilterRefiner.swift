@@ -57,6 +57,13 @@ struct UnlikelyFilterRefiner: Refiner {
     private func isPlausible(_ c: ParsingComponents, _ context: ParsingContext) -> Bool {
         if let hour = c.get(.hour), !(0...23).contains(hour) { return false }
         if let minute = c.get(.minute), !(0...59).contains(minute) { return false }
+        // Real UTC offsets run -12:00 to +14:00. Without this an ISO "+19:00"
+        // stored 1140 as a CERTAIN component while resolution quietly ignored it
+        // (Foundation returns no zone for an out-of-range offset), so the reported
+        // component and the resolved instant disagreed with each other. Checked
+        // here rather than in ISOParser so every parser that can emit an offset is
+        // covered by one rule.
+        if let offset = c.get(.timezoneOffset), !(-720...840).contains(offset) { return false }
         guard let year = c.get(.year), year > 0,
               let month = c.get(.month), let day = c.get(.day) else { return true }
         return isRealDate(year: year, month: month, day: day, calendar: context.reference.calendar)
