@@ -4,6 +4,13 @@
   "seen": 168,
   "ported": 168,
   "excluded": [],
+  "droppedClaims": [
+    {
+      "where": "it_casual.test.ts",
+      "input": "La scadenza è adesso",
+      "claim": "start.timezoneOffset"
+    }
+  ],
   "reasons": {},
   "tables": [
     {

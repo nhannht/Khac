@@ -40,6 +40,13 @@
       "reason": "the source test asserted nothing portable"
     }
   ],
+  "droppedClaims": [
+    {
+      "where": "nl_casual.test.ts",
+      "input": "De deadline is nu",
+      "claim": "start.timezoneOffset"
+    }
+  ],
   "reasons": {
     "unrecognised argument": 2,
     "uses chrono's default (English) parser, not this locale": 4,

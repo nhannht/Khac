@@ -40,6 +40,12 @@ struct CasualDateParser: Parser {
             .map { "(?:" + $0 + "\\s{0,3})?" } ?? ""
         let timesOfDay = WordTable(vocab.timeOfDay).alternation
         let now = regexAlternation(context.locale.patterns.nowWords) ?? "(?!)"
+        // Optional preposition consumed INTO a bare day-reference match, e.g.
+        // Russian "с сегодня". Sits outside the capture group for the same reason
+        // todPrefix does: the group must hold only the word looked up in the
+        // vocabulary, while the span covers the phrase the oracle asserts.
+        let drefPrefix = regexAlternation(context.locale.patterns.dayReferencePrefixWords)
+            .map { "(?:" + $0 + "\\s{1,3})?" } ?? ""
         // A day-shift word is the locale's day reference in SUFFIX position:
         // Vietnamese "sáng mai" is "sáng" (the clock) plus "mai" (the day). It
         // matches ON ITS OWN, behind a LOOKBEHIND for the time-of-day word, and
@@ -91,12 +97,27 @@ struct CasualDateParser: Parser {
         var alternatives = [
             "(?<nowg>" + now + ")",
             "(?<anchor>" + anchors + ")\\s{0,3}" + todPrefix + "(?<atod>" + timesOfDay + ")",
-            "(?<dref>" + dayRefs + ")",
+            drefPrefix + "(?<dref>" + dayRefs + ")",
             todPrefix + "(?<btod>" + timesOfDay + ")",
         ]
         if !dayShift.isEmpty {
             alternatives.append(
                 "(?<=" + timesOfDay + "\\s{1,3})(?<dshift>(?-i:" + dayShift.alternation + "))"
+            )
+        }
+        // The same shape on the other side, for a locale that writes the shift
+        // BEFORE the time of day ("прошлым вечером"). A LOOKAHEAD here for the
+        // same reason the suffix branch uses a lookbehind: the time-of-day word
+        // must stay unclaimed so TimeExpressionParser can still read an hour out
+        // of it, and the merge joins the two halves afterwards.
+        //
+        // No (?-i:) wrapper, unlike above. The case-sensitivity there is a
+        // Vietnamese rule about a proper noun that can only follow the time word;
+        // a prefix sits where a capital is ordinary. See Vocabulary.dayShiftPrefixes.
+        let dayShiftPrefix = WordTable(vocab.dayShiftPrefixes)
+        if !dayShiftPrefix.isEmpty {
+            alternatives.append(
+                "(?<dshiftpre>" + dayShiftPrefix.alternation + ")(?=\\s{1,3}" + todPrefix + timesOfDay + ")"
             )
         }
 
@@ -163,6 +184,20 @@ struct CasualDateParser: Parser {
         // one rather than stacking on top of it.
         if let shiftText = match.string(named: "dshift") {
             guard let offset = WordTable(context.locale.vocabulary.dayShiftSuffixes).value(for: shiftText),
+                  let target = calendar.date(byAdding: .day, value: offset, to: context.reference.instant) else {
+                return nil
+            }
+            comps.assignDate(target, calendar: calendar)
+            comps.implySimilarTime(to: context.reference)
+            return .components(comps)
+        }
+
+        // The prefix spelling of the same fact, resolved identically. Kept as a
+        // separate group rather than one alternation with the suffix because the
+        // two read different vocabulary tables; the RESOLUTION below is shared,
+        // which is the part that would otherwise drift.
+        if let shiftText = match.string(named: "dshiftpre") {
+            guard let offset = WordTable(context.locale.vocabulary.dayShiftPrefixes).value(for: shiftText),
                   let target = calendar.date(byAdding: .day, value: offset, to: context.reference.instant) else {
                 return nil
             }

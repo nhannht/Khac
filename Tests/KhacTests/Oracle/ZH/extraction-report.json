@@ -75,6 +75,7 @@
       "reason": "unrecognised argument: new Date()"
     }
   ],
+  "droppedClaims": [],
   "reasons": {
     "the source test asserted nothing portable": 6,
     "unrecognised argument": 2,
