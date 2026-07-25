@@ -64,6 +64,21 @@ struct TimeExpressionParser: Parser {
         // "06:36", silently dropping the seconds, with nothing in the suite
         // covering that shape. Inside the group, a failed guard just skips the
         // group and the primary is never shortened.
+        // chrono carries a SECOND guard here that this port does not
+        // (AbstractTimeExpressionParser.ts:103-113): when the primary side starts
+        // with 3-4 digits and a following time pattern exists, it rejects the
+        // whole match for "2022-12" and "2022-12:01" shapes. It is unported, and
+        // it stays unported because measurement says it would add nothing.
+        // Against chrono 2.10.1 on its own worked examples, reference 2012-08-10:
+        //
+        //     "2022-12"       chrono (none)      khac (none)
+        //     "456-12"        chrono (none)      khac (none)
+        //     "2022-12:01"    chrono [12:01]     khac [12:01]
+        //
+        // Khac reaches the same three answers by other means - the lone-number
+        // filter and the digits-only rule in UnlikelyFilterRefiner - so porting
+        // the guard would add a branch that changes no output. If an input is ever
+        // found where the two disagree, port it then, with that input as the test.
         let notTimezoneOffset = "(?!\\s{0,3}[-\\u2013]\\s{0,3}[0-9]{3,4}(?![0-9]))"
 
         return makeRegex(

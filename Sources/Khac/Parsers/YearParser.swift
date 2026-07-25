@@ -14,6 +14,16 @@
 // Not handled here (documented deferrals): a bare year with no era (chrono does
 // not parse it either), and the Buddhist era "BE" whose 543-year offset the
 // sign-based eraMarkers table cannot express.
+//
+// A BC year is NOT validated, deliberately, and it is worth knowing why before
+// "fixing" it. The negative year goes to Foundation, which reads it through the
+// proleptic Gregorian calendar's astronomical convention, so "234 BCE" resolves
+// as era = BC, year = 235 - off by one against the historian's convention, where
+// there is no year zero. That is chrono's answer too, arrived at differently:
+// JavaScript's Date has no era concept at all, so chrono's BC years get zero
+// validation of any kind. Matching the value while the mechanism differs is the
+// most that can be claimed here. Anything stricter would be a divergence, and
+// nothing in the oracle or in any real input measured so far discriminates it.
 
 import Foundation
 

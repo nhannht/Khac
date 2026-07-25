@@ -152,6 +152,18 @@ struct RelativeUnitParser: Parser {
     /// Sunday reference, where rolling back is a no-op and so proves nothing,
     /// while Khac's VI case for "tuần này" asserts the day does NOT move. Leaving
     /// it unanchored satisfies both. Revisit only if a case actually discriminates.
+    ///
+    /// There is no chrono behaviour to be faithful to here, because chrono is
+    /// internally inconsistent about it. Measured live against 2.10.1, reference
+    /// Friday 2012-08-10:
+    ///
+    ///     chrono.parse("this week")        2012-08-05    rolled back to the week start
+    ///     chrono.vi.parse("tuần này")      2012-08-17    identical to "tuần sau"
+    ///
+    /// Its VI locale reads "này" as +1, so in Vietnamese chrono cannot tell "this
+    /// week" from "next week" at all. Khac already diverges there deliberately
+    /// (KHAC-FIX: này = 0), which is what makes the unanchored week the only
+    /// choice consistent with both locales rather than a dodge.
     private func currentOrShiftedPeriod(
         component: Calendar.Component,
         offset: Int,

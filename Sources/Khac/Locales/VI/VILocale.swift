@@ -128,6 +128,16 @@ public struct VILocale: KhacLocale {
                 "chiều": (15, .pm),
                 "tối": (19, .pm),
                 "đêm": (22, .pm),
+                // "nửa đêm mai" is genuinely ambiguous and resolves to the
+                // midnight that OPENS tomorrow (day + 1, hour 0), not the one that
+                // closes it (day + 2). English has the identical problem with
+                // "midnight on Friday", so this is not a Vietnamese quirk and
+                // there is no reading to be faithful to. The opening midnight is
+                // what hour 0 of the shifted day means everywhere else in this
+                // table, so the alternative would make one entry behave unlike its
+                // siblings. Ruled moderate-confidence-not-a-bug by review-vi;
+                // recorded so the next reader does not reopen it without a case
+                // that actually discriminates.
                 "nửa đêm": (0, .am),
             ],
             meridiemHourRules: [
