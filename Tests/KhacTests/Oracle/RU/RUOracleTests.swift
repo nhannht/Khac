@@ -121,33 +121,22 @@ final class RUOracleTests: XCTestCase {
 
     /// Cases individually deferred pending a specific engine gap reported to
     /// `main` (KHAC-6), keyed by input text (unique within ru's ported corpus).
-    /// Each reason names the exact missing capability - see RULocale.swift's
-    /// header comment for the full account of all three gaps.
+    /// Each reason names the exact missing capability. Six former deferrals
+    /// (dayReferencePrefixWords, monthPrefixWords, bareMonthPrefixWords,
+    /// dayOrdinalSuffixes, yearSuffixWords) are gone from this list because
+    /// the fields landed and RULocale now sets them - watched go green here
+    /// before removal, per main's instruction not to flip a deferral on faith.
     private let deferrals: [String: String] = [
-        "Событие с сегодня и до послезавтра":
-            "KHAC-6 deferral: CasualDateParser's bare day-reference branch has no data-driven prefix hook for \"с\" (reported to main, needs dayReferencePrefixWords)",
-        "в январе":
-            "KHAC-6 deferral: MonthNameParser's monthOnly branch has no data-driven prefix hook for \"в\" (reported to main, needs monthPrefixWords)",
-        "в янв":
-            "KHAC-6 deferral: same gap as \"в январе\" - monthPrefixWords",
-        "Это было в сентябре 2012 перед новым годом":
-            "KHAC-6 deferral: same gap as \"в январе\" - monthPrefixWords, here with a trailing year",
-        "с 10 по 22 августа 2012":
-            "KHAC-6 deferral: MonthNameParser's little branch hardcodes English \"on\" instead of a data-driven prefix; reported as the same monthPrefixWords fix generalized to this branch",
-        "24го октября, 9:00":
-            "KHAC-6 deferral: MonthNameParser's day-ordinal suffix is hardcoded to English st/nd/rd/th; Russian's го/ого/е/ое has no field (reported to main)",
         "полчаса назад что-то было":
             "KHAC-6 deferral: DurationExpression requires whitespace between a word-count and its unit; получаса/полчаса is glued with none (reported to main)",
         "через полчаса":
             "KHAC-6 deferral: same gap as \"полчаса назад\" - glued quantifier+unit",
-        "двадцать пятое мая 2020 года":
-            "KHAC-6 deferral: MonthNameParser's yearGroup has no hook for a TRAILING year-suffix word (\"года\"/\"году\"/\"год\"), only a prefix hook (yearMarkerWords) - reported to main",
         "через неделю":
-            "KHAC-6 deferral: DurationExpression's clause pattern requires an explicit count (digits or word); Russian elides the count entirely for 1 (\"через неделю\", no word at all, unlike English \"a week\") - reported to main",
+            "KHAC-6 deferral: options.elidesDurationCount exists and would read this correctly on its own, but turning it on regresses \"на этой неделе\"/\"в этом месяце\"/\"в этом году\" (three DIFFERENT, previously-passing cases) through an interaction with RelativeUnitParser's modifierAlt - see RULocale.swift's `options` comment for the full mechanism. Left off until main scopes the elided alternative out of the modifier-prefixed duration fragment.",
         "через месяц":
-            "KHAC-6 deferral: same gap as \"через неделю\" - elided count defaulting to 1",
+            "KHAC-6 deferral: same gap as \"через неделю\" - elidesDurationCount regresses 3 other cases if turned on",
         "будет сделано в течение минуты":
-            "KHAC-6 deferral: same gap as \"через неделю\" - elided count defaulting to 1 (\"в течение минуты\", no count word)",
+            "KHAC-6 deferral: same gap as \"через неделю\" - elidesDurationCount regresses 3 other cases if turned on",
     ]
 
     /// Fails once per failing CASE, listing every reason that case failed.
@@ -184,11 +173,11 @@ final class RUOracleTests: XCTestCase {
 }
 
 /// The progress instrument, mirroring ENOracleScoreboardTests exactly. Passed
-/// count EXCLUDES the 12 deferred cases (they are expected failures, not
+/// count EXCLUDES the 5 deferred cases (they are expected failures, not
 /// passes) - raise `floor` whenever the real pass count goes up, never to
 /// paper over a regression.
 final class RUOracleScoreboardTests: XCTestCase {
-    static let floor = 119
+    static let floor = 126
 
     func testScoreboard() {
         let runner = RUOracleRunner()

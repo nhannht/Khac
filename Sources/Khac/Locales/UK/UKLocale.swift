@@ -14,13 +14,23 @@
 // one locale's data. Differences from Russian, where they matter, are called
 // out inline rather than repeating RULocale's comments wholesale.
 //
-// The same three-way engine gap reported under KHAC-6 recurs here too, with
-// Ukrainian's own words: dayReferencePrefixWords needs з/із/від,
-// monthPrefixWords needs в/у, the day-ordinal suffix needs го/ого/е, and
-// DurationExpression needs both the glued-quantifier whitespace relaxation
-// (половини/півгодини) and the elided-count-defaults-to-1 alternative. The
-// oracle cases depending on these are individually deferred in
-// UKOracleTests.swift, not edited or dropped.
+// The prefix/suffix gaps reported under KHAC-6 have since landed centrally
+// and are wired below with Ukrainian's own words: dayReferencePrefixWords
+// (з/із/від), monthPrefixWords and bareMonthPrefixWords (в/у, split the same
+// way RU's are - see RULocale.swift's comment on why one shared field broke
+// English), dayOrdinalSuffixes (го/ого/е), yearSuffixWords, and
+// dayShiftPrefixes (минулого, the flat half of "минулого вечора").
+//
+// Two gaps remain open, both in UKOracleTests's deferral list with the full
+// reason recorded at each case:
+//   - DurationExpression's glued-quantifier whitespace requirement blocks
+//     "півгодини" (half an hour, one word).
+//   - options.elidesDurationCount would read "через тиждень"-style elided
+//     counts correctly, but Ukrainian hits the EXACT SAME regression Russian
+//     does when it is turned on: its own 0-valued phrase modifiers ("цього",
+//     "минулого" bare) collide with RelativeUnitParser's modifierAlt through
+//     the same mechanism - see RULocale.swift's `options` comment for the
+//     full account. Left off here too, for the same reason.
 
 import Foundation
 
@@ -50,7 +60,14 @@ public struct UKLocale: KhacLocale {
             eraMarkers: [:],
             eraOffsets: [:],
             fullMonthNames: Self.fullMonthNames,
-            casualQuantifiers: Self.casualQuantifiers
+            casualQuantifiers: Self.casualQuantifiers,
+            // "минулого" (genitive "last", agreeing with masculine/neuter
+            // вечір) written BEFORE a time-of-day word - "минулого вечора" is
+            // always yesterday evening, no reference-hour threshold. The flat
+            // half of the night-compound problem; see RULocale.swift's
+            // dayShiftPrefixes comment for why "минулої" (the fem form used in
+            // "минулої ночі") stays off this table.
+            dayShiftPrefixes: Self.dayShiftPrefixes
         )
     }
 
@@ -90,12 +107,31 @@ public struct UKLocale: KhacLocale {
             // needs both at once). Oracle-confirmed: "у п'ятницю" (у),
             // "в минулий четвер" (в), "в наступний вівторок" (в).
             weekdayPrefixWords: ["в", "у"],
+            // "з"/"із"/"від" lead a bare day reference ("від сьогодні") -
+            // UKCasualDateParser.ts's own optional prefix. Oracle-confirmed:
+            // "Подія від сьогодні і до післязавтра" keeps "від" in the match.
+            dayReferencePrefixWords: ["з", "із", "від"],
+            // "з"/"із" lead a FULL month-name date
+            // (UKMonthNameLittleEndianParser.ts's own `(?:з|із)?` prefix).
+            // Oracle-confirmed: "із 10 по 22 серпня 2012". Kept separate from
+            // bareMonthPrefixWords below for the same reason RU's are split -
+            // see RULocale.swift's comment on monthPrefixWords.
+            monthPrefixWords: ["з", "із"],
+            // "в"/"у" lead a month with NO day (UkMonthNameParser.ts's own
+            // `(?:в|у)?` prefix). Oracle-confirmed: "в січні", "у вересні 2012".
+            bareMonthPrefixWords: ["в", "у"],
+            // ORDINAL_NUMBER_PATTERN's own suffix set: `[0-9]{1,2}(?:го|ого|е)?`
+            // - one fewer form than Russian's (no "ое").
+            dayOrdinalSuffixes: ["го", "ого", "е"],
+            // The mirror of yearMarkerWords, matching RU's own trailing suffix
+            // exactly: chrono's own YEAR_PATTERN accepts an optional TRAILING
+            // "року"/"рік"/"р"/"р." after the digits. Source-confirmed (the
+            // same `const year = "(?:\s+(?:року|рік|р|р.))?"` shape RU has),
+            // though no case in the ported uk oracle happens to exercise it.
+            yearSuffixWords: ["року", "рік", "р.", "р"],
             timeOfDayConnectorWords: [],
-            // Same as RU: no marker word distinct from the trailing suffix
-            // chrono's own YEAR_PATTERN folds into the number itself
-            // ("року"/"рік"/"р"/"р."). That trailing suffix is the reported
-            // yearGroup gap (RULocale.swift's header, finding 4/6), not
-            // something this PREFIX field can express either way.
+            // Same as RU: no PRECEDING year-marker word (the trailing one is
+            // yearSuffixWords above).
             yearMarkerWords: [],
             weekdaySuffixExclusionWords: [],
             dayMarkerWords: [],
@@ -118,8 +154,16 @@ public struct UKLocale: KhacLocale {
     // Ukrainian numeric dates are day.month.year ("10.08.2012" - confirmed by
     // UkMonthNameLittleEndianCases's identical case to RU's), week starts
     // Monday (Foundation convention, Monday = 2).
+    //
+    // elidesDurationCount is OFF, for the identical reason RULocale documents
+    // at length on its own `options`: Ukrainian ALSO has 0-valued phrase
+    // modifiers ("цього", bare "минулого"), and turning the flag on lets
+    // RelativeUnitParser's modifierAlt claim "цього тижня"-shaped text before
+    // bareModifierAlt gets a turn, then reject it for offset 0 with no
+    // fallback. Verified empirically here too, not assumed from ru's result -
+    // flipping the flag reproduces the same regression on uk's own oracle.
     public var options: LocaleOptions {
-        LocaleOptions(dateOrder: .dayMonth, weekStart: 2)
+        LocaleOptions(dateOrder: .dayMonth, weekStart: 2, elidesDurationCount: false)
     }
 
     /// Bespoke grammar the data tables cannot express - see UKParsers.swift.
@@ -134,6 +178,12 @@ public struct UKLocale: KhacLocale {
 // MARK: - Vocabulary data
 
 private extension UKLocale {
+    // "минулого" only - see the doc comment on the call site for why
+    // "минулої" (the form "минулої ночі" needs) is deliberately absent.
+    static let dayShiftPrefixes: [String: Int] = [
+        "минулого": -1,
+    ]
+
     // Chrono/JS weekday numbering (Sunday = 0), matching WEEKDAY_DICTIONARY.
     static let weekdays: [String: Int] = [
         "неділя": 0, "неділі": 0, "неділю": 0, "нд": 0, "нд.": 0,

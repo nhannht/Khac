@@ -13,19 +13,35 @@
 // uses for its own spelling variants ("tháng 3"/"tháng ba" both -> 3). No
 // engine change needed for that part.
 //
-// Three genuine engine gaps were found and reported to `main` (KHAC-6) rather
-// than patched around here:
-//   1. CasualDateParser's bare day-reference branch and MonthNameParser's
-//      monthOnly/little branches hardcode English glue words ("on", "of") or
-//      have no prefix hook at all, where Russian needs "с"/"в" consumed into
-//      the match span. Needs dayReferencePrefixWords / monthPrefixWords.
-//   2. MonthNameParser's day-ordinal suffix is hardcoded to English st/nd/rd/th;
-//      Russian's numeric day suffixes (го/ого/е/ое) have no field.
-//   3. DurationExpression requires real whitespace between a word-count and its
-//      unit; Russian "получаса"/"полчаса" (half an hour) is ONE glued word with
-//      none.
-// The oracle cases that depend on these are individually deferred with
-// XCTExpectFailure in RUOracleTests.swift, not edited or dropped.
+// Several engine gaps were found while building this locale and reported to
+// `main` under KHAC-6. Most have since landed centrally and are wired below:
+// dayReferencePrefixWords/monthPrefixWords/bareMonthPrefixWords (the missing
+// prefix hooks on CasualDateParser and MonthNameParser), dayOrdinalSuffixes
+// (the day-ordinal suffix that used to be hardcoded to English st/nd/rd/th),
+// yearSuffixWords (a trailing year marker - "2020 года" - where the engine
+// only had a LEADING one), and dayShiftPrefixes (a day shift written BEFORE
+// the time of day, "прошлым вечером" - the generic mirror of VI's suffix-form
+// dayShiftSuffixes).
+//
+// Two gaps remain open, both in RUOracleTests's deferral list with the full
+// reason recorded at each case:
+//   - DurationExpression requires real whitespace between a word-count and
+//     its unit; Russian "получаса"/"полчаса" (half an hour) is ONE glued word
+//     with none.
+//   - options.elidesDurationCount exists and would fix "через неделю"-style
+//     elided counts, but turning it on regresses 3 different, previously
+//     passing cases through an interaction with RelativeUnitParser's
+//     modifierAlt - see the long comment on `options` below for the
+//     mechanism. Left off until that scoping fix lands.
+//
+// Still NOT wired: `Vocabulary.dayShiftPrefixes` only covers a FLAT prefix
+// shift ("прошлым вечером" is always yesterday, no threshold). "прошлой ночью"
+// (last night) is a DIFFERENT problem - the day shift depends on the
+// REFERENCE's own clock hour - and main is holding a shared field for that
+// across en/de/ru rather than have three locales hardcode it separately.
+// RUCasualNightEveningParser (RUParsers.swift) still carries BOTH phrases
+// pending that field; it is left exactly as built, per main's instruction,
+// and will be migrated down to just the night rule once the field lands.
 
 import Foundation
 
@@ -57,7 +73,17 @@ public struct RULocale: KhacLocale {
             eraMarkers: [:],
             eraOffsets: [:],
             fullMonthNames: Self.fullMonthNames,
-            casualQuantifiers: Self.casualQuantifiers
+            casualQuantifiers: Self.casualQuantifiers,
+            // "прошлым" (instrumental "last", agreeing with masculine/neuter
+            // вечер) written BEFORE a time-of-day word - "прошлым вечером" is
+            // always yesterday evening, no reference-hour threshold
+            // (casualReferences.yesterdayEvening). This is the flat half of
+            // the night-compound problem; see the header comment for why
+            // "прошлой" (the fem form used in "прошлой ночью") is NOT here -
+            // that construct needs a reference-hour-dependent rule this flat
+            // field cannot express, and stays on the bespoke parser pending
+            // main's shared field.
+            dayShiftPrefixes: Self.dayShiftPrefixes
         )
     }
 
@@ -113,18 +139,33 @@ public struct RULocale: KhacLocale {
             // ("в пятницу"), and "Дедлайн в прошлый четверг!" keeps both "в"
             // AND the modifier ("в прошлый четверг").
             weekdayPrefixWords: ["в"],
+            // "с"/"со" lead a bare day reference ("с сегодня") -
+            // RUCasualDateParser.ts's own optional prefix.
+            dayReferencePrefixWords: ["с", "со"],
+            // "с" leads a FULL month-name date ("с 10 по 22 августа 2012") -
+            // RUMonthNameLittleEndianParser.ts's own optional prefix. Kept
+            // separate from bareMonthPrefixWords below on purpose: sharing one
+            // field let the bare-month reading start earlier and swallow a
+            // date that had a day (main's finding, reverted after the oracle
+            // caught it on English "on Sept 2").
+            monthPrefixWords: ["с"],
+            // "в" leads a month with NO day ("в январе", "в сентябре 2012") -
+            // RUMonthNameParser.ts's own optional prefix.
+            bareMonthPrefixWords: ["в"],
+            // ORDINAL_NUMBER_PATTERN's own suffix set: `[0-9]{1,2}(?:го|ого|е|ое)?`.
+            dayOrdinalSuffixes: ["го", "ого", "е", "ое"],
+            // The mirror of yearMarkerWords: chrono's own YEAR_PATTERN accepts
+            // an optional TRAILING "года"/"году"/"год"/"г"/"г." after the
+            // digits ("25 мая 2020 года"), parseYear strips it back off. This
+            // used to have no home in the engine (only a leading marker
+            // existed); now it does.
+            yearSuffixWords: ["года", "году", "год", "г.", "г"],
             // RU's time-of-day words attach directly to a stated hour with no
             // connector ("11 вечера", not "11 at вечера") - chrono's own
             // primarySuffix has no connector slot, just the bare word.
             timeOfDayConnectorWords: [],
-            // RU has no year-marker word distinct from a bare number - chrono's
-            // own YEAR_PATTERN accepts an optional trailing "года"/"году"/
-            // "год"/"г"/"г." folded INTO the number group itself
-            // (parseYear strips it), not a separate marker consumed before the
-            // year the way Vietnamese "năm" is. No oracle case in the ported
-            // set needs this distinction to pass, so left empty rather than
-            // modeling a mechanism the engine's generic yearGroup doesn't have
-            // a matching shape for.
+            // RU has no PRECEDING year-marker word the way Vietnamese "năm" is
+            // (its trailing marker is yearSuffixWords above).
             yearMarkerWords: [],
             weekdaySuffixExclusionWords: [],
             dayMarkerWords: [],
@@ -157,8 +198,37 @@ public struct RULocale: KhacLocale {
     // Russian numeric dates are day.month.year ("10.08.2012" - confirmed by
     // RuMonthNameLittleEndianCases's "10.08.2012" case), and the week starts
     // Monday (Foundation convention: 1 = Sunday ... 7 = Saturday, so Monday = 2).
+    //
+    // elidesDurationCount is OFF, DESPITE ru needing exactly the reading it
+    // describes ("через неделю"/"через месяц" state no count word at all - not
+    // even an article the way English "a week" has one). Turning it on
+    // regresses three PREVIOUSLY PASSING cases: "на этой неделе"/"в этом
+    // месяце"/"в этом году" stop matching entirely. Measured, not assumed -
+    // flipping the flag alone reproduces both directions.
+    //
+    // The mechanism: RelativeUnitParser's modifierAlt ("next 3 weeks") builds
+    // its own duration fragment with `abbreviations: false`, and
+    // elidesDurationCount widens THAT fragment too, so "на этой" (modifier,
+    // offset 0) + the now-elided "неделе" matches modifierAlt BEFORE the
+    // engine ever tries bareModifierAlt. modifierAlt's own extraction then
+    // rejects offset 0 ("this 2 weeks" is not an expression anyone writes) and
+    // returns nil - and because the regex already committed to this
+    // alternative at this position, there is no second attempt at
+    // bareModifierAlt for the same span. The result is not a wrong answer, it
+    // is no answer, for a phrase that used to work.
+    //
+    // bareModifierAlt already owns the "modifier + bare unit, no count" shape
+    // correctly (offset 0 anchors the period, nonzero shifts it) - modifierAlt
+    // exists for a DIFFERENT shape, a modifier plus an EXPLICIT count greater
+    // than one. So the elided-count alternative never needed to reach
+    // modifierAlt at all; reported to main as a scoping fix (gate the elided
+    // branch out of the `abbreviations: false` fragment specifically), not
+    // something this locale file can express. Kept off here in the meantime -
+    // regressing 3 known-good cases to fix 3 different ones is not a net gain,
+    // and the 3 elided-count cases stay in RUOracleTests's deferral list with
+    // this reason recorded.
     public var options: LocaleOptions {
-        LocaleOptions(dateOrder: .dayMonth, weekStart: 2)
+        LocaleOptions(dateOrder: .dayMonth, weekStart: 2, elidesDurationCount: false)
     }
 
     /// Bespoke grammar the data tables cannot express - see RUParsers.swift.
@@ -176,6 +246,12 @@ public struct RULocale: KhacLocale {
 // MARK: - Vocabulary data
 
 private extension RULocale {
+    // "прошлым" only - see the doc comment on the call site for why "прошлой"
+    // (the form "прошлой ночью" needs) is deliberately absent.
+    static let dayShiftPrefixes: [String: Int] = [
+        "прошлым": -1,
+    ]
+
     // Chrono/JS weekday numbering (Sunday = 0), matching WEEKDAY_DICTIONARY in
     // constants.ts exactly. Genitive forms ("воскресенья", "понедельника", ...)
     // are extra spellings for the same value, the same technique as VI's

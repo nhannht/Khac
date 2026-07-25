@@ -17,23 +17,31 @@
 // prediction (chrono's narrow fi suite implies a narrow subset) confirmed by
 // actually reading the source and running the port.
 //
-// One gap DOES recur, in a fi-specific form: "15. elokuuta" (the 15th of
-// August) needs a "." connector between the day number and the month name.
-// That connector slot is Locale.swift's own `dateConnectorWords` field
-// (doc-commented "Connector in '3rd of March': 'of'", already set by EN to
-// ["of"]) - but grepping the parser sources shows it is never actually READ
-// by MonthNameParser.swift, which hardcodes "of" literally instead. So the
-// fix here may be simpler than a brand new field: wiring the existing,
-// already-declared field into the connector it was written to serve. Reported
-// to `main` under KHAC-6; the two affected cases are deferred below, not
-// patched around.
+// Two gaps recurred, in fi-specific form, and both have since landed
+// centrally and are wired below:
+//   - "15. elokuuta" (the 15th of August) needs a "." connector between the
+//     day number and the month name. That connector slot is Locale.swift's
+//     own `dateConnectorWords` field (doc-commented "Connector in '3rd of
+//     March': 'of'", already set by EN to ["of"]) - it was declared and
+//     documented but never actually READ by MonthNameParser.swift, which
+//     hardcoded "of" literally instead. The parser reads it now; fi sets it
+//     to ["."] below and both previously-deferred cases pass.
+//   - "32 elokuuta" (an invalid day) must produce NOTHING, because chrono's
+//     own FI grammar has no bare-month construct to fall back to at all - its
+//     own day>31 guard forces the WHOLE match to fail rather than degrade.
+//     The generic MonthNameParser always offered a monthOnly reading
+//     regardless of what a locale's real grammar supports; `LocaleOptions.
+//     monthNameForms` now lets a locale decline forms it does not have, and
+//     fi declines everything but dayFirst below.
 //
 // One bespoke parser is still needed, for "viime yönä" (last night) - see
 // FIParsers.swift. Its own reference-hour threshold (>6) matches EN's inline
 // rule exactly, not RU/UK's shared casualReferences.lastNight (<6) - a THIRD
 // distinct threshold value for the "same" construct across three locales,
 // which is itself confirmation that this genuinely cannot be one generic
-// field; each locale's own source states its own number.
+// field; each locale's own source states its own number. main is holding a
+// shared field for this across en/de/ru/uk/fi; this parser stays as built
+// pending that.
 
 import Foundation
 
@@ -92,13 +100,10 @@ public struct FILocale: KhacLocale {
             // ("at", "o'clock"-ish). No "in"/"at" alternative beyond these two.
             timePrefixWords: ["klo", "kello"],
             // The "." connector FI needs between a day number and the month
-            // name ("15. elokuuta") is documented as dateConnectorWords's own
-            // slot, but that field is not yet wired into MonthNameParser's
-            // connector construction (reported to main, KHAC-6) - setting it
-            // here would have no effect until that lands, so it is left unset
-            // and the two affected cases are deferred instead of silently
-            // pretending this field already does the job.
-            dateConnectorWords: [],
+            // name ("15. elokuuta", "15. elo 2012") - the period there is an
+            // ordinal marker, not sentence punctuation. MonthNameParser now
+            // reads this field instead of hardcoding "of" (KHAC-6, landed).
+            dateConnectorWords: ["."],
             clockHourWords: [],
             clockMinuteWords: [],
             clockSecondWords: [],
@@ -146,8 +151,17 @@ public struct FILocale: KhacLocale {
 
     // Finnish numeric/little-endian dates are day-month-year ("15. elokuuta
     // 2012"), week starts Monday (Foundation convention, Monday = 2).
+    //
+    // monthNameForms is JUST dayFirst: chrono ships exactly one month-name
+    // parser for Finnish, and its own day>31 guard forces the whole match to
+    // fail rather than degrade to a bare month - confirmed by the oracle's
+    // own "32 elokuuta" case, which expects NOTHING, not "elokuuta" alone.
+    // The other three forms (monthFirst/yearFirst/monthOnly) are not
+    // untested-and-omitted, they are actively DECLINED: chrono's fi grammar
+    // does not have them, and offering them anyway is not a superset, it is a
+    // wrong answer for the one case that discriminates.
     public var options: LocaleOptions {
-        LocaleOptions(dateOrder: .dayMonth, weekStart: 2)
+        LocaleOptions(dateOrder: .dayMonth, weekStart: 2, monthNameForms: [.dayFirst])
     }
 
     /// Bespoke grammar the data tables cannot express - see FIParsers.swift.

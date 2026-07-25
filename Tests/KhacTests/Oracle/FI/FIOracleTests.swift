@@ -114,18 +114,13 @@ final class FIOracleTests: XCTestCase {
     private let runner = FIOracleRunner()
 
     /// Cases individually deferred pending a specific engine gap reported to
-    /// `main` (KHAC-6): MonthNameParser's day-month connector hardcodes "of"
-    /// instead of reading the already-declared (but currently unwired)
-    /// `dateConnectorWords` field, so Finnish's "." connector has nowhere to
-    /// go. See FILocale.swift's header comment for the full account.
-    private let deferrals: [String: String] = [
-        "15. elokuuta":
-            "KHAC-6 deferral: MonthNameParser's day-month connector hardcodes \"of\" instead of reading the already-declared dateConnectorWords field; Finnish needs \".\" there (reported to main)",
-        "15. elo 2012":
-            "KHAC-6 deferral: same gap as \"15. elokuuta\" - dateConnectorWords not wired into the day-month connector",
-        "32 elokuuta":
-            "KHAC-6 deferral: MonthNameParser's monthOnly branch has no per-locale opt-out; chrono's own FI grammar has no bare-month-alone construct at all, so an invalid day (32) should reject the whole match, not fall back to a bare \"elokuuta\" - reported to main, needs something like LocaleOptions.monthOnlySupported",
-    ]
+    /// `main` (KHAC-6). Empty: both gaps fi hit (dateConnectorWords not being
+    /// read, MonthNameParser's monthOnly having no per-locale opt-out) have
+    /// since landed centrally - FILocale now sets dateConnectorWords = ["."]
+    /// and options.monthNameForms = [.dayFirst], and all three previously
+    /// deferred cases were watched go green here before removal. See
+    /// FILocale.swift's header comment for the full account.
+    private let deferrals: [String: String] = [:]
 
     private func run(_ cases: [OracleCase]) {
         for c in cases {
@@ -157,7 +152,7 @@ final class FIOracleTests: XCTestCase {
 /// The progress instrument, mirroring RUOracleScoreboardTests/
 /// UKOracleScoreboardTests exactly.
 final class FIOracleScoreboardTests: XCTestCase {
-    static let floor = 74
+    static let floor = 77
 
     func testScoreboard() {
         let runner = FIOracleRunner()

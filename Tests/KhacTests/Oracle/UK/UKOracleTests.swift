@@ -114,35 +114,25 @@ final class UKOracleTests: XCTestCase {
     private let runner = UKOracleRunner()
 
     /// Cases individually deferred pending a specific engine gap reported to
-    /// `main` (KHAC-6), keyed by input text. Same gaps as RU's own deferral
-    /// list (see RULocale.swift's header comment), uk's own words, and one
-    /// fewer entry - no case in uk's ported oracle exercises the trailing
-    /// year-suffix gap RU's "года" case does.
+    /// `main` (KHAC-6), keyed by input text. The prefix/suffix/ordinal-suffix
+    /// gaps this list used to carry are gone: the fields landed, UKLocale now
+    /// sets them, and each was watched go green here before its deferral was
+    /// removed - see RULocale.swift's header comment for the shared account.
+    /// The two gaps that remain are the same ones RU still carries, for the
+    /// same reasons, with uk's own words and case counts.
     private let deferrals: [String: String] = [
-        "Подія від сьогодні і до післязавтра":
-            "KHAC-6 deferral: CasualDateParser's bare day-reference branch has no data-driven prefix hook for \"від\" (reported to main, needs dayReferencePrefixWords)",
-        "в січні":
-            "KHAC-6 deferral: MonthNameParser's monthOnly branch has no data-driven prefix hook for \"в\" (reported to main, needs monthPrefixWords)",
-        "в січ":
-            "KHAC-6 deferral: same gap as \"в січні\" - monthPrefixWords",
-        "Це було у вересні 2012 перед новим роком":
-            "KHAC-6 deferral: same gap as \"в січні\" - monthPrefixWords (here \"у\"), with a trailing year",
-        "із 10 по 22 серпня 2012":
-            "KHAC-6 deferral: MonthNameParser's little branch hardcodes English \"on\" instead of a data-driven prefix; reported as the same monthPrefixWords fix generalized to this branch",
-        "24го жовтня, 9:00":
-            "KHAC-6 deferral: MonthNameParser's day-ordinal suffix is hardcoded to English st/nd/rd/th; Ukrainian's го/ого/е has no field (reported to main)",
         "півгодини тому щось відбулось":
             "KHAC-6 deferral: DurationExpression requires whitespace between a word-count and its unit; півгодини is glued with none (reported to main)",
         "через півгодини":
             "KHAC-6 deferral: same gap as \"півгодини тому\" - glued quantifier+unit",
         "через тиждень":
-            "KHAC-6 deferral: DurationExpression's clause pattern requires an explicit count (digits or word); Ukrainian elides the count entirely for 1 (\"через тиждень\", no word at all) - reported to main",
+            "KHAC-6 deferral: options.elidesDurationCount exists and would read this correctly on its own, but turning it on regresses \"на цьому тижні\"/\"у цьому місяці\"/\"цього місяця\"/\"у цьому році\" (four DIFFERENT, previously-passing cases) through the same RelativeUnitParser modifierAlt interaction ru hits - see RULocale.swift's `options` comment for the mechanism. Left off until main scopes the elided alternative out of the modifier-prefixed duration fragment.",
         "через місяць":
-            "KHAC-6 deferral: same gap as \"через тиждень\" - elided count defaulting to 1",
+            "KHAC-6 deferral: same gap as \"через тиждень\" - elidesDurationCount regresses 4 other cases if turned on",
         "через рік":
-            "KHAC-6 deferral: same gap as \"через тиждень\" - elided count defaulting to 1",
+            "KHAC-6 deferral: same gap as \"через тиждень\" - elidesDurationCount regresses 4 other cases if turned on",
         "буде зроблено протягом хвилини":
-            "KHAC-6 deferral: same gap as \"через тиждень\" - elided count defaulting to 1 (\"протягом хвилини\", no count word)",
+            "KHAC-6 deferral: same gap as \"через тиждень\" - elidesDurationCount regresses 4 other cases if turned on",
     ]
 
     private func run(_ cases: [OracleCase]) {
@@ -176,7 +166,7 @@ final class UKOracleTests: XCTestCase {
 
 /// The progress instrument, mirroring RUOracleScoreboardTests exactly.
 final class UKOracleScoreboardTests: XCTestCase {
-    static let floor = 119
+    static let floor = 125
 
     func testScoreboard() {
         let runner = UKOracleRunner()
