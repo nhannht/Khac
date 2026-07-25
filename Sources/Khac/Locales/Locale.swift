@@ -126,6 +126,14 @@ public struct Vocabulary {
     /// Leave EMPTY to switch the restriction off, so a locale that does not
     /// declare it behaves identically in both modes.
     public var fullTimeUnitNames: Set<String>
+    /// Vague counts that stand in for a number: "a"/"an"/"the" = 1, "a couple"
+    /// = 2, "a few" = 3, "several" = 7, "half" = 0.5.
+    ///
+    /// Fractional on purpose. "half an hour" is 30 minutes, so a whole-number
+    /// table could not express it - the fraction cascades into the next smaller
+    /// unit (see RelativeDuration). Multi-word keys are fine and win over their
+    /// own prefixes, since the alternation is built longest-first.
+    public var casualQuantifiers: [String: Double]
 
     public init(
         weekdays: [String: Int] = [:],
@@ -140,7 +148,8 @@ public struct Vocabulary {
         meridiemHourRules: [String: MeridiemHourRule] = [:],
         eraMarkers: [String: Int] = [:],
         fullMonthNames: Set<String> = [],
-        fullTimeUnitNames: Set<String> = []
+        fullTimeUnitNames: Set<String> = [],
+        casualQuantifiers: [String: Double] = [:]
     ) {
         self.weekdays = weekdays
         self.months = months
@@ -155,6 +164,7 @@ public struct Vocabulary {
         self.eraMarkers = eraMarkers
         self.fullMonthNames = fullMonthNames
         self.fullTimeUnitNames = fullTimeUnitNames
+        self.casualQuantifiers = casualQuantifiers
     }
 }
 
@@ -231,6 +241,12 @@ public struct PatternSet {
     /// stay ONE match: without it "hôm nay buổi sáng" splits into "hôm nay" and
     /// "sáng" with an unconsumed word between them, and nothing can rejoin them.
     public var timeOfDayPrefixWords: [String]
+    /// Approximation words that carry no value and may be skipped inside a
+    /// duration: "in around 5 hours", "in about ~5 hours". They may repeat.
+    public var durationFillerWords: [String]
+    /// Words joining the clauses of one compound duration: "1 day and 2 hours".
+    /// A comma is handled structurally and needs no entry.
+    public var durationConnectorWords: [String]
 
     public init(
         timePrefixWords: [String] = [],
@@ -248,7 +264,9 @@ public struct PatternSet {
         yearMarkerWords: [String] = [],
         weekdaySuffixExclusionWords: [String] = [],
         dayMarkerWords: [String] = [],
-        timeOfDayPrefixWords: [String] = []
+        timeOfDayPrefixWords: [String] = [],
+        durationFillerWords: [String] = [],
+        durationConnectorWords: [String] = []
     ) {
         self.timePrefixWords = timePrefixWords
         self.dateConnectorWords = dateConnectorWords
@@ -266,6 +284,8 @@ public struct PatternSet {
         self.weekdaySuffixExclusionWords = weekdaySuffixExclusionWords
         self.dayMarkerWords = dayMarkerWords
         self.timeOfDayPrefixWords = timeOfDayPrefixWords
+        self.durationFillerWords = durationFillerWords
+        self.durationConnectorWords = durationConnectorWords
     }
 }
 

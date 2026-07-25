@@ -1,9 +1,18 @@
-// RelativeUnitParser.swift - "5 days ago", "2 days later", "in five days".
+// RelativeUnitParser.swift - a duration applied to the reference.
 //
-// A count plus a time unit plus a direction word shifts the reference by that
-// duration. Direction words come in three positions: a past suffix ("ago"), a
-// future suffix ("later"), and a future prefix ("in"/"within"). The shifted
-// year/month/day/hour/minute/second are implied onto the result.
+// "5 days ago", "in five days", "15 hours 29 min ago", "+2 months, 5 days",
+// "next 2 weeks", "half an hour ago", "next week".
+//
+// A relative expression is a DURATION plus a DIRECTION. The duration itself -
+// possibly several clauses, possibly a vague count like "a few" - is defined
+// once in DurationExpression and shared, so every direction below reads the same
+// grammar. Direction comes in five positions: a past suffix ("ago"), a future
+// suffix ("later"), a future prefix ("in"), an explicit sign ("+15min"), and a
+// modifier prefix ("next 2 weeks").
+//
+// A sixth form carries NO count at all ("next week", "tuần này"). It is not a
+// duration: offset zero means the CURRENT period anchored to its start, which is
+// a different operation from shifting. See currentOrShiftedPeriod.
 
 import Foundation
 
@@ -16,6 +25,8 @@ struct RelativeUnitParser: Parser {
     func pattern(_ context: ParsingContext) -> NSRegularExpression {
         let vocab = context.locale.vocabulary
         let patterns = context.locale.patterns
+        let duration = DurationExpression.fragment(context)
+
         // Strict mode accepts only spelled-out units: "5 minutes ago" parses,
         // "5m ago" does not. A locale that declares no full-name set is
         // unaffected and behaves the same in both modes.
@@ -23,51 +34,53 @@ struct RelativeUnitParser: Parser {
             ? vocab.timeUnits.filter { vocab.fullTimeUnitNames.contains(WordTable<Int>.fold($0.key)) }
             : vocab.timeUnits
         let units = WordTable(unitTable).alternation
-        let integers = WordTable(vocab.integerWords).alternation
-        let number = "(?:[0-9]{1,4}|" + integers + ")"
 
         let past = regexAlternation(patterns.relativePastWords) ?? "(?!)"
         let futureSuffix = regexAlternation(patterns.futureSuffixWords) ?? "(?!)"
         let futurePrefix = regexAlternation(patterns.relativeFutureWords) ?? "(?!)"
+        let modifiers = WordTable(vocab.relativeModifiers).alternation
 
-        // Past: "5 days ago"
-        let pastAlt =
-            "(?<pn>" + number + ")\\s*(?<punit>" + units + ")\\s*(?<psfx>" + past + ")"
-        // Future suffix: "2 days later"
-        let futureSuffixAlt =
-            "(?<fn>" + number + ")\\s*(?<funit>" + units + ")\\s*(?<fsfx>" + futureSuffix + ")"
-        // Future prefix: "in 5 days"
-        let futurePrefixAlt =
-            "(?<fpfx>" + futurePrefix + ")\\s*(?<fpn>" + number + ")\\s*(?<fpunit>" + units + ")"
+        // Past: "5 days ago", "15 hours 29 min ago"
+        let pastAlt = "(?<pdur>" + duration + ")\\s{0,3}(?<psfx>" + past + ")"
+        // Future suffix: "2 days later", "15 minute out"
+        let futureSuffixAlt = "(?<fdur>" + duration + ")\\s{0,3}(?<fsfx>" + futureSuffix + ")"
+        // Future prefix: "in 5 days", "wait for 5 minutes"
+        let futurePrefixAlt = "(?<fpfx>" + futurePrefix + ")\\s{0,3}(?<fpdur>" + duration + ")"
+        // Explicit sign: "+15 minutes", "-3y", "-2hr5min"
+        let signedAlt = "(?<sign>[+-])\\s{0,3}(?<sdur>" + duration + ")"
+        // Modifier prefix WITH a count: "next 2 weeks", "past 2 days". Shorthand
+        // units are refused here in BOTH modes - "last 2m" is not a date - unlike
+        // the signed form above, which accepts "-3y".
+        let modifierDuration = DurationExpression.fragment(context, abbreviations: false)
+        let modifierAlt = "(?<mpmod>" + modifiers + ")\\s{0,3}(?<mpdur>" + modifierDuration + ")"
 
         // Bare modifier plus unit, NO count: "next week", "last month", "this
         // year", Vietnamese "tuần này", "tháng trước". Both word orders are
         // accepted because the modifier is postnominal in Vietnamese and
-        // prenominal in English; neither locale's oracle contains an expression
-        // where the other order means something else. Listed last so a counted
-        // form ("next 2 weeks") is never captured here by mistake - that shape
-        // needs a count and falls through to the counted branches.
-        let modifiers = WordTable(vocab.relativeModifiers).alternation
-        // A unit word followed by digits is the head of a larger token, not a
-        // bare unit: Vietnamese "tháng" is the word for month, but "tháng 5" is
-        // May. Without this guard, the range "tháng 3 tới tháng 5" has its
-        // connector "tới" (which is ALSO a modifier) glued to the following
-        // "tháng" and read as "next month", destroying the range.
+        // prenominal in English. Listed last so any counted form is captured by
+        // the branches above first.
+        //
+        // A unit word followed by digits is the head of a larger token:
+        // Vietnamese "tháng" is the word for month, but "tháng 5" is May.
+        // Without this guard the range "tháng 3 tới tháng 5" has its connector
+        // "tới" (which is ALSO a modifier) glued to the following "tháng" and
+        // read as "next month", destroying the range.
         let notPartOfNumberedToken = "(?!\\s{0,3}[0-9])"
         let bareModifierAlt =
             "(?:(?<bmod>" + modifiers + ")\\s{0,3}(?<bunit>" + units + ")" + notPartOfNumberedToken +
             "|(?<bunit2>" + units + ")" + notPartOfNumberedToken + "\\s{0,3}(?<bmod2>" + modifiers + "))"
 
-        return makeRegex(
-            boundaryBefore + "(?:" + pastAlt + "|" + futureSuffixAlt + "|" + futurePrefixAlt
-                + "|" + bareModifierAlt + ")" + boundaryAfter
-        )
+        let alternatives = [
+            pastAlt, futureSuffixAlt, futurePrefixAlt, signedAlt, modifierAlt, bareModifierAlt,
+        ].joined(separator: "|")
+
+        return makeRegex(boundaryBefore + "(?:" + alternatives + ")" + boundaryAfter)
     }
 
     func extract(_ context: ParsingContext, _ match: TextMatch) -> ParserResult? {
         let vocab = context.locale.vocabulary
         let units = WordTable(vocab.timeUnits)
-        let integers = WordTable(vocab.integerWords)
+        let modifiers = WordTable(vocab.relativeModifiers)
 
         // Bare modifier plus unit, no count. Casual by nature - "next week" names
         // no explicit date - so strict mode rejects it, unlike the counted forms.
@@ -75,40 +88,47 @@ struct RelativeUnitParser: Parser {
            let modText = match.string(named: "bmod") ?? match.string(named: "bmod2") {
             guard context.options.mode != .strict else { return nil }
             guard let component = units.value(for: unitText),
-                  let offset = WordTable(vocab.relativeModifiers).value(for: modText) else { return nil }
+                  let offset = modifiers.value(for: modText) else { return nil }
             guard let comps = currentOrShiftedPeriod(component: component, offset: offset, context: context) else {
                 return nil
             }
             return .components(comps)
         }
 
-        let numberText: String?
-        let unitText: String?
-        let sign: Int
+        guard let (durationText, direction) = durationAndDirection(match, modifiers) else { return nil }
 
-        if let n = match.string(named: "pn") {
-            numberText = n; unitText = match.string(named: "punit"); sign = -1
-        } else if let n = match.string(named: "fn") {
-            numberText = n; unitText = match.string(named: "funit"); sign = 1
-        } else if let n = match.string(named: "fpn") {
-            numberText = n; unitText = match.string(named: "fpunit"); sign = 1
-        } else {
-            return nil
-        }
-
-        guard let numberText = numberText, let unitText = unitText else { return nil }
-        guard let count = parseNumber(numberText, integers: integers) else { return nil }
-        guard let component = units.value(for: unitText) else { return nil }
+        let clauses = DurationExpression.clauses(in: durationText, context)
+        guard !clauses.isEmpty else { return nil }
+        let duration = RelativeDuration(clauses, direction: direction)
+        guard !duration.isEmpty else { return nil }
 
         let calendar = context.reference.calendar
-        let shift = Self.shiftable(component, sign * count)
-        guard let target = calendar.date(byAdding: shift.component, value: shift.value, to: context.reference.instant) else {
-            return nil
-        }
+        guard let target = duration.apply(to: context.reference.instant, calendar: calendar) else { return nil }
 
         var comps = context.createParsingComponents()
         comps.implyAll(from: target, calendar: calendar)
         return .components(comps)
+    }
+
+    /// Which counted branch matched, as its duration text plus the direction the
+    /// surrounding words give it.
+    private func durationAndDirection(
+        _ match: TextMatch,
+        _ modifiers: WordTable<Int>
+    ) -> (String, RelativeDirection)? {
+        if let text = match.string(named: "pdur") { return (text, .past) }
+        if let text = match.string(named: "fdur") { return (text, .future) }
+        if let text = match.string(named: "fpdur") { return (text, .future) }
+        if let text = match.string(named: "sdur") {
+            return (text, match.string(named: "sign") == "-" ? .past : .future)
+        }
+        if let text = match.string(named: "mpdur"), let modText = match.string(named: "mpmod") {
+            // "this 2 weeks" is not an expression anyone writes, and offset zero
+            // gives no direction to move in, so only a signed modifier counts.
+            guard let offset = modifiers.value(for: modText), offset != 0 else { return nil }
+            return (text, offset < 0 ? .past : .future)
+        }
+        return nil
     }
 
     /// Resolve a bare "modifier + unit" expression.
@@ -149,23 +169,11 @@ struct RelativeUnitParser: Parser {
             return comps
         }
 
-        let shift = Self.shiftable(component, offset)
+        let shift = RelativeDuration.shiftable(component, offset)
         guard let target = calendar.date(byAdding: shift.component, value: shift.value, to: context.reference.instant) else {
             return nil
         }
         comps.implyAll(from: target, calendar: calendar)
         return comps
-    }
-
-    /// Foundation's Calendar does not shift by `.quarter` - adding one leaves the
-    /// date untouched - so express a quarter as three months. Everything else
-    /// passes through unchanged.
-    static func shiftable(_ component: Calendar.Component, _ value: Int) -> (component: Calendar.Component, value: Int) {
-        component == .quarter ? (.month, value * 3) : (component, value)
-    }
-
-    private func parseNumber(_ text: String, integers: WordTable<Int>) -> Int? {
-        if let value = Int(text) { return value }
-        return integers.value(for: text)
     }
 }

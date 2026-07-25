@@ -33,7 +33,8 @@ public struct ENLocale: KhacLocale {
             timeOfDay: Self.timeOfDay,
             eraMarkers: Self.eraMarkers,
             fullMonthNames: Self.fullMonthNames,
-            fullTimeUnitNames: Self.fullTimeUnitNames
+            fullTimeUnitNames: Self.fullTimeUnitNames,
+            casualQuantifiers: Self.casualQuantifiers
         )
     }
 
@@ -57,7 +58,9 @@ public struct ENLocale: KhacLocale {
             futureSuffixWords: ["later", "from now", "after", "out"],
             rangeConnectorWords: ["to", "until", "till", "through"],
             nowWords: ["now"],
-            weekdayPrefixWords: ["on"]
+            weekdayPrefixWords: ["on"],
+            durationFillerWords: ["around", "about", "~"],
+            durationConnectorWords: ["and"]
         )
     }
 
@@ -159,6 +162,30 @@ private extension ENLocale {
         "month": .month, "months": .month, "mo": .month, "mon": .month, "mos": .month,
         "quarter": .quarter, "quarters": .quarter, "qtr": .quarter,
         "year": .year, "years": .year, "yr": .year, "yrs": .year, "y": .year,
+    ]
+
+    /// Vague counts, all confirmed against chrono's own parseNumberPattern
+    /// constants rather than inferred from case arithmetic: an article is 1,
+    /// a couple is 2, a few is 3, several is 7, half is 0.5.
+    ///
+    /// Multi-word keys are listed outright rather than composed, since the
+    /// alternation is built longest-first and picks "a couple of" over "a".
+    /// "half an hour" is the only fraction any oracle case exercises; it becomes
+    /// 30 minutes through the cascade in RelativeDuration.
+    ///
+    /// "the" is deliberately ABSENT even though chrono lists it. English "the" is
+    /// a definite article and does not mean one: "the year ended Dec. 2021" and
+    /// "in the second half of 2025" are not durations, and reading them as one
+    /// year and one second is plainly wrong. chrono appears to carry it for the
+    /// idiom "the day after tomorrow", where the +1 comes from "after tomorrow"
+    /// rather than from "the". Revisit only alongside that anchored form, which
+    /// gives a far more constrained context.
+    static let casualQuantifiers: [String: Double] = [
+        "a": 1, "an": 1,
+        "half": 0.5, "half a": 0.5, "half an": 0.5,
+        "a couple of": 2, "a couple": 2, "couple of": 2, "couple": 2,
+        "a few": 3, "few": 3,
+        "several": 7,
     ]
 
     /// The spelled-out time units, so strict mode can refuse shorthand. Every

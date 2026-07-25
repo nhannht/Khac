@@ -84,14 +84,22 @@ struct RelativeDuration {
     func apply(to anchor: Date, calendar: Calendar) -> Date? {
         var result = anchor
         for clause in clauses {
+            let shift = Self.shiftable(clause.component, clause.count * direction.sign)
             guard let shifted = calendar.date(
-                byAdding: clause.component,
-                value: clause.count * direction.sign,
+                byAdding: shift.component,
+                value: shift.value,
                 to: result
             ) else { return nil }
             result = shifted
         }
         return result
+    }
+
+    /// Foundation's Calendar does not shift by `.quarter` - adding one leaves the
+    /// date untouched - so express a quarter as three months. Everything else
+    /// passes through unchanged.
+    static func shiftable(_ component: Calendar.Component, _ value: Int) -> (component: Calendar.Component, value: Int) {
+        component == .quarter ? (.month, value * 3) : (component, value)
     }
 
     // MARK: Fraction cascading
@@ -129,4 +137,116 @@ struct RelativeDuration {
     static let cascadeOrder: [Calendar.Component] = [
         .year, .quarter, .month, .weekOfYear, .day, .hour, .minute, .second, .nanosecond,
     ]
+}
+
+// MARK: - Reading a duration out of text
+
+/// Builds the regex fragment for a duration expression and reads the clauses
+/// back out of the matched text.
+///
+/// Deliberately split this way. The parser needs a fragment it can splice into a
+/// larger pattern with direction words around it, and a re-anchoring refiner
+/// needs to recover the same duration from an already-produced result's text
+/// without re-running any parser. One function answers both, so there is exactly
+/// one definition of what a duration is - and it is driven entirely by locale
+/// DATA, so it serves Vietnamese as readily as English.
+enum DurationExpression {
+    /// Regex fragment matching one whole duration ("15 hours 29 min",
+    /// "a few days", "about ~5 hours"). Contains no capture groups, so it can be
+    /// spliced anywhere without disturbing the caller's group names.
+    ///
+    /// `abbreviations` is false for the modifier-word form. chrono refuses
+    /// shorthand there even in casual mode - "last 2m" is not a date - while the
+    /// signed form still accepts it ("-3y", "+15min").
+    static func fragment(_ context: ParsingContext, abbreviations: Bool = true) -> String {
+        let clause = clausePattern(context, abbreviations: abbreviations)
+        // Clauses join with whitespace, an optional comma, and an optional
+        // connector word: "1d 2hr 5min", "in 1d, 2hr, and 5min".
+        let connector = regexAlternation(context.locale.patterns.durationConnectorWords)
+            .map { "(?:" + $0 + "\\s{0,3})?" } ?? ""
+        let separator = "\\s{0,3},?\\s{0,3}" + connector
+        return "(?:" + clause + "(?:" + separator + clause + "){0,4})"
+    }
+
+    /// Read the clauses back out of a matched duration substring. Order is
+    /// preserved, and an unreadable clause is skipped rather than failing the
+    /// whole duration.
+    static func clauses(in text: String, _ context: ParsingContext) -> [DurationClause] {
+        let vocab = context.locale.vocabulary
+        let units = WordTable(vocab.timeUnits)
+        let quantifiers = WordTable(vocab.casualQuantifiers)
+        let integers = WordTable(vocab.integerWords)
+
+        let regex = makeRegex(capturingClausePattern(context))
+        let ns = text as NSString
+        let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+
+        return matches.compactMap { raw in
+            let match = TextMatch(result: raw, normalizedNS: ns, normalization: NormalizedText(original: text))
+            guard let unitText = match.string(named: "dunit") ?? match.string(named: "dunitw"),
+                  let component = units.value(for: unitText),
+                  let countText = match.string(named: "dcount") ?? match.string(named: "dcountw")
+            else { return nil }
+
+            let amount: Double
+            if let digits = Double(countText) {
+                amount = digits
+            } else if let vague = quantifiers.value(for: countText) {
+                amount = vague
+            } else if let word = integers.value(for: countText) {
+                amount = Double(word)
+            } else {
+                return nil
+            }
+            return DurationClause(component, amount)
+        }
+    }
+
+    /// One clause, no capture groups.
+    private static func clausePattern(_ context: ParsingContext, abbreviations: Bool) -> String {
+        let p = clauseParts(context, abbreviations: abbreviations)
+        return "(?:" + p.filler + "(?:"
+            + "(?:" + p.digits + ")\\s{0,3}(?:" + p.units + ")"
+            + "|(?:" + p.words + ")\\s{1,3}(?:" + p.units + ")"
+            + "))"
+    }
+
+    /// One clause with the count and unit captured, for reading values back.
+    /// Two alternatives means two group-name pairs; `clauses` reads whichever
+    /// participated.
+    private static func capturingClausePattern(_ context: ParsingContext) -> String {
+        let p = clauseParts(context, abbreviations: true)
+        return p.filler + "(?:"
+            + "(?<dcount>" + p.digits + ")\\s{0,3}(?<dunit>" + p.units + ")"
+            + "|(?<dcountw>" + p.words + ")\\s{1,3}(?<dunitw>" + p.units + ")"
+            + ")"
+    }
+
+    /// A digit count may abut its unit ("5m"); a WORD count may not.
+    ///
+    /// That asymmetry is the whole defence against a catastrophic false positive.
+    /// With "a" meaning one and "m" meaning minute, an abutting word count reads
+    /// "am ago" as one minute ago, and "them ago" the same way - every English
+    /// word ending in those letters becomes a duration. Requiring real whitespace
+    /// after a spelled-out count costs nothing ("a few days" and "half an hour"
+    /// are always spaced) and removes the entire class.
+    private static func clauseParts(
+        _ context: ParsingContext,
+        abbreviations: Bool
+    ) -> (filler: String, digits: String, words: String, units: String) {
+        let vocab = context.locale.vocabulary
+        // Strict mode refuses shorthand units, matching RelativeUnitParser. The
+        // modifier-word form refuses them in either mode.
+        let restrict = !abbreviations || context.options.mode == .strict
+        let unitTable = restrict && !vocab.fullTimeUnitNames.isEmpty
+            ? vocab.timeUnits.filter { vocab.fullTimeUnitNames.contains(WordTable<Int>.fold($0.key)) }
+            : vocab.timeUnits
+        let units = WordTable(unitTable).alternation
+        let quantifiers = WordTable(vocab.casualQuantifiers).alternation
+        let integers = WordTable(vocab.integerWords).alternation
+        // Approximation words carry no value and may repeat ("about ~5 hours").
+        let filler = regexAlternation(context.locale.patterns.durationFillerWords)
+            .map { "(?:" + $0 + "\\s{0,3}){0,2}" } ?? ""
+        return (filler, "[0-9]{1,4}(?:\\.[0-9]{1,3})?", quantifiers + "|" + integers, units)
+    }
 }
