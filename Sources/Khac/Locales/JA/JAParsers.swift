@@ -15,25 +15,11 @@
 // A note on word boundaries, since it is the crux. chrono guards only its time
 // parser, with `(\W|^)`, and in JS without the /u flag `\W` is ASCII-only - so a
 // kanji satisfies it and a digit does not. That is the correct semantic for a
-// space-free script, and it is what `asciiWordBoundary` below reproduces. The
+// space-free script, and it is what `cjkWordBoundary` below reproduces. The
 // generic parsers' `(?<![\p{L}\p{N}_])` is the same idea written with the Unicode
 // property, and in CJK that one difference rejects every match.
 
 import Foundation
-
-/// Left boundary for a Japanese pattern: not inside an ASCII word and not inside
-/// a number of either digit width.
-///
-/// chrono's `(\W|^)` covers `[A-Za-z0-9_]`. The full-width digits are added
-/// because chrono's own patterns accept them as digits everywhere else, so a
-/// half-width guard would let a match start in the middle of a full-width number
-/// - and unlike chrono, this engine gets a second chance to do so (see the
-/// comment on JATimeExpressionParser about advance-on-reject).
-private let asciiWordBoundary = "(?<![A-Za-z0-9_０-９])"
-
-/// Arabic digits, either width. Every numeric slot in a Japanese pattern takes
-/// both, because real input mixes them inside one expression.
-private let arabicDigit = "[0-9０-９]"
 
 // MARK: - 年月日, the standard date
 
@@ -55,10 +41,10 @@ struct JAStandardParser: Parser {
             // case that exists only in this construction, which is a second
             // reason the eras cannot live in Vocabulary - there would be nowhere
             // to put it.
-            + "|(?:(?<era>" + eras + ")?(?<yearnum>" + arabicDigit + "{1,4}|元))"
+            + "|(?:(?<era>" + eras + ")?(?<yearnum>" + cjkArabicDigit + "{1,4}|元))"
             + ")年\\s*)?"
-            + "(?<month>" + arabicDigit + "{1,2})月\\s*"
-            + "(?<day>" + arabicDigit + "{1,2})日"
+            + "(?<month>" + cjkArabicDigit + "{1,2})月\\s*"
+            + "(?<day>" + cjkArabicDigit + "{1,2})日"
         )
     }
 
@@ -118,10 +104,10 @@ struct JASlashDateParser: Parser {
         // the pipe is not carried over.
         let slash = "[/／]"
         return makeRegex(
-            asciiWordBoundary
-            + "(?:(?<year>" + arabicDigit + "{4})" + slash + ")?"
-            + "(?<month>[0-1０-１]?" + arabicDigit + ")"
-            + slash + "(?<day>[0-3０-３]?" + arabicDigit + ")"
+            cjkWordBoundary
+            + "(?:(?<year>" + cjkArabicDigit + "{4})" + slash + ")?"
+            + "(?<month>[0-1０-１]?" + cjkArabicDigit + ")"
+            + slash + "(?<day>[0-3０-３]?" + cjkArabicDigit + ")"
         )
     }
 
@@ -335,12 +321,12 @@ struct JATimeExpressionParser: Parser {
     /// optional, which is what lets `3月17日 20時15` read 15 as the minute.
     private static func clockBody(_ suffix: String) -> String {
         let cjk = "[" + JALocale.numerals.characterClass + "]+"
-        let number = "(?:" + arabicDigit + "+|" + cjk + ")"
+        let number = "(?:" + cjkArabicDigit + "+|" + cjk + ")"
         return "(?<hour\(suffix)>" + number + ")\\s*"
             // 時間 is "hour" the DURATION, not a clock hour, so `1時間` is not a
             // time. chrono's own (?!間).
             + "(?:時(?!間)|:|：)\\s*"
-            + "(?:(?<minute\(suffix)>" + arabicDigit + "+|半|" + cjk + ")\\s*(?:分|:|：)?\\s*)?"
+            + "(?:(?<minute\(suffix)>" + cjkArabicDigit + "+|半|" + cjk + ")\\s*(?:分|:|：)?\\s*)?"
             + "(?:(?<second\(suffix)>" + number + ")\\s*秒)?"
             + "(?:\\s*(?<tmer\(suffix)>" + meridiemWords + "))?"
     }
@@ -373,7 +359,7 @@ struct JATimeExpressionParser: Parser {
     )
 
     func pattern(_ context: ParsingContext) -> NSRegularExpression {
-        makeRegex(asciiWordBoundary + Self.side(""))
+        makeRegex(cjkWordBoundary + Self.side(""))
     }
 
     func extract(_ context: ParsingContext, _ match: TextMatch) -> ParserResult? {

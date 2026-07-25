@@ -21,6 +21,27 @@
 
 import Foundation
 
+/// Left boundary for a CJK pattern: not inside an ASCII word, and not inside a
+/// number of either digit width.
+///
+/// This is chrono's own boundary for these locales, and getting it right is the
+/// whole difference between matching CJK and not. chrono guards with `(\W|^)`,
+/// and in JS without the /u flag `\W` is `[^A-Za-z0-9_]` - so a kanji SATISFIES
+/// it while an ASCII digit does not. The generic parsers express the same idea as
+/// `(?<![\p{L}\p{N}_])`, with the Unicode property, and in a space-free script
+/// that one substitution rejects every match.
+///
+/// The full-width digits go beyond chrono. They are here because a match must not
+/// begin in the middle of a number, chrono's patterns treat full-width digits as
+/// digits everywhere else, and - unlike chrono, which skips a rejected span
+/// wholesale - this engine advances one character after a rejection and so gets a
+/// second chance to start mid-number.
+let cjkWordBoundary = "(?<![A-Za-z0-9_０-９])"
+
+/// Arabic digits, either width. Every numeric slot in a Japanese pattern takes
+/// both, because real input mixes them inside one expression.
+let cjkArabicDigit = "[0-9０-９]"
+
 /// Reads a number written in CJK digit characters, in either of the two
 /// readings, plus ASCII and full-width Arabic digits.
 struct CJKNumerals {
