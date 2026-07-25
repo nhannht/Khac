@@ -88,9 +88,18 @@ func regexEscape(_ literal: String) -> String {
 
 /// Build a non-capturing alternation from words, escaped and longest-first so
 /// multi-word entries win over their prefixes. Returns nil for an empty list.
+///
+/// Ordering is SPEC H2: length descending, then lexicographic. The lexicographic
+/// tiebreak is not cosmetic. Callers pass `Array(someDictionary.keys)`, whose
+/// order Swift randomizes per process (SE-0206), and `sorted` is not stable - so
+/// without a total ordering the compiled pattern STRING differs from launch to
+/// launch. Two equal-length literals cannot both match at one position, so today
+/// that is invisible in the output, but it makes the pattern irreproducible and
+/// leaves the invariant resting on a property of the vocabulary rather than on
+/// the builder.
 func regexAlternation(_ words: [String]) -> String? {
     guard !words.isEmpty else { return nil }
-    let sorted = words.sorted { $0.count > $1.count }
+    let sorted = words.sorted { $0.count != $1.count ? $0.count > $1.count : $0 < $1 }
     let escaped = sorted.map(regexEscape)
     return "(?:" + escaped.joined(separator: "|") + ")"
 }
