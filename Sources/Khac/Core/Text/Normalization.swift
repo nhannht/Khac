@@ -26,6 +26,10 @@ public struct NormalizedText {
     private let normalizedBoundaries: [Int]
     /// Parallel original String.Index at each boundary.
     private let originalBoundaryIndices: [String.Index]
+    /// Parallel original UTF-16 offset at each boundary, ascending. The same
+    /// positions as `originalBoundaryIndices`, counted rather than indexed, so a
+    /// caller holding an original OFFSET can binary-search instead of walking.
+    private let originalBoundaryOffsets: [Int]
 
     public init(original: String) {
         self.original = original
@@ -34,21 +38,42 @@ public struct NormalizedText {
         norm.reserveCapacity(original.count)
         var nBoundaries: [Int] = [0]
         var oIndices: [String.Index] = [original.startIndex]
+        var oOffsets: [Int] = [0]
 
         var normalizedOffset = 0
+        var originalOffset = 0
         var originalIndex = original.startIndex
         for character in original {
             let composed = String(character).precomposedStringWithCanonicalMapping
             norm += composed
             normalizedOffset += composed.utf16.count
+            originalOffset += String(character).utf16.count
             originalIndex = original.index(after: originalIndex)
             nBoundaries.append(normalizedOffset)
             oIndices.append(originalIndex)
+            oOffsets.append(originalOffset)
         }
 
         self.normalized = norm
         self.normalizedBoundaries = nBoundaries
         self.originalBoundaryIndices = oIndices
+        self.originalBoundaryOffsets = oOffsets
+    }
+
+    /// Index of the last boundary at or before `offset` in an ascending boundary
+    /// array. Shared by both directions so they snap the same way.
+    private static func boundary(atOrBefore offset: Int, in boundaries: [Int]) -> Int {
+        var low = 0
+        var high = boundaries.count - 1
+        while low < high {
+            let mid = (low + high + 1) / 2
+            if boundaries[mid] <= offset {
+                low = mid
+            } else {
+                high = mid - 1
+            }
+        }
+        return low
     }
 
     /// The original String.Index for a normalized UTF-16 offset. Matches from the
@@ -56,17 +81,24 @@ public struct NormalizedText {
     /// possible from a pathological custom pattern) snaps down to the enclosing
     /// boundary so the returned index is always valid.
     public func originalIndex(forNormalizedUTF16 offset: Int) -> String.Index {
-        var low = 0
-        var high = normalizedBoundaries.count - 1
-        while low < high {
-            let mid = (low + high + 1) / 2
-            if normalizedBoundaries[mid] <= offset {
-                low = mid
-            } else {
-                high = mid - 1
-            }
-        }
-        return originalBoundaryIndices[low]
+        originalBoundaryIndices[Self.boundary(atOrBefore: offset, in: normalizedBoundaries)]
+    }
+
+    /// The INVERSE of `originalUTF16Offset(forNormalizedUTF16:)`: the normalized
+    /// UTF-16 offset for an original one.
+    ///
+    /// This is what lets a refiner scanning FORWARD from a result work in the
+    /// coordinates the engine matches in. `ParsedResult.index`, `matchLength` and
+    /// `rangeEnd` are all ORIGINAL offsets, so a refiner starting from one has no
+    /// other route into normalized space, and matching a vocabulary-built pattern
+    /// against the original string is the bug this exists to prevent - patterns
+    /// are folded to NFC, real input often is not.
+    ///
+    /// Snaps DOWN to the enclosing grapheme boundary, exactly as the forward
+    /// direction does. Offsets that come from a `ParsedResult` are already on a
+    /// boundary, so the snap only ever fires on a hand-built offset.
+    public func normalizedUTF16Offset(forOriginalUTF16 offset: Int) -> Int {
+        normalizedBoundaries[Self.boundary(atOrBefore: offset, in: originalBoundaryOffsets)]
     }
 
     /// The original-text range for a normalized UTF-16 range.
@@ -76,10 +108,12 @@ public struct NormalizedText {
         return start..<end
     }
 
-    /// The original-text UTF-16 offset for a normalized UTF-16 offset.
+    /// The original-text UTF-16 offset for a normalized UTF-16 offset. Reads the
+    /// boundary array rather than re-walking the string, so it agrees with
+    /// `normalizedUTF16Offset(forOriginalUTF16:)` by construction instead of by
+    /// two implementations happening to round the same way.
     public func originalUTF16Offset(forNormalizedUTF16 offset: Int) -> Int {
-        let index = originalIndex(forNormalizedUTF16: offset)
-        return original.utf16.distance(from: original.startIndex, to: index)
+        originalBoundaryOffsets[Self.boundary(atOrBefore: offset, in: normalizedBoundaries)]
     }
 
     /// The original substring for a normalized UTF-16 range.
