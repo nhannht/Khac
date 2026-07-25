@@ -17,26 +17,8 @@
 
 import Foundation
 
-struct MergeRelativeAnchorRefiner: Refiner {
-    func refine(_ context: ParsingContext, _ results: [ParsedResult]) -> [ParsedResult] {
-        guard results.count > 1 else { return results }
-        let sorted = results.sorted { $0.index < $1.index }
-
-        var output: [ParsedResult] = []
-        var i = 0
-        while i < sorted.count {
-            if i + 1 < sorted.count, let merged = merge(sorted[i], sorted[i + 1], context) {
-                output.append(merged)
-                i += 2
-            } else {
-                output.append(sorted[i])
-                i += 1
-            }
-        }
-        return output
-    }
-
-    private func merge(_ a: ParsedResult, _ b: ParsedResult, _ context: ParsingContext) -> ParsedResult? {
+struct MergeRelativeAnchorRefiner: MergingRefiner {
+    func merged(_ a: ParsedResult, _ b: ParsedResult, _ context: ParsingContext) -> ParsedResult? {
         // Exactly one side must be a dangling relative expression, and the other
         // must carry a real date to anchor it on.
         let relative: RelativeDuration

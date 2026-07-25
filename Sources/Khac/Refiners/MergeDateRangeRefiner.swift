@@ -16,26 +16,8 @@
 
 import Foundation
 
-struct MergeDateRangeRefiner: Refiner {
-    func refine(_ context: ParsingContext, _ results: [ParsedResult]) -> [ParsedResult] {
-        guard results.count > 1 else { return results }
-        let sorted = results.sorted { $0.index < $1.index }
-
-        var output: [ParsedResult] = []
-        var i = 0
-        while i < sorted.count {
-            if i + 1 < sorted.count, let merged = merge(sorted[i], sorted[i + 1], context) {
-                output.append(merged)
-                i += 2
-            } else {
-                output.append(sorted[i])
-                i += 1
-            }
-        }
-        return output
-    }
-
-    private func merge(_ a: ParsedResult, _ b: ParsedResult, _ context: ParsingContext) -> ParsedResult? {
+struct MergeDateRangeRefiner: MergingRefiner {
+    func merged(_ a: ParsedResult, _ b: ParsedResult, _ context: ParsingContext) -> ParsedResult? {
         // Only merge single (non-range) results into a range.
         guard a.end == nil, b.end == nil else { return nil }
         guard isDateLike(a), isDateLike(b) else { return nil }

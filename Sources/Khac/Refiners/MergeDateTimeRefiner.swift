@@ -18,26 +18,8 @@
 
 import Foundation
 
-struct MergeDateTimeRefiner: Refiner {
-    func refine(_ context: ParsingContext, _ results: [ParsedResult]) -> [ParsedResult] {
-        guard results.count > 1 else { return results }
-        let sorted = results.sorted { $0.index < $1.index }
-
-        var output: [ParsedResult] = []
-        var i = 0
-        while i < sorted.count {
-            if i + 1 < sorted.count, let merged = merge(sorted[i], sorted[i + 1], context) {
-                output.append(merged)
-                i += 2
-            } else {
-                output.append(sorted[i])
-                i += 1
-            }
-        }
-        return output
-    }
-
-    private func merge(_ a: ParsedResult, _ b: ParsedResult, _ context: ParsingContext) -> ParsedResult? {
+struct MergeDateTimeRefiner: MergingRefiner {
+    func merged(_ a: ParsedResult, _ b: ParsedResult, _ context: ParsingContext) -> ParsedResult? {
         // chrono's ordered branching: the earlier result claims the date role
         // first. A result can be both date-like and time-like ("morning"); the
         // order decides which half it plays.
