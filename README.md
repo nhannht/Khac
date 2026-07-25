@@ -151,6 +151,8 @@ including negative UTC offsets.
   mùng 2 tháng 9                      2024-09-02 12:00
   sáng mai                            2024-06-10 09:00
   7 giờ sáng mai                      2024-06-10 07:00
+  tối qua                             2024-06-08 19:00
+  đêm qua                             2024-06-08 22:00
   thứ hai tới                         2024-06-10 12:00
   hai tuần trước                      2024-05-26 12:00
   12 giờ đêm                          2024-06-09 00:00
@@ -159,9 +161,9 @@ including negative UTC offsets.
 ## Results
 
 ```
-  swift test        204 tests, 0 failures, exit 0
+  swift test        219 tests, 0 failures, exit 0
   EN oracle         561 / 561 cases
-  VI suite           88 tests
+  VI suite           91 tests
 ```
 
 Verified stable across three consecutive runs. The oracle count is the number
@@ -203,7 +205,9 @@ where chrono's Vietnamese is wrong, each marked KHAC-FIX in the source:
 - `này` means this period, not next.
 - `12 giờ đêm` is midnight, not noon.
 - `1 giờ đêm` is 1am, not 13:00.
-- `sáng mai` and its siblings resolve to tomorrow, with their own hour.
+- `sáng mai` and its siblings resolve to tomorrow, with their own hour, and
+  `tối qua` and its siblings resolve to yesterday. chrono has only the whole
+  words `ngày mai` and `hôm qua`, so every bare compound answered TODAY.
 - `và` lists, it does not range. `"thứ hai và thứ sáu"` is two days, not Monday
   through Friday. chrono lists it as a range connector; every other chrono locale
   shows that was a slip, since none of them accepts a bare "and" without a real
@@ -222,6 +226,19 @@ have the feature.
   shift and `Mai` is a common given name, and only capitalization separates them.
   `"chiều Mai đến"` is handled, but `"chiều mai đến"` is genuinely ambiguous to a
   native reader too, and resolves as a date.
+- **`qua` after a time of day is always read as "yesterday".** `"tối qua"` is
+  last night, which is the far more common phrase, but `qua` is also the verb to
+  cross or go over, and Vietnamese drops subjects freely. So `"sáng qua sông"`
+  (in the morning, cross the river) reads as yesterday morning. The
+  capitalization that separates `Mai` from `mai` does not help here, because
+  `qua` is lowercase either way. Accepted deliberately, and asserted in the
+  suite so it cannot be fixed by accident.
+- **Vietnamese has no weekend concept.** `"cuối tuần này"` resolves as `"tuần
+  này"`, this week, with `cuối` dropped from the match. English has a full
+  weekend and weekday parser, so this is an internal asymmetry rather than a
+  gap against chrono, whose Vietnamese has no weekend word either. Scheduled
+  with the other 12 locales in Phase 2, so every locale's weekend convention is
+  decided together rather than one at a time.
 - **Always use `interval`, never build your own from `start` and `end`.**
   `"August 22 - 10, 2012"` really does resolve to a range whose end precedes its
   start, reported as written rather than silently reordered, because swapping the

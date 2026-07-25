@@ -157,6 +157,55 @@ final class VITests: XCTestCase {
         XCTAssertEqual(chieu?.start.get(.hour), 15)
     }
 
+    // The backward sibling of the "mai" family. "tối qua" / "đêm qua" ("last
+    // night") are more frequent than the whole "kia" family, and without the
+    // "qua" entry they answered TODAY with "qua" dropped from the span - the same
+    // failure as bare "sáng mai", in the opposite direction. Each reference is
+    // again chosen so a leaked reference clock is unmistakable.
+    func testCasualCompoundQua() {
+        // Reference 12:00, correct answer 19:00 YESTERDAY. A missing shift would
+        // answer day 10; a leaked clock would answer 12:00.
+        let toi = single("tối qua", ref(2012, 8, 10, 12))
+        XCTAssertEqual(toi?.text, "tối qua", "the span must cover the shift word")
+        XCTAssertEqual(toi?.start.get(.day), 9)
+        XCTAssertEqual(toi?.start.get(.hour), 19)
+
+        let dem = single("đêm qua", ref(2012, 8, 10, 12))
+        XCTAssertEqual(dem?.start.get(.day), 9)
+        XCTAssertEqual(dem?.start.get(.hour), 22)
+
+        let sang = single("sáng qua", ref(2012, 8, 10, 20))
+        XCTAssertEqual(sang?.start.get(.day), 9)
+        XCTAssertEqual(sang?.start.get(.hour), 9)
+
+        let chieu = single("chiều qua", ref(2012, 8, 10, 20))
+        XCTAssertEqual(chieu?.start.get(.day), 9)
+        XCTAssertEqual(chieu?.start.get(.hour), 15)
+    }
+
+    // "hôm qua" is a whole dayReferences key and must keep winning outright, with
+    // no interference from the new suffix. Its hour stays the reference's, because
+    // it names a day and no time of day.
+    func testHomQuaStillOutranksTheSuffix() {
+        let r = single("hôm qua", ref(2012, 8, 10, 12))
+        XCTAssertEqual(r?.text, "hôm qua")
+        XCTAssertEqual(r?.start.get(.day), 9)
+    }
+
+    // The accepted cost of the "qua" entry, pinned rather than hidden. "qua" is
+    // also an ordinary movement verb and Vietnamese drops subjects freely, so
+    // "sáng qua sông" (in the morning, cross the river) reads as yesterday
+    // morning. The capitalisation signal that separates "Mai" from "mai" does not
+    // transfer, since "qua" is lowercase in both readings.
+    //
+    // This asserts the WRONG answer on purpose. If a future change fixes it, this
+    // test fails and the fix gets read rather than landing unnoticed.
+    func testQuaFalsePositiveIsKnownAndAccepted() {
+        let r = single("sáng qua sông", ref(2012, 8, 10, 12))
+        XCTAssertEqual(r?.start.get(.day), 9, "known false positive: the verb reading is not distinguished")
+        XCTAssertEqual(r?.start.get(.hour), 9)
+    }
+
     // "nửa đêm" is the one time-of-day word with a CERTAIN hour 0, and the only
     // one whose bare form takes a coming-day roll. With "mai" stating the day
     // explicitly the roll must not also apply, or the answer lands two days out

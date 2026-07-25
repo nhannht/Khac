@@ -111,6 +111,8 @@ final class ReadmeExamplesTests: XCTestCase {
             ("mùng 2 tháng 9", "2024-09-02 12:00"),
             ("sáng mai", "2024-06-10 09:00"),
             ("7 giờ sáng mai", "2024-06-10 07:00"),
+            ("tối qua", "2024-06-08 19:00"),
+            ("đêm qua", "2024-06-08 22:00"),
             ("thứ hai tới", "2024-06-10 12:00"),
             ("hai tuần trước", "2024-05-26 12:00"),
             ("12 giờ đêm", "2024-06-09 00:00"),
@@ -139,6 +141,25 @@ final class ReadmeExamplesTests: XCTestCase {
         // Does not: a bare clock leaves the shift unattached, so the day stays today.
         XCTAssertEqual(vi.parse("8 giờ mai", reference: reference()).first?.start.get(.day), 9)
         XCTAssertEqual(vi.parse("15:30 mai", reference: reference()).first?.start.get(.day), 9)
+    }
+
+    /// The two Vietnamese limitations the README states as SHORTFALLS. Both are
+    /// asserted for the same reason as the day-shift gate above: if either starts
+    /// behaving differently, the README is out of date and should be corrected
+    /// rather than quietly over-promising or under-selling.
+    func testStatedVietnameseShortfalls() {
+        let vi = Khac(locales: [.vietnamese])
+
+        // The accepted "qua" false positive: the verb reading is not separated
+        // from the temporal one, so this crossing-the-river phrase reads as
+        // yesterday morning.
+        XCTAssertEqual(vi.parse("sáng qua sông", reference: reference()).first?.start.get(.day), 8)
+
+        // No weekend concept: "cuối tuần này" degrades to "tuần này", this week,
+        // with "cuối" dropped from the reported span.
+        let weekend = vi.parse("cuối tuần này", reference: reference()).first
+        XCTAssertEqual(weekend?.text, "tuần này", "cuối is not part of the match")
+        XCTAssertEqual(weekend?.start.get(.day), 9, "resolves to the reference day, not the coming Saturday")
     }
 
     /// The marked-versus-unmarked invalid day asymmetry, as the README states it.

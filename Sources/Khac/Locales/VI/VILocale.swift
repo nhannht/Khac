@@ -225,15 +225,25 @@ public struct VILocale: KhacLocale {
                 // expects; the phrase previously parsed as bare "sáng" and
                 // answered TODAY, which was wrong under either reading.
                 "kia": 2,
-                // NOT added: "qua" (-1). "tối qua" / "đêm qua" ("last night") are
-                // more frequent than the "kia" family, so the gap is real and
-                // worth closing - but "qua" is also an ordinary movement verb ("đi
-                // qua", "qua nhà ai đó"), and Vietnamese drops subjects freely, so
-                // "chiều qua nhà bạn chơi" (in the afternoon, went over to a
-                // friend's place) has the identical shape to the temporal reading.
-                // The case-sensitivity that separates "Mai" from "mai" does NOT
-                // transfer, because "qua" is not a proper noun and is lowercase in
-                // both readings. Needs its own analysis, not a copy of this entry.
+                // "tối qua" / "đêm qua" ("last night") are more frequent than the
+                // whole "kia" family, and without this entry they answered TODAY
+                // with "qua" dropped from the span - the same shape as the "sáng
+                // mai" bug above, in the opposite direction.
+                //
+                // Added by USER DECISION with the cost accepted, not because the
+                // cost went away. "qua" is also an ordinary movement verb ("đi
+                // qua", "qua nhà ai đó"), Vietnamese drops subjects freely, and
+                // the case-sensitivity that separates "Mai" from "mai" does NOT
+                // transfer here - "qua" is not a proper noun and is lowercase in
+                // both readings. So "sáng qua sông" (in the morning, cross the
+                // river) now reads as yesterday morning. That is a real false
+                // positive, and it is the price of the far more common phrase.
+                //
+                // A trailing-boundary guard was offered and declined: it would fix
+                // "sáng qua sông" while leaving "mai" and "kia" matching mid
+                // sentence, so one entry in this table would behave unlike its
+                // siblings for a case rarer than the one it protects.
+                "qua": -1,
             ]
         )
     }

@@ -75,6 +75,33 @@ final class WeekendPostfixTests: XCTestCase {
         }
     }
 
+    /// A WEEKEND reference, which the Friday cases above cannot reach. The
+    /// "weekday" branch has a separate shortcut for it (chrono: on a weekend, take
+    /// the coming Monday or the last Friday rather than doing working-day
+    /// arithmetic), and "this"/"next" weekend collapse onto the same Saturday
+    /// there. Measured from chrono 2.10.1 at Sunday 2024-06-09.
+    func testWeekendReferenceTakesTheOtherBranch() {
+        var cal = ReferencePoint.defaultCalendar
+        cal.timeZone = TimeZone(identifier: "UTC") ?? .current
+        var c = DateComponents()
+        c.year = 2024; c.month = 6; c.day = 9; c.hour = 12
+        let sunday = ReferencePoint(instant: cal.date(from: c)!, calendar: cal)
+
+        let khac = Khac(locales: [.english])
+        for (text, expected) in [
+            ("this weekend", "2024-06-15"),
+            ("next weekend", "2024-06-15"),
+            ("weekend next week", "2024-06-15"),
+            ("last weekend", "2024-06-02"),
+            ("weekend last week", "2024-06-02"),
+            ("weekday", "2024-06-10"),
+            ("weekday next week", "2024-06-10"),
+        ] {
+            let r = khac.parse(text, reference: sunday).first
+            XCTAssertEqual(r.map { ymd($0.date) }, expected, "\(text) at a Sunday reference")
+        }
+    }
+
     /// The span was never the broken part, and it must stay whole. If a future
     /// change fixes resolution by refusing to match the postfix at all, the date
     /// assertions above would still pass while the reported text silently shrank.
