@@ -139,30 +139,26 @@ final class DEOracleTests: XCTestCase {
         }
     }
 
-    // MARK: - Deferral reasons (checkpoint 1 / follow-up findings, engine-owned)
-
-    /// MonthNameParser.swift's day-month separator is hardcoded to hyphen,
-    /// slash, or whitespace+"of" - no locale slot for a period glued directly to
-    /// the day digits with no required space before it ("10. August", "15.Sep").
-    /// This is the dominant German date shape (31 of 124 DE cases use it).
-    private static let dayPeriodMonth =
-        "KHAC-6 deferral: day+period+month ('10. August') needs a day-token separator MonthNameParser.swift does not support - reported to engine at checkpoint 1"
+    // MARK: - Deferral reasons
+    //
+    // Two checkpoint-1 findings are RESOLVED as of this pass and no longer
+    // appear below: the day+period+month gap (MonthNameParser now reads
+    // `dayOrdinalSuffixes`/`dateConnectorWords`/`monthPrefixWords` as data -
+    // 31 cases recovered) and the 2-digit-year dot date gap (now
+    // `options.dotIsUnambiguousDateSeparator` - 2 cases recovered). The bare
+    // month+year fallback gap ("32. Oktober 2015") is ALSO resolved, by
+    // `options.monthNameForms` - narrowing German to `.dayFirst`, matching
+    // chrono's own registered parser list, turns the fallback off outright
+    // rather than needing a special-cased rejection.
 
     /// RelativeUnitParser.swift's six alternatives (past-suffix, future-suffix,
     /// future-prefix, signed, modifier-prefix, bare-modifier) have no slot for a
-    /// modifier landing AFTER the number and BEFORE the unit word.
+    /// modifier landing AFTER the number and BEFORE the unit word. Still open -
+    /// held per main's call: one German case is not enough to justify a
+    /// seventh alternative in a parser all fourteen locales share; decided
+    /// once every soldier's final report is in.
     private static let numberModifierUnit =
         "KHAC-6 deferral: NUMBER-MODIFIER-UNIT duration ('30 vorangegangenen Tagen') has no matching alternative in RelativeUnitParser.swift - reported to engine at checkpoint 1"
-
-    /// NumericDateParser.swift's dot-separator guard requires a 4-digit year
-    /// present anywhere in the match, treating any 2-digit-year dot form as a
-    /// decimal/version number universally. German's dd.mm.yy is the standard,
-    /// unambiguous 2-digit-year numeric date (the German decimal separator is a
-    /// comma, not a period, so there is no real collision to guard against here)
-    /// - the guard is right for the locale it was written against and wrong for
-    /// this one, with no override. Found running this suite, reported to engine.
-    private static let dotDateTwoDigitYear =
-        "KHAC-6 deferral: NumericDateParser.swift's dot-separator guard demands a 4-digit year, rejecting German's standard 2-digit-year dd.mm.yy - reported to engine"
 
     /// Named timezone abbreviations (CET) are out of scope for Khac v1's generic
     /// parsers - the SAME boundary the EN oracle already excludes 5 cases for
@@ -170,22 +166,29 @@ final class DEOracleTests: XCTestCase {
     private static let namedTimezone =
         "KHAC-6 deferral: named timezone abbreviation (CET) unsupported - same v1 scope boundary EN's oracle already excludes, not a new gap"
 
+    /// TimeExpressionParser's trailing connector-then-tod slot requires a tod
+    /// WORD once it engages - `(?:\s*connector(?<tod>todAlt))?` - so a bare
+    /// decorative "Uhr" with nothing after it can only be consumed via the
+    /// clockHourWords hw-slot (no colon present) or the connector-before-a-tod-
+    /// word shape (colon present, meridiem word follows). Neither covers a
+    /// colon time followed by a BARE trailing "Uhr" with no meridiem word at
+    /// all ("19:53 Uhr", nothing after). chrono's own DESpecificTimeExpressionParser
+    /// makes this decoration unconditionally optional at the pattern level
+    /// (`(?:\s*Uhr)?`, no following word required); Khac's shared engine has
+    /// no locale slot for an unconditional trailing decorative word, only for
+    /// one that gates a further tod capture. Narrow (1 case), found after the
+    /// timeOfDayConnectorWords fix above closed the adjacent, more common shape.
+    private static let bareTrailingUhrAfterColonTime =
+        "KHAC-6 deferral: a bare decorative 'Uhr' trailing a colon time with nothing after it has no engine slot (timeOfDayConnectorWords requires a following tod word) - reported to engine"
+
     func testCasualCases() { run(deCasualCases) }
 
     func testDashCases() {
-        run(deDashCases, deferrals: [2: Self.dotDateTwoDigitYear, 3: Self.dotDateTwoDigitYear])
+        run(deDashCases)
     }
 
     func testMonthNameLittleEndianCases() {
-        // Every one of the 20 cases in this file is the day+period+month shape,
-        // including the trailing noMatch case ("32. Oktober 2015"): with the
-        // period construction unimplemented, the shared MonthNameParser's
-        // bare-month-plus-year fallback (present for every locale, but never
-        // registered for German in chrono's own parser list - see
-        // src/locales/de/index.ts) wrongly claims "Oktober 2015" on its own.
-        run(deMonthNameLittleEndianCases, deferrals: Dictionary(
-            uniqueKeysWithValues: (0..<deMonthNameLittleEndianCases.count).map { ($0, Self.dayPeriodMonth) }
-        ))
+        run(deMonthNameLittleEndianCases, deferrals: [17: Self.bareTrailingUhrAfterColonTime])
     }
 
     func testTimeExpCases() {
@@ -199,15 +202,11 @@ final class DEOracleTests: XCTestCase {
     func testTimeUnitsWithinCases() { run(deTimeUnitsWithinCases) }
 
     func testWeekdayCases() {
-        run(deWeekdayCases, deferrals: [7: Self.dayPeriodMonth])
+        run(deWeekdayCases)
     }
 
     func testYearCases() {
-        // Every case in de_year.test.ts is "10. August <year> <era>" - the same
-        // day+period+month shape, blocked for the same reason.
-        run(deYearCases, deferrals: Dictionary(
-            uniqueKeysWithValues: (0..<deYearCases.count).map { ($0, Self.dayPeriodMonth) }
-        ))
+        run(deYearCases)
     }
 }
 
@@ -216,11 +215,12 @@ final class DEOracleTests: XCTestCase {
 /// holds a ratchet floor so the number can only go up.
 final class DEOracleScoreboardTests: XCTestCase {
     /// Cases known to pass. Raise this after every improvement; never lower it
-    /// to accommodate a regression. 87/124 as of this port - the 37 gap is the
-    /// four deferrals in DEOracleTests above (day+period+month, 31 cases;
-    /// NUMBER-MODIFIER-UNIT duration, 1; named timezone, 3; 2-digit-year dot
-    /// date, 2).
-    static let floor = 87
+    /// to accommodate a regression. 119/124 after master's Wall 1 /
+    /// dotIsUnambiguousDateSeparator / monthNameForms fixes landed (up from
+    /// 87) - the 5-case gap is the three deferrals in DEOracleTests above:
+    /// NUMBER-MODIFIER-UNIT duration (1), named timezone (3), bare trailing
+    /// "Uhr" after a colon time (1).
+    static let floor = 119
 
     func testScoreboard() {
         let runner = DEOracleRunner()

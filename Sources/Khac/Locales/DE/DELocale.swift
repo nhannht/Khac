@@ -61,15 +61,38 @@ public struct DELocale: KhacLocale {
             // Chrono's own DEWeekdayParser accepts "an" too (`a[mn]`), not
             // exercised by any ported case but harmless to admit alongside "am".
             weekdayPrefixWords: ["am", "an"],
-            // "uhr" as a CONNECTOR (distinct from its clockHourWords role): a
-            // colon-separated time already has its minute stated ("11:00"), so
-            // "Uhr" cannot attach via the clockBody hour+minute slot - there's no
-            // hour left to fill. It shows up instead as a bare decorative word
-            // between the stated time and a trailing meridiem ("11:00 Uhr
-            // vormittags"). "8 Uhr abends" is unaffected: there "Uhr" is
-            // consumed by the clockHourWords hw-slot first (no colon present),
-            // so this connector slot is never reached for that shape.
+            // Preposition leading a FULL month-name date (day AND month):
+            // oracle-confirmed, "Die Deadline ist am 10. August" keeps "am" IN
+            // the span. Deliberately not shared with weekdayPrefixWords or a
+            // bare-month field - see PatternSet's own doc on monthPrefixWords
+            // for why English needed the split (a shared field let "on" claim
+            // "on Sept 2" as "on Sept").
+            monthPrefixWords: ["am"],
+            // The day-token suffix glued directly to the digits, no whitespace
+            // tolerance: "10." in "10. August", "15." in "15.Sep". This is
+            // THE fix for the day+period+month construction flagged at
+            // checkpoint 1 - engine now reads it as data instead of hardcoding
+            // English's "of".
+            dayOrdinalSuffixes: ["."],
+            // "uhr" as a CONNECTOR (distinct from its clockHourWords role, just
+            // below the field that reads it): a colon-separated time already
+            // has its minute stated ("11:00"), so "Uhr" cannot attach via the
+            // clockBody hour+minute slot - there's no hour left to fill. It
+            // shows up instead as a bare decorative word between the stated
+            // time and a trailing meridiem ("11:00 Uhr vormittags"). Checked
+            // this could NOT break the sibling shape before adding it: "8 Uhr
+            // abends" is unaffected, because there "Uhr" is consumed by the
+            // clockHourWords hw-slot first (no colon present), so the
+            // connector position is never even reached for that input - the
+            // two shapes only ever compete for the same word when a colon
+            // time already claimed "Uhr" as decoration rather than as an hour
+            // marker. Traced by hand rather than assumed; this field was
+            // nearly reported as an engine gap before the trace turned up an
+            // existing hook that already covered it.
             timeOfDayConnectorWords: ["uhr"],
+            // Marks a following bare day number: "den 10. Januar". Optional -
+            // "Di, 10. Januar" has no marker at all and still matches.
+            dayMarkerWords: ["den"],
             // DEMergeDateTimeRefiner.ts's own glue set, beyond the whitespace/
             // punctuation the merge already treats as free: "um" is also a
             // timePrefixWord (listed here too is harmless), "am" is the weekday
@@ -81,8 +104,27 @@ public struct DELocale: KhacLocale {
 
     // German: day-month numeric order (3/4 = April 3rd), week starts Monday
     // (ISO 8601 / German convention, matching VI's own weekStart=2).
+    //
+    // dotIsUnambiguousDateSeparator: true - German's decimal mark is a comma
+    // (6,5 kilograms), not a period, so a dotted triple like "30.12.16" can
+    // never collide with a decimal or version number the way "1.1.3" would in
+    // English. This is the fix for the "30.12.16"/"Freitag 30.12.16" gap
+    // flagged at checkpoint 1 (the engine's 4-digit-year guard, now opt-out
+    // per locale rather than universal).
+    //
+    // monthNameForms: .dayFirst - chrono's own DE parser list
+    // (src/locales/de/index.ts) registers exactly one month-name parser,
+    // DEMonthNameLittleEndianParser, day-first only. No bare month+year
+    // fallback exists in chrono for German, which is exactly what let "32.
+    // Oktober 2015" (an invalid day) surface the bare month "Oktober 2015"
+    // instead of the noMatch chrono itself produces - flagged at checkpoint 1,
+    // fixed now that the option exists to say a locale simply lacks the form.
     public var options: LocaleOptions {
-        LocaleOptions(dateOrder: .dayMonth, weekStart: 2)
+        LocaleOptions(
+            dateOrder: .dayMonth, weekStart: 2,
+            dotIsUnambiguousDateSeparator: true,
+            monthNameForms: .dayFirst
+        )
     }
 
     /// "letzte Nacht" (last night): hour 0, rolled back a day only when the

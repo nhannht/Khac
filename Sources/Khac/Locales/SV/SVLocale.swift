@@ -53,8 +53,16 @@ public struct SVLocale: KhacLocale {
     }
 
     // Swedish: day-month numeric order (3/4 = April 3rd), week starts Monday.
+    //
+    // monthNameForms: .dayFirst - chrono's own SV parser list
+    // (src/locales/sv/index.ts) registers exactly one month-name parser,
+    // SVMonthNameLittleEndianParser, day-first only, no bare month+year
+    // fallback. This is the fix for the "32 augusti" gap this locale's own
+    // oracle test file flagged: with the shared engine's monthOnly fallback
+    // narrowed away, an invalid day (32) now correctly produces no match at
+    // all instead of surfacing the bare month.
     public var options: LocaleOptions {
-        LocaleOptions(dateOrder: .dayMonth, weekStart: 2)
+        LocaleOptions(dateOrder: .dayMonth, weekStart: 2, monthNameForms: .dayFirst)
     }
 }
 

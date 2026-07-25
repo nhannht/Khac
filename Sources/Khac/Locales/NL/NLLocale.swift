@@ -59,6 +59,20 @@ public struct NLLocale: KhacLocale {
             // Oracle-confirmed: "op dinsdag" / "op volgende week vrijdag" keep
             // "op" IN the matched span.
             weekdayPrefixWords: ["op"],
+            // The day-token suffix glued directly to the digits, no whitespace
+            // tolerance: "12de", "31ste". This is the fix for the ordinal
+            // gap flagged at checkpoint 1 - engine reads it as data now,
+            // the same mechanism that fixed DE's "10." period suffix.
+            //
+            // NOT set: monthPrefixWords / bareMonthPrefixWords. Every Dutch
+            // oracle case with a leading preposition before a month date
+            // EXCLUDES it from the match span ("In januari" -> matched text
+            // is "januari", not "In januari"; "Op 23 MRT. 2022" -> matched
+            // text is "23 MRT. 2022") - the opposite of what German's "am"
+            // needs. Leaving both fields at their empty default is what
+            // reproduces that, verified against the oracle rather than
+            // assumed once the fields existed to check.
+            dayOrdinalSuffixes: ["de", "ste"],
             // "'s avonds"/"'s ochtends" etc. attach directly to a stated hour
             // with no connector between them ("23:00 's avonds"); "in de
             // namiddag" is matched as a literal multi-word key in `meridiem`

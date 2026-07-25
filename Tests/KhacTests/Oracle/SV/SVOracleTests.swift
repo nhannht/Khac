@@ -3,12 +3,11 @@
 // Oracle/README.md for the prior-art credit - the case DATA is ported from
 // wanasit/chrono (MIT) test/sv/*.test.ts, never chrono's test code.
 //
-// One case is deferred: MonthNameParser.swift's `monthOnly` alternative is
-// present for EVERY Khac locale with no per-locale opt-out, but chrono's own
-// SV parser list (src/locales/sv/index.ts) registers no bare "month + year, no
-// day" fallback at all - the same finding as DE's "32. Oktober 2015" (DE's
-// index.ts is equally bare of one), now CONFIRMED recurring across 2 of 3
-// locales in this batch rather than a one-off.
+// Every case passes outright. The one gap this port originally found -
+// MonthNameParser's `monthOnly` fallback surfacing bare "augusti" for the
+// invalid "32 augusti" - is resolved by `options.monthNameForms = .dayFirst`
+// in SVLocale, mirroring chrono's own SV parser list (src/locales/sv/index.ts
+// registers no bare month+year parser at all, same as DE's).
 
 import Foundation
 import XCTest
@@ -135,11 +134,7 @@ final class SVOracleTests: XCTestCase {
 
     func testCasualCases() { run(svCasualCases) }
 
-    func testMonthNameLittleEndianCases() {
-        run(svMonthNameLittleEndianCases, deferrals: [
-            5: "KHAC-6 deferral: MonthNameParser's bare month+year fallback has no per-locale opt-out, but chrono registers none for Swedish (same finding as DE's '32. Oktober 2015') - reported to engine",
-        ])
-    }
+    func testMonthNameLittleEndianCases() { run(svMonthNameLittleEndianCases) }
 
     func testTimeUnitsCasualRelativeCases() { run(svTimeUnitsCasualRelativeCases) }
     func testWeekdayCases() { run(svWeekdayCases) }
@@ -148,9 +143,9 @@ final class SVOracleTests: XCTestCase {
 /// The progress instrument, mirroring DE/NLOracleScoreboardTests.
 final class SVOracleScoreboardTests: XCTestCase {
     /// Cases known to pass. Raise this after every improvement; never lower it
-    /// to accommodate a regression. 40/41 - the one gap is the monthOnly
-    /// fallback deferral in SVOracleTests above.
-    static let floor = 40
+    /// to accommodate a regression. 41/41 - the whole corpus, after
+    /// `monthNameForms: .dayFirst` closed the one gap this port found.
+    static let floor = 41
 
     func testScoreboard() {
         let runner = SVOracleRunner()

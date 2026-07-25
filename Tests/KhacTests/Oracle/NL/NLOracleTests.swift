@@ -132,22 +132,16 @@ final class NLOracleTests: XCTestCase {
     }
 
     // MARK: - Deferral reasons (engine-owned, reported to main)
-
-    /// MonthNameParser.swift's ordinal suffix is hardcoded to English
-    /// "st/nd/rd/th" - no locale slot for Dutch "ste"/"de" ("12de juli",
-    /// "31ste maart"). Same root cause as DE's day+period+month gap (the day
-    /// token's own decoration is not locale-driven), different symptom.
-    private static let ordinalSuffix =
-        "KHAC-6 deferral: numeric day ordinal suffix ('12de', '31ste') has no locale slot in MonthNameParser.swift - reported to engine"
-
-    /// MonthNameParser.swift's internal day-RANGE connector ("10 - 22 August")
-    /// is ALSO hardcoded to English words (to/until/through/till), not read
-    /// from patterns.rangeConnectorWords at all - a second locale-blind literal
-    /// in the same parser, found running this suite. Dutch "tot" is otherwise
-    /// correctly wired (works everywhere else: TimeExpressionParser ranges,
-    /// WeekdayParser ranges) - only this one internal alternation is deaf to it.
-    private static let monthRangeConnector =
-        "KHAC-6 deferral: MonthNameParser.swift's day-range connector hardcodes English words, not patterns.rangeConnectorWords - reported to engine"
+    //
+    // RESOLVED, no longer appear below: the ordinal-suffix gap ("12de juli",
+    // "31ste maart" - MonthNameParser now reads `dayOrdinalSuffixes` as data,
+    // set to ["de","ste"] in NLLocale) and the month-name day-RANGE connector
+    // gap ("10 tot 22 augustus" - MonthNameParser now reads
+    // patterns.rangeConnectorWords for real, no NLLocale change needed since
+    // "tot" was already there). Also resolved: "De deadline is nu" no longer
+    // needs a deferral - main fixed the oracle itself, removing a bogus
+    // timezoneOffset: 420 (a non-portable extraction-environment artifact)
+    // from NlCasualCases.swift.
 
     /// TimeExpressionParser.swift's parseSide rejects ANY stated hour above 12
     /// that also carries a trailing meridiem/time-of-day word
@@ -177,38 +171,15 @@ final class NLOracleTests: XCTestCase {
     private static let decimalCommaDuration =
         "KHAC-6 deferral: RelativeDuration.swift's digit pattern only accepts a period decimal, not Dutch/German's comma - reported to engine"
 
-    /// "De deadline is nu" asserts start.timezoneOffset == 420. This is not a
-    /// fact about Dutch "nu" (now) - it is JavaScript's Date.getTimezoneOffset()
-    /// captured from whatever machine and moment ran the extraction pipeline
-    /// that ported this oracle, baked into the case data as if it were a
-    /// semantic claim. Khac's own "now" handling (mirroring EN's, which sets no
-    /// timezoneOffset at all) does not fabricate a machine-local offset, and
-    /// nothing in this port should start doing so to chase a non-portable
-    /// number. Recorded for main since the other 11 locale ports may carry the
-    /// same artifact in their own "now" cases, unexamined until run like this.
-    private static let nonPortableNowTimezoneArtifact =
-        "KHAC-6 deferral: timezoneOffset 420 on 'nu' is a non-portable artifact of the extraction environment, not a Dutch semantic fact - not an engine gap"
-
     func testCasualCases() {
         run(nlCasualCases, deferrals: [
-            0: Self.nonPortableNowTimezoneArtifact,
             9: Self.midnightRollThreshold,
         ])
     }
 
     func testMonthCases() { run(nlMonthCases) }
 
-    func testMonthNameLittleEndianCases() {
-        run(nlMonthNameLittleEndianCases, deferrals: [
-            9: Self.ordinalSuffix,
-            10: Self.ordinalSuffix,
-            12: Self.monthRangeConnector,
-            15: Self.ordinalSuffix,
-            19: Self.monthRangeConnector,
-            20: Self.ordinalSuffix,
-            21: Self.ordinalSuffix,
-        ])
-    }
+    func testMonthNameLittleEndianCases() { run(nlMonthNameLittleEndianCases) }
 
     func testRelativeCases() { run(nlRelativeCases) }
     func testSlashCases() { run(nlSlashCases) }
@@ -231,11 +202,12 @@ final class NLOracleTests: XCTestCase {
 /// The progress instrument, mirroring DEOracleScoreboardTests.
 final class NLOracleScoreboardTests: XCTestCase {
     /// Cases known to pass. Raise this after every improvement; never lower it
-    /// to accommodate a regression. 203/214 as of this port - the 11-case gap
-    /// is the six deferrals in NLOracleTests above (ordinal suffix, 5; month
-    /// range connector, 2; stated hour above 12 plus meridiem, 1; midnight-roll
-    /// threshold, 1; decimal comma duration, 1; non-portable "nu" artifact, 1).
-    static let floor = 203
+    /// to accommodate a regression. 211/214 after master's `dayOrdinalSuffixes`
+    /// / month-range-connector / oracle-artifact fixes landed (up from 203) -
+    /// the 3-case gap is the three deferrals in NLOracleTests above (stated
+    /// hour above 12 plus meridiem, 1; midnight-roll threshold, 1; decimal
+    /// comma duration, 1).
+    static let floor = 211
 
     func testScoreboard() {
         let runner = NLOracleRunner()
