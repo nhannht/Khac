@@ -275,8 +275,14 @@ See `SPEC.md` for the full contract.
 
 ## Status
 
-Early development. Phase 1 is the core engine plus English and Vietnamese (v0.1).
-Phase 2 adds the remaining 12 locales as data on the proven engine (v1.0).
+Phase 1 is complete: the core engine plus English and Vietnamese, with the
+adversarial review closed and its findings fixed. Phase 2 adds the remaining 12
+locales as data on the proven engine.
+
+Complete means the scope is built, measured, and its known gaps are written down
+above rather than discovered later. It does not mean tagged: this is still early
+development, the API can still move, and the limitations section is the honest
+list of what a caller will hit.
 
 ## License
 
