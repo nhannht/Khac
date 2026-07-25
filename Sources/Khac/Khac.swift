@@ -8,22 +8,28 @@ import Foundation
 ///     let results = k.parse("next Friday at 5pm")
 ///     let date = k.parseDate("họp lúc 3 giờ chiều mai")
 public struct Khac {
-    private let locales: [KhacLocale]
+    /// Prepared, not raw: each locale carries the patterns compiled from it, so
+    /// the first parse compiles and every later one reuses. Hold on to the Khac
+    /// instance to get that - a fresh one starts cold. See PreparedLocale.
+    ///
+    /// Copying a Khac shares the prepared locales rather than duplicating them,
+    /// which is the intent: the compiled patterns are identical either way.
+    private let locales: [PreparedLocale]
 
     /// All registered locales.
     public init() {
-        self.locales = defaultLocales()
+        self.locales = defaultLocales().map(PreparedLocale.init)
     }
 
     /// Only the named locales, in the given order.
     public init(locales ids: [LocaleID]) {
         let byID = Dictionary(defaultLocales().map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        self.locales = ids.compactMap { byID[$0] }
+        self.locales = ids.compactMap { byID[$0] }.map(PreparedLocale.init)
     }
 
     /// Explicit locale instances. Used by tests and advanced callers.
     public init(localeInstances: [KhacLocale]) {
-        self.locales = localeInstances
+        self.locales = localeInstances.map(PreparedLocale.init)
     }
 
     /// Parse all date/time expressions in `text`.

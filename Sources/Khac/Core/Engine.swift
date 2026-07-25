@@ -57,20 +57,24 @@ enum Engine {
     }
 
     /// Parse `text` against the given locales and return resolved results.
-    static func run(text: String, reference: ReferencePoint, options: Options, locales: [KhacLocale]) -> [ParsedResult] {
+    ///
+    /// Locales arrive PREPARED: each carries the patterns already compiled from
+    /// it, so a repeat parse compiles nothing. See PreparedLocale.
+    static func run(text: String, reference: ReferencePoint, options: Options, locales: [PreparedLocale]) -> [ParsedResult] {
         let normalization = NormalizedText(original: text)
 
         var allResults: [ParsedResult] = []
         var lastContext: ParsingContext?
 
-        for locale in locales {
+        for prepared in locales {
+            let locale = prepared.locale
             let context = ParsingContext(reference: reference, options: options, locale: locale, normalization: normalization)
             lastContext = context
 
             // Parse: generic parsers plus the locale's bespoke parsers.
             var results: [ParsedResult] = []
             for parser in genericParsers + locale.additionalParsers {
-                results += runParser(parser, context: context)
+                results += runParser(parser, prepared: prepared, context: context)
             }
 
             // Refine: merge refiners, then the locale's bespoke refiners, then a
@@ -94,8 +98,8 @@ enum Engine {
     /// Run one parser over the normalized text, collecting all non-overlapping
     /// matches. Advances past each match to avoid infinite loops on zero-width
     /// or rejected matches.
-    private static func runParser(_ parser: Parser, context: ParsingContext) -> [ParsedResult] {
-        let regex = parser.pattern(context)
+    private static func runParser(_ parser: Parser, prepared: PreparedLocale, context: ParsingContext) -> [ParsedResult] {
+        let regex = prepared.regex(for: parser, context: context)
         let ns = context.text as NSString
         let full = NSRange(location: 0, length: ns.length)
 

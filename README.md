@@ -253,8 +253,12 @@ have the feature.
 - **A malformed timestamp with month 13 can leave a stray time.**
   `"2023-13-01T10:00:00"` yields a spurious `00:00`. This behaviour is inherited
   from chrono.
-- **Parsing rebuilds its patterns on every call**, roughly 4.5 ms fixed cost per
-  `parse` for one locale. Reuse of compiled patterns is not implemented yet.
+- **Hold on to your `Khac` instance.** Patterns are compiled once per instance,
+  on first use, and reused after that. A warm `parse` costs about 0.5 ms whether
+  one locale is enabled or both. Constructing a fresh `Khac` for every call
+  instead costs about 5 ms for one locale and 8.8 ms for two, because the
+  compiled patterns are thrown away with the instance. Measured on an Apple M5,
+  release build.
 
 ## Design
 
