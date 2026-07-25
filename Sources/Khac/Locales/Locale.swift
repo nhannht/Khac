@@ -305,6 +305,12 @@ public struct PatternSet {
     /// январе"), Ukrainian "в"/"у". Empty for English, which is load-bearing
     /// rather than incidental - see `monthPrefixWords`.
     public var bareMonthPrefixWords: [String]
+    /// Words that TRAIL a year and belong to the match, e.g. Russian
+    /// "года"/"году" in "25 мая 2020 года". The mirror of `yearMarkerWords`,
+    /// which only ever precedes the digits, so a locale writing the marker after
+    /// the year had nowhere to put it and lost the word from its span. Empty for
+    /// English and Vietnamese.
+    public var yearSuffixWords: [String]
     /// Suffixes glued DIRECTLY to a day's digits, with no whitespace between:
     /// English "10th", Dutch "12de"/"1ste", German "10." - the period is an
     /// ordinal marker there, not punctuation. Written as data because the shape
@@ -381,6 +387,7 @@ public struct PatternSet {
         monthPrefixWords: [String] = [],
         bareMonthPrefixWords: [String] = [],
         dayOrdinalSuffixes: [String] = [],
+        yearSuffixWords: [String] = [],
         timeOfDayConnectorWords: [String] = [],
         yearMarkerWords: [String] = [],
         weekdaySuffixExclusionWords: [String] = [],
@@ -405,6 +412,7 @@ public struct PatternSet {
         self.monthPrefixWords = monthPrefixWords
         self.bareMonthPrefixWords = bareMonthPrefixWords
         self.dayOrdinalSuffixes = dayOrdinalSuffixes
+        self.yearSuffixWords = yearSuffixWords
         self.timeOfDayConnectorWords = timeOfDayConnectorWords
         self.yearMarkerWords = yearMarkerWords
         self.weekdaySuffixExclusionWords = weekdaySuffixExclusionWords
@@ -429,11 +437,34 @@ public struct LocaleOptions {
     /// prefix form ("next Monday") and leave this false. Additive: enabling it
     /// only adds a match position, it never changes the prefix/week-word forms.
     public var weekdaySuffixModifier: Bool
+    /// Whether a duration may state its UNIT with no count at all, the count
+    /// being 1: Russian "через неделю" is "in a week" with nothing standing where
+    /// "a" stands in English.
+    ///
+    /// Off by default, and that default is load-bearing rather than cautious. The
+    /// duration clause otherwise reads a bare unit word as a duration, so English
+    /// "week" or "month" alone would become one - and no English oracle case
+    /// covers it, so nothing would catch the regression. A locale that elides the
+    /// count opts in; the other thirteen are untouched.
+    public var elidesDurationCount: Bool
+    /// Whether a period between numbers is unambiguously a DATE separator, so
+    /// "30.12.16" is a date without needing a 4-digit year to vouch for it.
+    ///
+    /// Set it for a locale whose decimal mark is NOT the period - German writes
+    /// 6,5 for six and a half, so "30.12.16" cannot be a decimal and dotting the
+    /// date is the standard form. Left false, the parser requires a 4-digit year
+    /// before reading a dotted triple as a date, which is what keeps "6.5
+    /// kilograms" and the version number "1.1.3" out of English results.
+    public var dotIsUnambiguousDateSeparator: Bool
 
-    public init(dateOrder: DateOrder = .dayMonth, weekStart: Int = 2, weekdaySuffixModifier: Bool = false) {
+    public init(dateOrder: DateOrder = .dayMonth, weekStart: Int = 2, weekdaySuffixModifier: Bool = false,
+                elidesDurationCount: Bool = false,
+                dotIsUnambiguousDateSeparator: Bool = false) {
         self.dateOrder = dateOrder
         self.weekStart = weekStart
         self.weekdaySuffixModifier = weekdaySuffixModifier
+        self.elidesDurationCount = elidesDurationCount
+        self.dotIsUnambiguousDateSeparator = dotIsUnambiguousDateSeparator
     }
 }
 

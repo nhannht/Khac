@@ -158,8 +158,13 @@ struct MonthNameParser: Parser {
         let clockWords = regexAlternation(context.locale.patterns.clockHourWords) ?? "(?!)"
         let followers = [meridiemWords, clockWords, monthWords].joined(separator: "|")
         let bare = "(?:[1-9][0-9]{3}|[0-9]{2}(?![\\p{L}\\p{N}_]|:[0-9]|\\s{1,3}(?:" + followers + ")))"
-        return "(?:(?<\(prefix)yearEra>[1-9][0-9]{0,3})\\s{0,2}(?<\(prefix)era>" + era + ")"
-            + "|(?<\(prefix)year>" + bare + "))"
+        // A trailing marker word, the mirror of yearMarkerWords: Russian writes
+        // "2020 года". Consumed so the span covers it, and OUTSIDE the year capture
+        // group so the digits read back cleanly.
+        let yearSuffix = regexAlternation(context.locale.patterns.yearSuffixWords)
+            .map { "(?:\\s{1,3}" + $0 + ")?" } ?? ""
+        return "(?:(?:(?<\(prefix)yearEra>[1-9][0-9]{0,3})\\s{0,2}(?<\(prefix)era>" + era + ")"
+            + "|(?<\(prefix)year>" + bare + "))" + yearSuffix + ")"
     }
 
     func extract(_ context: ParsingContext, _ match: TextMatch) -> ParserResult? {
