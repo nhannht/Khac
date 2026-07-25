@@ -142,6 +142,31 @@ public struct Vocabulary {
     ///
     /// Empty for locales without the pattern.
     public var dayShiftSuffixes: [String: Int]
+    /// The same thing on the other side of the time-of-day word: a day shift
+    /// written BEFORE it, as Russian "прошлым вечером" (last evening) and
+    /// Ukrainian do. Resolves identically - a certain calendar date, no clock,
+    /// matched alone with the time-of-day word read through a LOOKAHEAD rather
+    /// than consumed - so the date-time merge joins the two halves exactly as it
+    /// does for the suffix form.
+    ///
+    /// This exists because the concept was, briefly, a data field on one side and
+    /// a hand-written parser on the other. Vietnamese put the suffix form in
+    /// `dayShiftSuffixes`; Russian and Ukrainian need the prefix form, and the
+    /// alternative was a bespoke parser per Slavic locale for a shape Vietnamese
+    /// already expressed as data. Two code paths for one concept, kept in step by
+    /// hand, is the thing this design is meant not to have.
+    ///
+    /// One asymmetry with the suffix table is deliberate: the suffix form matches
+    /// CASE-SENSITIVELY and this one does not. That rule is Vietnamese-specific
+    /// and load-bearing there - "mai" is tomorrow, "Mai" is a common given name,
+    /// and pro-drop makes "chiều Mai đến" and "chiều mai đến" structurally
+    /// identical, so case is the only signal separating them. A PREFIX sits where
+    /// a sentence-initial capital is ordinary and carries no information, so
+    /// requiring lowercase there would reject correct input to guard against an
+    /// ambiguity that only arises after the time word.
+    ///
+    /// Empty for locales without the pattern.
+    public var dayShiftPrefixes: [String: Int]
     /// Hour-DEPENDENT time-of-day words that adjust an ATTACHED numeric hour
     /// ("1 giờ trưa", "10 giờ đêm"), keyed by the same lowercase word as
     /// `meridiem`/`timeOfDay`. Resolved BEFORE the flat `meridiem` table, so a
@@ -198,9 +223,11 @@ public struct Vocabulary {
         fullMonthNames: Set<String> = [],
         fullTimeUnitNames: Set<String> = [],
         casualQuantifiers: [String: Double] = [:],
-        dayShiftSuffixes: [String: Int] = [:]
+        dayShiftSuffixes: [String: Int] = [:],
+        dayShiftPrefixes: [String: Int] = [:]
     ) {
         self.dayShiftSuffixes = dayShiftSuffixes
+        self.dayShiftPrefixes = dayShiftPrefixes
         self.weekdays = weekdays
         self.months = months
         self.integerWords = integerWords

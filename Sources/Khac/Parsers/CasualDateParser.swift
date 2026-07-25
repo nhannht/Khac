@@ -99,6 +99,21 @@ struct CasualDateParser: Parser {
                 "(?<=" + timesOfDay + "\\s{1,3})(?<dshift>(?-i:" + dayShift.alternation + "))"
             )
         }
+        // The same shape on the other side, for a locale that writes the shift
+        // BEFORE the time of day ("прошлым вечером"). A LOOKAHEAD here for the
+        // same reason the suffix branch uses a lookbehind: the time-of-day word
+        // must stay unclaimed so TimeExpressionParser can still read an hour out
+        // of it, and the merge joins the two halves afterwards.
+        //
+        // No (?-i:) wrapper, unlike above. The case-sensitivity there is a
+        // Vietnamese rule about a proper noun that can only follow the time word;
+        // a prefix sits where a capital is ordinary. See Vocabulary.dayShiftPrefixes.
+        let dayShiftPrefix = WordTable(vocab.dayShiftPrefixes)
+        if !dayShiftPrefix.isEmpty {
+            alternatives.append(
+                "(?<dshiftpre>" + dayShiftPrefix.alternation + ")(?=\\s{1,3}" + todPrefix + timesOfDay + ")"
+            )
+        }
 
         return makeRegex(boundaryBefore + "(?:" + alternatives.joined(separator: "|") + ")" + boundaryAfter)
     }
@@ -163,6 +178,20 @@ struct CasualDateParser: Parser {
         // one rather than stacking on top of it.
         if let shiftText = match.string(named: "dshift") {
             guard let offset = WordTable(context.locale.vocabulary.dayShiftSuffixes).value(for: shiftText),
+                  let target = calendar.date(byAdding: .day, value: offset, to: context.reference.instant) else {
+                return nil
+            }
+            comps.assignDate(target, calendar: calendar)
+            comps.implySimilarTime(to: context.reference)
+            return .components(comps)
+        }
+
+        // The prefix spelling of the same fact, resolved identically. Kept as a
+        // separate group rather than one alternation with the suffix because the
+        // two read different vocabulary tables; the RESOLUTION below is shared,
+        // which is the part that would otherwise drift.
+        if let shiftText = match.string(named: "dshiftpre") {
+            guard let offset = WordTable(context.locale.vocabulary.dayShiftPrefixes).value(for: shiftText),
                   let target = calendar.date(byAdding: .day, value: offset, to: context.reference.instant) else {
                 return nil
             }
