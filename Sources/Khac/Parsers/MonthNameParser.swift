@@ -34,7 +34,21 @@ struct MonthNameParser: Parser {
         // is August 1996, not a rejected 96th of August.
         let ordinalWords = WordTable(vocab.ordinals).alternation
         let day = "(?:" + ordinalWords + "|(?:3[01]|[12][0-9]|0?[1-9])(?![0-9])" + ordinalSuffix + ")"
-        let rangeConnector = "(?:to|-|\\u2013|until|through|till)"
+        // The day-to-day connector INSIDE one month-name match ("10 - 22 August
+        // 2012"). The WORDS come from the locale, like every other connector in
+        // the engine; only the punctuation stays built in, because a hyphen and an
+        // en dash read as a range in every locale this library targets and no
+        // locale should have to restate them.
+        //
+        // This was a hardcoded English list for as long as English was the only
+        // locale with a day-range test, which quietly made it the one connector in
+        // the engine NOT reading patterns.rangeConnectorWords - TimeExpressionParser
+        // and MergeDateRangeRefiner both already did. English loses nothing by the
+        // change: its rangeConnectorWords holds exactly the words that were spelled
+        // out here. The Romance locales are what exposed it, each with its own word
+        // in this slot - Spanish "10 a 22 Agosto 2012", French "au", Italian "al".
+        let connectorWords = regexAlternation(context.locale.patterns.rangeConnectorWords)
+        let rangeConnector = "(?:" + (connectorWords.map { $0 + "|" } ?? "") + "-|\\u2013)"
         // Optional locale year-marker word before the year, e.g. VI "năm" in
         // "tháng 4 năm 1975". Empty for locales without one (English keeps its
         // built-in "of"), so this adds nothing to their patterns.
