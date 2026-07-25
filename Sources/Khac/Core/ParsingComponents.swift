@@ -86,24 +86,6 @@ public struct ParsingComponents {
         values.values.reduce(0) { $0 + ($1.certainty == .certain ? 1 : 0) }
     }
 
-    // MARK: Merge
-
-    /// A copy of self with the other set's values layered on top: other's
-    /// certain values become certain here; other's implied values fill only
-    /// components that are still implied here. Used by merge refiners.
-    public func merged(with other: ParsingComponents) -> ParsingComponents {
-        var result = self
-        for component in Component.allCases {
-            if other.isCertain(component), let v = other.get(component) {
-                result.certain(component, v)
-            } else if !result.isCertain(component), other.get(component) != nil,
-                      let v = other.get(component) {
-                result.imply(component, v)
-            }
-        }
-        return result
-    }
-
     // MARK: Resolution
 
     /// Resolve to a concrete Date using the reference calendar. A certain
