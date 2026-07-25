@@ -159,7 +159,7 @@ including negative UTC offsets.
 ## Results
 
 ```
-  swift test        194 tests, 0 failures, exit 0
+  swift test        204 tests, 0 failures, exit 0
   EN oracle         561 / 561 cases
   VI suite           88 tests
 ```
@@ -222,9 +222,14 @@ have the feature.
   shift and `Mai` is a common given name, and only capitalization separates them.
   `"chiều Mai đến"` is handled, but `"chiều mai đến"` is genuinely ambiguous to a
   native reader too, and resolves as a date.
-- **Prefer `interval` to building your own.** `interval` returns nil for a
-  malformed range, but a backwards `end` component can still be exported, and
-  `DateInterval(start:end:)` traps rather than failing when end precedes start.
+- **Always use `interval`, never build your own from `start` and `end`.**
+  `"August 22 - 10, 2012"` really does resolve to a range whose end precedes its
+  start, reported as written rather than silently reordered, because swapping the
+  sides would assert the writer meant August 10 to 22 - a guess about a typo.
+  chrono does the same, and in both libraries the range refiner repairs a
+  reversal while the month-name parser does not. `interval` returns nil for
+  exactly these, and that nil is the point: `DateInterval(start:end:)` TRAPS on
+  end < start, a Swift hazard with no equivalent in the JavaScript original.
 - **A malformed timestamp with month 13 can leave a stray time.**
   `"2023-13-01T10:00:00"` yields a spurious `00:00`. This behaviour is inherited
   from chrono.

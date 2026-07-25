@@ -10,6 +10,18 @@ public struct ParsedResult {
     /// Components of the (start) date.
     public var start: ParsingComponents
     /// Components of the end date, present for ranges.
+    ///
+    /// NOT guaranteed to resolve later than `start`. A backwards range is a real
+    /// reading of text like "August 22 - 10, 2012", and it is reported as written
+    /// rather than silently reordered - swapping the sides would assert the writer
+    /// meant August 10 to 22, which is a guess about a typo. chrono behaves the
+    /// same way at the same place, and the range REFINER repairs where the
+    /// month-name PARSER does not, in both libraries.
+    ///
+    /// So do not build an interval from `start` and `end` yourself:
+    /// `DateInterval(start:end:)` TRAPS when end precedes start, which is a Swift
+    /// hazard with no equivalent in the JavaScript original. Use `interval`, which
+    /// returns nil for exactly this case.
     public var end: ParsingComponents?
     /// Number of CERTAIN components across start and end. This is the FIRST
     /// overlap key - never summed with match length, since the units differ and
@@ -51,8 +63,12 @@ public struct ParsedResult {
     /// The resolved start date.
     public var date: Date { start.date() }
 
-    /// The resolved interval, or nil for a non-range result or a malformed range
-    /// where end precedes start (DateInterval traps on end < start).
+    /// The resolved interval, or nil for a non-range result or a backwards range.
+    ///
+    /// This is the ONLY safe way to turn a result into a `DateInterval`, and the
+    /// nil is load-bearing rather than defensive: `DateInterval(start:end:)` traps
+    /// on end < start, so a caller who builds one from `start` and `end` directly
+    /// crashes on input this returns nil for. See `end`.
     public var interval: DateInterval? {
         guard let end = end else { return nil }
         let s = start.date()
