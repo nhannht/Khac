@@ -74,7 +74,10 @@ final class TimezoneOffsetTests: XCTestCase {
     /// Pinned negatives. Word connectors are outside the guard entirely, and the
     /// bare-number rejections must keep rejecting.
     func testPinnedNegativesUnchanged() {
-        XCTAssertTrue(parse("2019 to 2020").allSatisfy { $0.start.get(.hour) == nil || $0.text != "2019 to 2020" })
+        // Two four-digit years are not a time range. Asserted directly rather than
+        // through a "no result claims the whole span" shape, which would have
+        // passed trivially on an empty parse and pinned nothing.
+        XCTAssertTrue(parse("2019 to 2020").isEmpty, "two years are not a time range")
         XCTAssertTrue(parse("10 - 10.1").isEmpty)
         XCTAssertTrue(parse("10.1 - 10.12").isEmpty)
         XCTAssertTrue(parse("1-2").isEmpty)
