@@ -79,7 +79,25 @@ struct TimeExpressionParser: Parser {
         // filter and the digits-only rule in UnlikelyFilterRefiner - so porting
         // the guard would add a branch that changes no output. If an input is ever
         // found where the two disagree, port it then, with that input as the test.
-        let notTimezoneOffset = "(?!\\s{0,3}[-\\u2013]\\s{0,3}[0-9]{3,4}(?![0-9]))"
+        // The guard must not fire on a genuine compact range end, and it did.
+        // "630-930am" has an offset's exact shape - hyphen, three digits, boundary
+        // - so the range was refused; then the abandoned first side, a bare
+        // three-digit number, was dropped by the lone-number filter, and the whole
+        // input degraded to "930am" alone. A silent wrong answer, losing "630-" and
+        // anything before it.
+        //
+        // A timezone offset is never followed by a meridiem word, so that is the
+        // discriminator. "-0500" still blocks the range; "-930am" no longer does.
+        // English never tested this shape, which is why it survived until the
+        // Spanish corpus ("lunes 4/29/2013 630-930am") hit it.
+        let offsetTodWords = Array(Set(
+            Array(context.locale.vocabulary.meridiem.keys)
+                + Array(context.locale.vocabulary.meridiemHourRules.keys)
+        ))
+        let notMeridiemAfter = regexAlternation(offsetTodWords)
+            .map { "(?!\\s{0,3}" + $0 + ")" } ?? ""
+        let notTimezoneOffset =
+            "(?!\\s{0,3}[-\\u2013]\\s{0,3}[0-9]{3,4}(?![0-9])" + notMeridiemAfter + ")"
 
         return makeRegex(
             "(?<![\\p{L}\\p{N}])" +
