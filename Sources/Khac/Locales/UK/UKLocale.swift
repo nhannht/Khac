@@ -14,23 +14,22 @@
 // one locale's data. Differences from Russian, where they matter, are called
 // out inline rather than repeating RULocale's comments wholesale.
 //
-// The prefix/suffix gaps reported under KHAC-6 have since landed centrally
-// and are wired below with Ukrainian's own words: dayReferencePrefixWords
-// (з/із/від), monthPrefixWords and bareMonthPrefixWords (в/у, split the same
-// way RU's are - see RULocale.swift's comment on why one shared field broke
-// English), dayOrdinalSuffixes (го/ого/е), yearSuffixWords, and
-// dayShiftPrefixes (минулого, the flat half of "минулого вечора").
+// Every gap reported under KHAC-6 has since landed centrally and is wired
+// below with Ukrainian's own words: dayReferencePrefixWords (з/із/від),
+// monthPrefixWords and bareMonthPrefixWords (в/у, split the same way RU's are
+// - see RULocale.swift's comment on why one shared field broke English),
+// dayOrdinalSuffixes (го/ого/е), yearSuffixWords, dayShiftPrefixes (минулого,
+// the flat half of "минулого вечора"), and options.elidesDurationCount
+// ("через тиждень" states no count word at all). elidesDurationCount hit the
+// EXACT SAME regression here that it hit on Russian - Ukrainian's own
+// 0-valued phrase modifiers ("цього", bare "минулого") collided with
+// RelativeUnitParser's modifierAlt through the identical mechanism, verified
+// independently on uk's own oracle rather than assumed from ru's result - and
+// main's scoping fix resolved it here too, re-verified after merging.
 //
-// Two gaps remain open, both in UKOracleTests's deferral list with the full
-// reason recorded at each case:
-//   - DurationExpression's glued-quantifier whitespace requirement blocks
-//     "півгодини" (half an hour, one word).
-//   - options.elidesDurationCount would read "через тиждень"-style elided
-//     counts correctly, but Ukrainian hits the EXACT SAME regression Russian
-//     does when it is turned on: its own 0-valued phrase modifiers ("цього",
-//     "минулого" bare) collide with RelativeUnitParser's modifierAlt through
-//     the same mechanism - see RULocale.swift's `options` comment for the
-//     full account. Left off here too, for the same reason.
+// One gap remains open, in UKOracleTests's deferral list with the full reason
+// recorded: DurationExpression's glued-quantifier whitespace requirement
+// blocks "півгодини" (half an hour, one word).
 
 import Foundation
 
@@ -155,15 +154,17 @@ public struct UKLocale: KhacLocale {
     // UkMonthNameLittleEndianCases's identical case to RU's), week starts
     // Monday (Foundation convention, Monday = 2).
     //
-    // elidesDurationCount is OFF, for the identical reason RULocale documents
-    // at length on its own `options`: Ukrainian ALSO has 0-valued phrase
-    // modifiers ("цього", bare "минулого"), and turning the flag on lets
-    // RelativeUnitParser's modifierAlt claim "цього тижня"-shaped text before
-    // bareModifierAlt gets a turn, then reject it for offset 0 with no
-    // fallback. Verified empirically here too, not assumed from ru's result -
-    // flipping the flag reproduces the same regression on uk's own oracle.
+    // elidesDurationCount is ON. It was found OFF first, for the identical
+    // reason RULocale's own `options` documents at length: Ukrainian ALSO has
+    // 0-valued phrase modifiers ("цього", bare "минулого"), and turning the
+    // flag on let RelativeUnitParser's modifierAlt claim "цього тижня"-shaped
+    // text before bareModifierAlt got a turn, then reject it for offset 0
+    // with no fallback - verified empirically on uk's own oracle, not assumed
+    // from ru's result. main's scoping fix (gate the elided alternative to
+    // the `abbreviations: true` fragment only) resolved this here too,
+    // re-verified after merging rather than assumed from the commit message.
     public var options: LocaleOptions {
-        LocaleOptions(dateOrder: .dayMonth, weekStart: 2, elidesDurationCount: false)
+        LocaleOptions(dateOrder: .dayMonth, weekStart: 2, elidesDurationCount: true)
     }
 
     /// Bespoke grammar the data tables cannot express - see UKParsers.swift.

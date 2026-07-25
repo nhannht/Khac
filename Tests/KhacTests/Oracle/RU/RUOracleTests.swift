@@ -121,22 +121,19 @@ final class RUOracleTests: XCTestCase {
 
     /// Cases individually deferred pending a specific engine gap reported to
     /// `main` (KHAC-6), keyed by input text (unique within ru's ported corpus).
-    /// Each reason names the exact missing capability. Six former deferrals
-    /// (dayReferencePrefixWords, monthPrefixWords, bareMonthPrefixWords,
-    /// dayOrdinalSuffixes, yearSuffixWords) are gone from this list because
-    /// the fields landed and RULocale now sets them - watched go green here
-    /// before removal, per main's instruction not to flip a deferral on faith.
+    /// Every deferral this list used to carry for a landed field is gone -
+    /// each was watched go green here before its removal, per main's
+    /// instruction not to flip a deferral on faith. That includes the three
+    /// elidesDurationCount cases: turning the flag on first regressed three
+    /// DIFFERENT cases through a DurationExpression scoping bug (see
+    /// RULocale.swift's `options` comment), main fixed the scope, and all six
+    /// cases (the three elided-count ones plus the three that had regressed)
+    /// now pass together.
     private let deferrals: [String: String] = [
         "полчаса назад что-то было":
             "KHAC-6 deferral: DurationExpression requires whitespace between a word-count and its unit; получаса/полчаса is glued with none (reported to main)",
         "через полчаса":
             "KHAC-6 deferral: same gap as \"полчаса назад\" - glued quantifier+unit",
-        "через неделю":
-            "KHAC-6 deferral: options.elidesDurationCount exists and would read this correctly on its own, but turning it on regresses \"на этой неделе\"/\"в этом месяце\"/\"в этом году\" (three DIFFERENT, previously-passing cases) through an interaction with RelativeUnitParser's modifierAlt - see RULocale.swift's `options` comment for the full mechanism. Left off until main scopes the elided alternative out of the modifier-prefixed duration fragment.",
-        "через месяц":
-            "KHAC-6 deferral: same gap as \"через неделю\" - elidesDurationCount regresses 3 other cases if turned on",
-        "будет сделано в течение минуты":
-            "KHAC-6 deferral: same gap as \"через неделю\" - elidesDurationCount regresses 3 other cases if turned on",
     ]
 
     /// Fails once per failing CASE, listing every reason that case failed.
@@ -173,11 +170,11 @@ final class RUOracleTests: XCTestCase {
 }
 
 /// The progress instrument, mirroring ENOracleScoreboardTests exactly. Passed
-/// count EXCLUDES the 5 deferred cases (they are expected failures, not
+/// count EXCLUDES the 2 deferred cases (they are expected failures, not
 /// passes) - raise `floor` whenever the real pass count goes up, never to
 /// paper over a regression.
 final class RUOracleScoreboardTests: XCTestCase {
-    static let floor = 126
+    static let floor = 129
 
     func testScoreboard() {
         let runner = RUOracleRunner()

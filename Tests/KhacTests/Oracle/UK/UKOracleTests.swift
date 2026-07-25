@@ -114,25 +114,18 @@ final class UKOracleTests: XCTestCase {
     private let runner = UKOracleRunner()
 
     /// Cases individually deferred pending a specific engine gap reported to
-    /// `main` (KHAC-6), keyed by input text. The prefix/suffix/ordinal-suffix
-    /// gaps this list used to carry are gone: the fields landed, UKLocale now
-    /// sets them, and each was watched go green here before its deferral was
-    /// removed - see RULocale.swift's header comment for the shared account.
-    /// The two gaps that remain are the same ones RU still carries, for the
-    /// same reasons, with uk's own words and case counts.
+    /// `main` (KHAC-6), keyed by input text. Every deferral this list used to
+    /// carry for a landed field is gone, including the four elidesDurationCount
+    /// cases - turning the flag on first regressed four DIFFERENT cases
+    /// through the same DurationExpression scoping bug RU hit, main fixed the
+    /// scope, and all eight cases (the four elided-count ones plus the four
+    /// that had regressed) now pass together. Each removal was watched go
+    /// green here first, per main's instruction not to flip on faith.
     private let deferrals: [String: String] = [
         "півгодини тому щось відбулось":
             "KHAC-6 deferral: DurationExpression requires whitespace between a word-count and its unit; півгодини is glued with none (reported to main)",
         "через півгодини":
             "KHAC-6 deferral: same gap as \"півгодини тому\" - glued quantifier+unit",
-        "через тиждень":
-            "KHAC-6 deferral: options.elidesDurationCount exists and would read this correctly on its own, but turning it on regresses \"на цьому тижні\"/\"у цьому місяці\"/\"цього місяця\"/\"у цьому році\" (four DIFFERENT, previously-passing cases) through the same RelativeUnitParser modifierAlt interaction ru hits - see RULocale.swift's `options` comment for the mechanism. Left off until main scopes the elided alternative out of the modifier-prefixed duration fragment.",
-        "через місяць":
-            "KHAC-6 deferral: same gap as \"через тиждень\" - elidesDurationCount regresses 4 other cases if turned on",
-        "через рік":
-            "KHAC-6 deferral: same gap as \"через тиждень\" - elidesDurationCount regresses 4 other cases if turned on",
-        "буде зроблено протягом хвилини":
-            "KHAC-6 deferral: same gap as \"через тиждень\" - elidesDurationCount regresses 4 other cases if turned on",
     ]
 
     private func run(_ cases: [OracleCase]) {
@@ -166,7 +159,7 @@ final class UKOracleTests: XCTestCase {
 
 /// The progress instrument, mirroring RUOracleScoreboardTests exactly.
 final class UKOracleScoreboardTests: XCTestCase {
-    static let floor = 125
+    static let floor = 129
 
     func testScoreboard() {
         let runner = UKOracleRunner()

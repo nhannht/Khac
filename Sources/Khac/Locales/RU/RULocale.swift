@@ -13,26 +13,23 @@
 // uses for its own spelling variants ("tháng 3"/"tháng ba" both -> 3). No
 // engine change needed for that part.
 //
-// Several engine gaps were found while building this locale and reported to
-// `main` under KHAC-6. Most have since landed centrally and are wired below:
+// Every engine gap found while building this locale was reported to `main`
+// under KHAC-6 and has since landed centrally, wired below:
 // dayReferencePrefixWords/monthPrefixWords/bareMonthPrefixWords (the missing
 // prefix hooks on CasualDateParser and MonthNameParser), dayOrdinalSuffixes
 // (the day-ordinal suffix that used to be hardcoded to English st/nd/rd/th),
 // yearSuffixWords (a trailing year marker - "2020 года" - where the engine
-// only had a LEADING one), and dayShiftPrefixes (a day shift written BEFORE
-// the time of day, "прошлым вечером" - the generic mirror of VI's suffix-form
-// dayShiftSuffixes).
+// only had a LEADING one), dayShiftPrefixes (a day shift written BEFORE the
+// time of day, "прошлым вечером" - the generic mirror of VI's suffix-form
+// dayShiftSuffixes), and options.elidesDurationCount ("через неделю" states no
+// count word at all). elidesDurationCount shipped once, caused a real
+// regression on THIS locale (see the long comment on `options` below), and
+// main landed a scoping fix for it - re-verified here, not assumed.
 //
-// Two gaps remain open, both in RUOracleTests's deferral list with the full
-// reason recorded at each case:
-//   - DurationExpression requires real whitespace between a word-count and
-//     its unit; Russian "получаса"/"полчаса" (half an hour) is ONE glued word
-//     with none.
-//   - options.elidesDurationCount exists and would fix "через неделю"-style
-//     elided counts, but turning it on regresses 3 different, previously
-//     passing cases through an interaction with RelativeUnitParser's
-//     modifierAlt - see the long comment on `options` below for the
-//     mechanism. Left off until that scoping fix lands.
+// One gap remains open, in RUOracleTests's deferral list with the full reason
+// recorded: DurationExpression requires real whitespace between a word-count
+// and its unit; Russian "получаса"/"полчаса" (half an hour) is ONE glued word
+// with none.
 //
 // Still NOT wired: `Vocabulary.dayShiftPrefixes` only covers a FLAT prefix
 // shift ("прошлым вечером" is always yesterday, no threshold). "прошлой ночью"
@@ -199,36 +196,21 @@ public struct RULocale: KhacLocale {
     // RuMonthNameLittleEndianCases's "10.08.2012" case), and the week starts
     // Monday (Foundation convention: 1 = Sunday ... 7 = Saturday, so Monday = 2).
     //
-    // elidesDurationCount is OFF, DESPITE ru needing exactly the reading it
-    // describes ("через неделю"/"через месяц" state no count word at all - not
-    // even an article the way English "a week" has one). Turning it on
-    // regresses three PREVIOUSLY PASSING cases: "на этой неделе"/"в этом
-    // месяце"/"в этом году" stop matching entirely. Measured, not assumed -
-    // flipping the flag alone reproduces both directions.
-    //
-    // The mechanism: RelativeUnitParser's modifierAlt ("next 3 weeks") builds
-    // its own duration fragment with `abbreviations: false`, and
-    // elidesDurationCount widens THAT fragment too, so "на этой" (modifier,
-    // offset 0) + the now-elided "неделе" matches modifierAlt BEFORE the
-    // engine ever tries bareModifierAlt. modifierAlt's own extraction then
-    // rejects offset 0 ("this 2 weeks" is not an expression anyone writes) and
-    // returns nil - and because the regex already committed to this
-    // alternative at this position, there is no second attempt at
-    // bareModifierAlt for the same span. The result is not a wrong answer, it
-    // is no answer, for a phrase that used to work.
-    //
-    // bareModifierAlt already owns the "modifier + bare unit, no count" shape
-    // correctly (offset 0 anchors the period, nonzero shifts it) - modifierAlt
-    // exists for a DIFFERENT shape, a modifier plus an EXPLICIT count greater
-    // than one. So the elided-count alternative never needed to reach
-    // modifierAlt at all; reported to main as a scoping fix (gate the elided
-    // branch out of the `abbreviations: false` fragment specifically), not
-    // something this locale file can express. Kept off here in the meantime -
-    // regressing 3 known-good cases to fix 3 different ones is not a net gain,
-    // and the 3 elided-count cases stay in RUOracleTests's deferral list with
-    // this reason recorded.
+    // elidesDurationCount is ON. It was found OFF first: turning it on
+    // regressed "на этой неделе"/"в этом месяце"/"в этом году" (three
+    // previously-passing cases) through an interaction with RelativeUnitParser's
+    // modifierAlt, which built its own duration fragment with the SAME elided
+    // alternative and claimed those spans before bareModifierAlt (which owns
+    // the "modifier + bare unit, no count" shape correctly) ever got a turn -
+    // reported to main as a scoping bug in DurationExpression, not something
+    // this locale file could fix. main landed the scope fix (gate the elided
+    // branch to the `abbreviations: true` fragment only, since that parameter
+    // already separates the two shapes DurationExpression serves) and all
+    // three "через неделю"-style cases now pass WITH the three previously-
+    // passing ones intact. Re-verified here, not assumed from the commit
+    // message.
     public var options: LocaleOptions {
-        LocaleOptions(dateOrder: .dayMonth, weekStart: 2, elidesDurationCount: false)
+        LocaleOptions(dateOrder: .dayMonth, weekStart: 2, elidesDurationCount: true)
     }
 
     /// Bespoke grammar the data tables cannot express - see RUParsers.swift.
