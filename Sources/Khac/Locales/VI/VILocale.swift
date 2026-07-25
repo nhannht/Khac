@@ -181,12 +181,11 @@ public struct VILocale: KhacLocale {
     public var patterns: PatternSet {
         PatternSet(
             timePrefixWords: ["lúc", "vào"],
-            // TODO(vi): "ngày" (optional marker before a bare day number, e.g.
-            // "ngày 15 tháng 3") does not clearly map to any existing PatternSet
-            // field - dateConnectorWords' doc example ("of" in "3rd of March")
-            // sits BETWEEN day and month, but "ngày" sits BEFORE the day number
-            // with no separate glue word before the month name. Left empty
-            // pending engine's answer rather than guessing wrong.
+            // ANSWERED: "ngày" needed its own field, not this one.
+            // dateConnectorWords sits BETWEEN day and month ("3rd of March"),
+            // whereas "ngày" sits BEFORE the day number - see dayMarkerWords
+            // below. VI has no between-day-and-month connector, so this stays
+            // empty.
             dateConnectorWords: [],
             clockHourWords: ["giờ"],
             clockMinuteWords: ["phút"],
@@ -217,7 +216,13 @@ public struct VILocale: KhacLocale {
             // "sau khi" is the conjunction "after [clause]", not the modifier
             // "sau" (next) plus an unrelated word. Without this, "thứ hai sau
             // khi chiến tranh kết thúc" reads as next Monday and swallows "sau".
-            weekdaySuffixExclusionWords: ["khi"]
+            weekdaySuffixExclusionWords: ["khi"],
+            // "ngày" marks a following bare day number ("ngày 15 tháng 3").
+            // Including it in the match keeps the reported span and index on the
+            // whole phrase, and its presence is what lets an invalid marked day
+            // ("ngày 0 tháng 4") reject outright instead of silently degrading
+            // to a bare "tháng 4" with the day dropped.
+            dayMarkerWords: ["ngày"]
         )
     }
 

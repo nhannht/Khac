@@ -202,6 +202,17 @@ public struct PatternSet {
     /// by a subordinate clause, not "next Monday". Only consulted by a locale
     /// with `weekdaySuffixModifier` enabled; empty elsewhere.
     public var weekdaySuffixExclusionWords: [String]
+    /// Optional marker word BEFORE a bare day number, e.g. Vietnamese "ngày" in
+    /// "ngày 15 tháng 3". Distinct from `dateConnectorWords`, which sits BETWEEN
+    /// day and month ("3rd of March").
+    ///
+    /// Consumed two ways, and it needs both to be correct. It is included in the
+    /// match span, so the result covers "ngày 15 tháng 3" rather than starting a
+    /// word late. And it SUPPRESSES a bare month-only match that follows a marked
+    /// but invalid day: "ngày 0 tháng 4" must produce nothing, where without the
+    /// suppression the rejected day leaves "tháng 4" to match on its own and the
+    /// day silently disappears instead of failing.
+    public var dayMarkerWords: [String]
 
     public init(
         timePrefixWords: [String] = [],
@@ -217,7 +228,8 @@ public struct PatternSet {
         weekdayPrefixWords: [String] = [],
         timeOfDayConnectorWords: [String] = [],
         yearMarkerWords: [String] = [],
-        weekdaySuffixExclusionWords: [String] = []
+        weekdaySuffixExclusionWords: [String] = [],
+        dayMarkerWords: [String] = []
     ) {
         self.timePrefixWords = timePrefixWords
         self.dateConnectorWords = dateConnectorWords
@@ -233,6 +245,7 @@ public struct PatternSet {
         self.timeOfDayConnectorWords = timeOfDayConnectorWords
         self.yearMarkerWords = yearMarkerWords
         self.weekdaySuffixExclusionWords = weekdaySuffixExclusionWords
+        self.dayMarkerWords = dayMarkerWords
     }
 }
 

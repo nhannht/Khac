@@ -31,8 +31,18 @@ struct YearParser: Parser {
         let era = WordTable(context.locale.vocabulary.eraMarkers).alternation
         // Optional leading marker word, present only for a locale that defines
         // one ("năm 1976"); English has none and relies on the era alone.
+        //
+        // A marked year is only STANDALONE when nothing before it makes it part
+        // of a larger date. After a month expression it is that month's year -
+        // "tháng 4 năm 1975" is April 1975, one date, and MonthNameParser owns
+        // it. Without this guard the year also surfaces on its own, which is
+        // invisible while MonthNameParser wins the overlap but becomes wrong the
+        // moment MonthNameParser correctly declines: "ngày 0 tháng 4 năm 2000"
+        // names an impossible day, so the whole phrase must produce nothing
+        // rather than degrade to a bare year 2000.
+        let notAfterMonth = "(?<!" + WordTable(context.locale.vocabulary.months).alternation + "\\s{0,3})"
         let markerPrefix = regexAlternation(context.locale.patterns.yearMarkerWords)
-            .map { "(?:(?<marker>" + $0 + ")\\s{0,3})?" } ?? ""
+            .map { "(?:" + notAfterMonth + "(?<marker>" + $0 + ")\\s{0,3})?" } ?? ""
         return makeRegex(
             boundaryBefore
                 + markerPrefix

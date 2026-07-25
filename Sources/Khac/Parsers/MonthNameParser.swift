@@ -37,8 +37,14 @@ struct MonthNameParser: Parser {
         let yearMarkerGroup = regexAlternation(context.locale.patterns.yearMarkerWords)
             .map { "(?:" + $0 + "\\s*)?" } ?? ""
 
+        // Optional marker word before the day number ("ngày 15"), included in the
+        // match so the reported span covers the whole phrase.
+        let dayMarker = regexAlternation(context.locale.patterns.dayMarkerWords)
+        let dayMarkerGroup = dayMarker.map { "(?:" + $0 + "\\s{0,3})?" } ?? ""
+
         let little =
             "(?:on\\s{0,3})?" +
+            dayMarkerGroup +
             "(?<lday>" + day + ")" +
             "(?:\\s{0,3}" + rangeConnector + "\\s{0,3}(?<lday2>" + day + "))?" +
             "(?:-|/|\\s{0,3}(?:of\\s{0,3})?)" +
@@ -59,7 +65,17 @@ struct MonthNameParser: Parser {
 
         // Month with an optional year, no day: "September 2012", "Sep. 2012",
         // "Sep-2012", "in June of 2022", "in August", "Aug 96".
+        //
+        // The lookbehind is what makes an invalid MARKED day fail instead of
+        // silently degrading. "ngày 0 tháng 4 năm 2000" rejects in the little
+        // branch (day 0), and the engine then resumes one character on and would
+        // happily match the bare "tháng 4 năm 2000", dropping the day the writer
+        // explicitly stated. Refusing a bare month that follows a marked day
+        // number means the whole phrase produces nothing, which is correct: the
+        // text named a day, and that day is not real.
+        let markedDayLookbehind = dayMarker.map { "(?<!" + $0 + "\\s{0,3}[0-9]{1,2}\\s{0,3})" } ?? ""
         let monthOnly =
+            markedDayLookbehind +
             "(?<omonth>" + months + ")" +
             "(?:(?:\\s*[.,/\\-]\\s*|\\s+)(?:of\\s+)?" + yearMarkerGroup + yearGroup(prefix: "o", context) + ")?"
 
