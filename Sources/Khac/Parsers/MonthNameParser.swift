@@ -92,8 +92,15 @@ struct MonthNameParser: Parser {
         // number means the whole phrase produces nothing, which is correct: the
         // text named a day, and that day is not real.
         let markedDayLookbehind = dayMarker.map { "(?<!" + $0 + "\\s{0,3}[0-9]{1,2}\\s{0,3})" } ?? ""
+        // Optional preposition consumed into the month-only match, e.g. Russian
+        // "в январе". Only this branch takes it: a month inside a full date gets
+        // its lead-in from the surrounding form, and admitting a preposition there
+        // too would let one match start before a day it does not contain.
+        let monthPrefix = regexAlternation(context.locale.patterns.monthPrefixWords)
+            .map { "(?:" + $0 + "\\s{1,3})?" } ?? ""
         let monthOnly =
             markedDayLookbehind +
+            monthPrefix +
             "(?<omonth>" + months + ")" +
             "(?:(?:\\s*[.,/\\-]\\s*|\\s+)(?:of\\s+)?" + yearMarkerGroup + yearGroup(prefix: "o", context) + ")?"
 

@@ -282,6 +282,19 @@ public struct PatternSet {
     /// is never matched, so the match starts at the weekday (e.g. Vietnamese
     /// "vào thứ hai" -> match text "thứ hai"). This is per-locale, not global.
     public var weekdayPrefixWords: [String]
+    /// Optional prepositions before a bare DAY REFERENCE that are part of the
+    /// match, e.g. Russian "с"/"со" and Ukrainian "з"/"із"/"від" ("с сегодня" ->
+    /// match text "с сегодня", per the RU oracle). Same rule as
+    /// `weekdayPrefixWords`: populate only when the locale's oracle puts the
+    /// preposition INSIDE the span, leave empty to have the match start at the day
+    /// word. English and Vietnamese leave it empty.
+    public var dayReferencePrefixWords: [String]
+    /// Optional prepositions before a bare MONTH NAME that are part of the match,
+    /// e.g. Russian "в" and Ukrainian "в"/"у" ("в январе" -> match text "в
+    /// январе"). Applies to the month-only reading, with or without a trailing
+    /// year; a month sitting in a full date takes its prefix from the surrounding
+    /// form instead. Empty for English and Vietnamese.
+    public var monthPrefixWords: [String]
     /// Connectors between a numeric hour and a TRAILING time-of-day word, e.g.
     /// English "at" ("8 at night") and "in the" ("3 in the afternoon"). May be
     /// multi-word (internal spaces match any whitespace run). Leave EMPTY for a
@@ -345,6 +358,8 @@ public struct PatternSet {
         rangeConnectorWords: [String] = [],
         nowWords: [String] = [],
         weekdayPrefixWords: [String] = [],
+        dayReferencePrefixWords: [String] = [],
+        monthPrefixWords: [String] = [],
         timeOfDayConnectorWords: [String] = [],
         yearMarkerWords: [String] = [],
         weekdaySuffixExclusionWords: [String] = [],
@@ -365,6 +380,8 @@ public struct PatternSet {
         self.rangeConnectorWords = rangeConnectorWords
         self.nowWords = nowWords
         self.weekdayPrefixWords = weekdayPrefixWords
+        self.dayReferencePrefixWords = dayReferencePrefixWords
+        self.monthPrefixWords = monthPrefixWords
         self.timeOfDayConnectorWords = timeOfDayConnectorWords
         self.yearMarkerWords = yearMarkerWords
         self.weekdaySuffixExclusionWords = weekdaySuffixExclusionWords

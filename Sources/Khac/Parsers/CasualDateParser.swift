@@ -40,6 +40,12 @@ struct CasualDateParser: Parser {
             .map { "(?:" + $0 + "\\s{0,3})?" } ?? ""
         let timesOfDay = WordTable(vocab.timeOfDay).alternation
         let now = regexAlternation(context.locale.patterns.nowWords) ?? "(?!)"
+        // Optional preposition consumed INTO a bare day-reference match, e.g.
+        // Russian "с сегодня". Sits outside the capture group for the same reason
+        // todPrefix does: the group must hold only the word looked up in the
+        // vocabulary, while the span covers the phrase the oracle asserts.
+        let drefPrefix = regexAlternation(context.locale.patterns.dayReferencePrefixWords)
+            .map { "(?:" + $0 + "\\s{1,3})?" } ?? ""
         // A day-shift word is the locale's day reference in SUFFIX position:
         // Vietnamese "sáng mai" is "sáng" (the clock) plus "mai" (the day). It
         // matches ON ITS OWN, behind a LOOKBEHIND for the time-of-day word, and
@@ -91,7 +97,7 @@ struct CasualDateParser: Parser {
         var alternatives = [
             "(?<nowg>" + now + ")",
             "(?<anchor>" + anchors + ")\\s{0,3}" + todPrefix + "(?<atod>" + timesOfDay + ")",
-            "(?<dref>" + dayRefs + ")",
+            drefPrefix + "(?<dref>" + dayRefs + ")",
             todPrefix + "(?<btod>" + timesOfDay + ")",
         ]
         if !dayShift.isEmpty {
