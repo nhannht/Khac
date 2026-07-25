@@ -5,6 +5,9 @@ code, only the facts a reference implementation's own tests assert (input text,
 reference date, expected date/components). See the root `NOTICE` for the
 project-wide prior-art credit.
 
+`OracleTypes.swift` sits here rather than under `EN/` because every locale's
+tables share it.
+
 ## EN/
 
 Ported from [wanasit/chrono](https://github.com/wanasit/chrono) (MIT), the
@@ -58,3 +61,66 @@ evaluates the JS `Date(...)` arguments, and emits the Swift literals above. If
 chrono's EN suite changes and a re-port is wanted, re-derive the same way rather
 than hand-editing the generated files (they are marked `GENERATED FILE` at the
 top).
+
+## The other 12 locales
+
+Ported from wanasit/chrono v2.10.1 (MIT), `test/<ll>/**/*.test.ts`, the same
+CASE-DATA-ONLY basis as EN. 1,427 of 1,450 source cases ported, 23 excluded and
+individually accounted for below.
+
+| dir | chrono test files | cases seen | ported | excluded |
+|---|---|---|---|---|
+| `DE/` | 8 | 124 | 124 | 0 |
+| `ES/` | 5 | 75 | 75 | 0 |
+| `FI/` | 8 | 77 | 77 | 0 |
+| `FR/` | 8 | 154 | 154 | 0 |
+| `IT/` | 20 | 168 | 168 | 0 |
+| `JA/` | 5 | 84 | 84 | 0 |
+| `NL/` | 11 | 221 | 214 | 7 |
+| `PT/` | 4 | 60 | 60 | 0 |
+| `RU/` | 9 | 133 | 131 | 2 |
+| `SV/` | 4 | 41 | 41 | 0 |
+| `UK/` | 9 | 131 | 131 | 0 |
+| `ZH/` | 13 | 182 | 168 | 14 |
+
+`ZH/` covers both scripts chrono ships, `zh.hans` and `zh.hant`, kept as separate
+tables (`zhHans*Cases`, `zhHant*Cases`) so a Simplified-versus-Traditional
+difference stays visible instead of averaging into one number.
+
+Each directory carries an `extraction-report.json` naming every excluded case and
+its reason, so the counts above are checkable rather than asserted.
+
+### How the port derives its values
+
+A case has two halves, and they come from different places deliberately.
+
+- WHICH facts a case claims comes from a static scan of the source test's
+  callback. Only fields the source asserts are ported, so an unset field means
+  "the source made no claim" - the same rule EN's tables follow. Commented-out
+  `expect` lines are stripped first; chrono's suites hold 96 of them, and porting
+  those would invent claims the reference never makes.
+- WHAT those facts are comes from running chrono itself on the case's input,
+  reference, and options.
+
+The second half is sound because chrono's suite is green at the pinned revision
+and contains no skipped tests: for any field a passing test asserts, chrono's
+actual value IS the asserted value. Every plain integer literal in a callback is
+then compared against what chrono returned, and a case is dropped rather than
+emitted if the two disagree - a disagreement means an assumption failed, not that
+a value should be invented.
+
+### The 23 exclusions
+
+- **6** - `ZH` weekday cases whose input is a variable rather than a string
+  literal. Recoverable by resolving the variable; deferred, not impossible.
+- **7** - the source test asserted nothing portable: a `.toContain()` style check
+  with no component assertions. Same category as 4 of EN's exclusions.
+- **4** - `NL` cases that run chrono's DEFAULT parser, which is English, from a
+  file inside `test/nl/`. They are English cases by construction and porting them
+  as Dutch would be wrong.
+- **2** - `ZH` cases whose reference is a bare `new Date()`, meaning the real
+  "now". No fixed reference can reproduce them.
+- **2** - `NL` cases whose reference is a variable rather than a literal.
+- **2** - `RU` cases using chrono's `ParsingReference` or timezone-option form,
+  which this port does not model - the same reason EN excluded its 5
+  timezone-abbreviation cases.
