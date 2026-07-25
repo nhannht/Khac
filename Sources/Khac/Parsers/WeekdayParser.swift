@@ -24,8 +24,18 @@ struct WeekdayParser: Parser {
         // Third modifier position: a modifier suffixed directly to the weekday,
         // no week-word ("thứ hai tới"). Only when the locale enables it, so
         // prefix-style locales (English) are unchanged.
+        //
+        // The exclusion guard sits INSIDE the optional group, which is what makes
+        // it degrade correctly: Vietnamese "sau khi" is the conjunction "after
+        // [clause]", not the modifier "sau" (next) followed by an unrelated word,
+        // so "thứ hai sau khi chiến tranh kết thúc" must match "thứ hai" alone.
+        // With the lookahead inside, a failed guard collapses the whole optional
+        // group to zero-width and the bare weekday still matches; placing it
+        // after the group would instead reject the weekday outright.
+        let suffixExclusion = regexAlternation(context.locale.patterns.weekdaySuffixExclusionWords)
+            .map { "(?!\\s+" + $0 + "(?![\\p{L}\\p{N}_]))" } ?? ""
         let suffixGroup = context.locale.options.weekdaySuffixModifier
-            ? "(?:\\s+(?<suffix>" + modifiers + "))?"
+            ? "(?:\\s+(?<suffix>" + modifiers + ")" + suffixExclusion + ")?"
             : ""
 
         return makeRegex(
@@ -44,6 +54,10 @@ struct WeekdayParser: Parser {
         let vocab = context.locale.vocabulary
         let weekdays = WordTable(vocab.weekdays)
         guard let target = weekdays.value(for: match.string(named: "wd") ?? "") else { return nil }
+
+        // A bare weekday names no calendar date on its own, so strict mode
+        // rejects it, matching the other parsers' gate.
+        guard context.options.mode != .strict else { return nil }
 
         let modifiers = WordTable(vocab.relativeModifiers)
         var modifier: Weekday.Modifier? = nil

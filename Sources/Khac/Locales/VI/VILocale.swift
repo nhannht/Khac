@@ -213,7 +213,11 @@ public struct VILocale: KhacLocale {
             // against chrono's real VIMonthYearParser.ts/VIYearParser.ts -
             // "năm" is unconditionally sufficient in both roles; TCN only
             // gates the fully-bare digit form ("179 TCN" with no "năm").
-            yearMarkerWords: ["năm"]
+            yearMarkerWords: ["năm"],
+            // "sau khi" is the conjunction "after [clause]", not the modifier
+            // "sau" (next) plus an unrelated word. Without this, "thứ hai sau
+            // khi chiến tranh kết thúc" reads as next Monday and swallows "sau".
+            weekdaySuffixExclusionWords: ["khi"]
         )
     }
 

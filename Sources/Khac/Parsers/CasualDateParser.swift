@@ -46,6 +46,11 @@ struct CasualDateParser: Parser {
     }
 
     func extract(_ context: ParsingContext, _ match: TextMatch) -> ParserResult? {
+        // Strict mode wants complete, explicit dates. Every word this parser
+        // knows is casual by definition, so none of them survive it. Same gate
+        // TimeExpressionParser and MonthNameParser already apply.
+        guard context.options.mode != .strict else { return nil }
+
         var comps = context.createParsingComponents()
 
         // "now": full precision, all certain.

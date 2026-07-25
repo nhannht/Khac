@@ -196,6 +196,12 @@ public struct PatternSet {
     /// with no such word - English "of" ("June of 2022") stays built into the
     /// month parser and is NOT driven by this field.
     public var yearMarkerWords: [String]
+    /// Words that must NOT follow a weekday's suffix modifier, because together
+    /// they form a different construction. Vietnamese "sau khi" is the
+    /// conjunction "after [clause]", so "thứ hai sau khi ..." is Monday followed
+    /// by a subordinate clause, not "next Monday". Only consulted by a locale
+    /// with `weekdaySuffixModifier` enabled; empty elsewhere.
+    public var weekdaySuffixExclusionWords: [String]
 
     public init(
         timePrefixWords: [String] = [],
@@ -210,7 +216,8 @@ public struct PatternSet {
         nowWords: [String] = [],
         weekdayPrefixWords: [String] = [],
         timeOfDayConnectorWords: [String] = [],
-        yearMarkerWords: [String] = []
+        yearMarkerWords: [String] = [],
+        weekdaySuffixExclusionWords: [String] = []
     ) {
         self.timePrefixWords = timePrefixWords
         self.dateConnectorWords = dateConnectorWords
@@ -225,6 +232,7 @@ public struct PatternSet {
         self.weekdayPrefixWords = weekdayPrefixWords
         self.timeOfDayConnectorWords = timeOfDayConnectorWords
         self.yearMarkerWords = yearMarkerWords
+        self.weekdaySuffixExclusionWords = weekdaySuffixExclusionWords
     }
 }
 
