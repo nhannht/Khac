@@ -213,6 +213,14 @@ public struct PatternSet {
     /// suppression the rejected day leaves "tháng 4" to match on its own and the
     /// day silently disappears instead of failing.
     public var dayMarkerWords: [String]
+    /// Optional particle BEFORE a time-of-day word, e.g. Vietnamese "buổi" in
+    /// "buổi sáng" (the morning). The mirror image of
+    /// `timeOfDayConnectorWords`, which follows a numeric hour instead.
+    ///
+    /// Consumed as part of the time-of-day token, so a day anchor and the time
+    /// stay ONE match: without it "hôm nay buổi sáng" splits into "hôm nay" and
+    /// "sáng" with an unconsumed word between them, and nothing can rejoin them.
+    public var timeOfDayPrefixWords: [String]
 
     public init(
         timePrefixWords: [String] = [],
@@ -229,7 +237,8 @@ public struct PatternSet {
         timeOfDayConnectorWords: [String] = [],
         yearMarkerWords: [String] = [],
         weekdaySuffixExclusionWords: [String] = [],
-        dayMarkerWords: [String] = []
+        dayMarkerWords: [String] = [],
+        timeOfDayPrefixWords: [String] = []
     ) {
         self.timePrefixWords = timePrefixWords
         self.dateConnectorWords = dateConnectorWords
@@ -246,6 +255,7 @@ public struct PatternSet {
         self.yearMarkerWords = yearMarkerWords
         self.weekdaySuffixExclusionWords = weekdaySuffixExclusionWords
         self.dayMarkerWords = dayMarkerWords
+        self.timeOfDayPrefixWords = timeOfDayPrefixWords
     }
 }
 

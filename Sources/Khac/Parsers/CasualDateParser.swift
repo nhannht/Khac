@@ -29,17 +29,25 @@ struct CasualDateParser: Parser {
         let vocab = context.locale.vocabulary
         let dayRefs = WordTable(vocab.dayReferences).alternation
         let anchors = WordTable(anchorOffsets(context)).alternation
+        // An optional particle before the time-of-day word ("buổi sáng"), part of
+        // the token itself so the match covers it and an anchored phrase stays
+        // one result. Empty for locales without one.
+        let todPrefix = regexAlternation(context.locale.patterns.timeOfDayPrefixWords)
+            .map { "(?:" + $0 + "\\s{0,3})?" } ?? ""
         let timesOfDay = WordTable(vocab.timeOfDay).alternation
         let now = regexAlternation(context.locale.patterns.nowWords) ?? "(?!)"
 
         // Order matters: NSRegularExpression takes the first matching alternative
         // at a position, so the day-anchored time-of-day combo must precede the
         // bare day reference, which must precede the bare time of day.
+        // The prefix sits OUTSIDE the capture group: it is consumed into the
+        // match span, but the group must hold only the time-of-day word itself,
+        // since that is what gets looked up in the vocabulary.
         let body = [
             "(?<nowg>" + now + ")",
-            "(?<anchor>" + anchors + ")\\s{0,3}(?<atod>" + timesOfDay + ")",
+            "(?<anchor>" + anchors + ")\\s{0,3}" + todPrefix + "(?<atod>" + timesOfDay + ")",
             "(?<dref>" + dayRefs + ")",
-            "(?<btod>" + timesOfDay + ")",
+            todPrefix + "(?<btod>" + timesOfDay + ")",
         ].joined(separator: "|")
 
         return makeRegex(boundaryBefore + "(?:" + body + ")" + boundaryAfter)

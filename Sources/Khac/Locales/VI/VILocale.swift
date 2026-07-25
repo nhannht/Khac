@@ -222,7 +222,12 @@ public struct VILocale: KhacLocale {
             // whole phrase, and its presence is what lets an invalid marked day
             // ("ngày 0 tháng 4") reject outright instead of silently degrading
             // to a bare "tháng 4" with the day dropped.
-            dayMarkerWords: ["ngày"]
+            dayMarkerWords: ["ngày"],
+            // "buổi" is the period-of-day particle: "buổi sáng" is the morning.
+            // It must be consumed as part of the time-of-day token, or a day
+            // anchor and the time split into two results with an unmatched word
+            // stranded between them ("hôm nay buổi sáng").
+            timeOfDayPrefixWords: ["buổi"]
         )
     }
 
