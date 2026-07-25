@@ -143,7 +143,7 @@ private extension ENLocale {
         "day": .day, "days": .day,
         "week": .weekOfYear, "weeks": .weekOfYear,
         "month": .month, "months": .month,
-        "quarter": .quarter, "quarters": .quarter,
+        "quarter": .quarter, "quarters": .quarter, "qtr": .quarter,
         "year": .year, "years": .year,
     ]
 
@@ -156,8 +156,13 @@ private extension ENLocale {
     /// "previous" (as a "last" synonym) are NOT in chrono's source at all -
     /// KHAC'S OWN EXTENSION, safe unambiguous standard English, not oracle- or
     /// source-backed.
+    /// "after this" is source-confirmed: chrono's ENRelativeDateFormatParser
+    /// pattern is `(this|last|past|next|after\s*this)` and routes anything
+    /// starting with "after" through the SAME branch as "next", so "after this
+    /// year" is next year, NOT this year anchored to its start. Listed as its own
+    /// key so the longest-match ordering picks it over bare "this".
     static let relativeModifiers: [String: Int] = [
-        "next": 1, "coming": 1,
+        "next": 1, "coming": 1, "after this": 1,
         "last": -1, "past": -1, "previous": -1,
         "this": 0,
     ]

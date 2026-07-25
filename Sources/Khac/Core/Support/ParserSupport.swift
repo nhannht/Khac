@@ -90,6 +90,23 @@ extension ParsingComponents {
         certain(.day, c.day ?? 0)
     }
 
+    /// Imply the full date AND clock from an absolute Date. Used by relative
+    /// shifts, where every field of the result comes from the shifted instant and
+    /// none of them was explicitly stated. Millisecond is included: the reference
+    /// can carry one, and dropping it silently moves the resolved instant.
+    mutating func implyAll(from date: Date, calendar: Calendar) {
+        let c = calendar.dateComponents(
+            [.year, .month, .day, .hour, .minute, .second, .nanosecond], from: date
+        )
+        imply(.year, c.year ?? 0)
+        imply(.month, c.month ?? 0)
+        imply(.day, c.day ?? 0)
+        imply(.hour, c.hour ?? 0)
+        imply(.minute, c.minute ?? 0)
+        imply(.second, c.second ?? 0)
+        imply(.millisecond, ParsingComponents.milliseconds(fromNanoseconds: c.nanosecond ?? 0))
+    }
+
     /// Imply a calendar date (year/month/day) from an absolute Date. Used where
     /// chrono treats the date as implied (e.g. a bare weekday), overriding the
     /// reference values seeded at construction.

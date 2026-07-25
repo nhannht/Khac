@@ -34,8 +34,27 @@ struct RelativeUnitParser: Parser {
         let futurePrefixAlt =
             "(?<fpfx>" + futurePrefix + ")\\s*(?<fpn>" + number + ")\\s*(?<fpunit>" + units + ")"
 
+        // Bare modifier plus unit, NO count: "next week", "last month", "this
+        // year", Vietnamese "tuần này", "tháng trước". Both word orders are
+        // accepted because the modifier is postnominal in Vietnamese and
+        // prenominal in English; neither locale's oracle contains an expression
+        // where the other order means something else. Listed last so a counted
+        // form ("next 2 weeks") is never captured here by mistake - that shape
+        // needs a count and falls through to the counted branches.
+        let modifiers = WordTable(vocab.relativeModifiers).alternation
+        // A unit word followed by digits is the head of a larger token, not a
+        // bare unit: Vietnamese "tháng" is the word for month, but "tháng 5" is
+        // May. Without this guard, the range "tháng 3 tới tháng 5" has its
+        // connector "tới" (which is ALSO a modifier) glued to the following
+        // "tháng" and read as "next month", destroying the range.
+        let notPartOfNumberedToken = "(?!\\s{0,3}[0-9])"
+        let bareModifierAlt =
+            "(?:(?<bmod>" + modifiers + ")\\s{0,3}(?<bunit>" + units + ")" + notPartOfNumberedToken +
+            "|(?<bunit2>" + units + ")" + notPartOfNumberedToken + "\\s{0,3}(?<bmod2>" + modifiers + "))"
+
         return makeRegex(
-            boundaryBefore + "(?:" + pastAlt + "|" + futureSuffixAlt + "|" + futurePrefixAlt + ")" + boundaryAfter
+            boundaryBefore + "(?:" + pastAlt + "|" + futureSuffixAlt + "|" + futurePrefixAlt
+                + "|" + bareModifierAlt + ")" + boundaryAfter
         )
     }
 
@@ -43,6 +62,19 @@ struct RelativeUnitParser: Parser {
         let vocab = context.locale.vocabulary
         let units = WordTable(vocab.timeUnits)
         let integers = WordTable(vocab.integerWords)
+
+        // Bare modifier plus unit, no count. Casual by nature - "next week" names
+        // no explicit date - so strict mode rejects it, unlike the counted forms.
+        if let unitText = match.string(named: "bunit") ?? match.string(named: "bunit2"),
+           let modText = match.string(named: "bmod") ?? match.string(named: "bmod2") {
+            guard context.options.mode != .strict else { return nil }
+            guard let component = units.value(for: unitText),
+                  let offset = WordTable(vocab.relativeModifiers).value(for: modText) else { return nil }
+            guard let comps = currentOrShiftedPeriod(component: component, offset: offset, context: context) else {
+                return nil
+            }
+            return .components(comps)
+        }
 
         let numberText: String?
         let unitText: String?
@@ -63,19 +95,67 @@ struct RelativeUnitParser: Parser {
         guard let component = units.value(for: unitText) else { return nil }
 
         let calendar = context.reference.calendar
-        guard let target = calendar.date(byAdding: component, value: sign * count, to: context.reference.instant) else {
+        let shift = Self.shiftable(component, sign * count)
+        guard let target = calendar.date(byAdding: shift.component, value: shift.value, to: context.reference.instant) else {
             return nil
         }
 
         var comps = context.createParsingComponents()
-        let c = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: target)
-        comps.imply(.year, c.year ?? 0)
-        comps.imply(.month, c.month ?? 0)
-        comps.imply(.day, c.day ?? 0)
-        comps.imply(.hour, c.hour ?? 0)
-        comps.imply(.minute, c.minute ?? 0)
-        comps.imply(.second, c.second ?? 0)
+        comps.implyAll(from: target, calendar: calendar)
         return .components(comps)
+    }
+
+    /// Resolve a bare "modifier + unit" expression.
+    ///
+    /// A nonzero offset is plain calendar arithmetic that keeps every other
+    /// field: "next year" from the 22nd is the 22nd of next year, not January 1.
+    ///
+    /// Offset zero means THIS period, which is a different operation - it anchors
+    /// to the period's start rather than shifting. "this month" is the 1st, and
+    /// "this year" is January 1, with the named unit certain because the text
+    /// stated it. A week is deliberately left unanchored: chrono's source rolls
+    /// back to the week's start, but its own EN case for "this week" uses a
+    /// Sunday reference, where rolling back is a no-op and so proves nothing,
+    /// while Khac's VI case for "tuần này" asserts the day does NOT move. Leaving
+    /// it unanchored satisfies both. Revisit only if a case actually discriminates.
+    private func currentOrShiftedPeriod(
+        component: Calendar.Component,
+        offset: Int,
+        context: ParsingContext
+    ) -> ParsingComponents? {
+        let calendar = context.reference.calendar
+        var comps = context.createParsingComponents()
+
+        guard offset != 0 else {
+            let reference = context.reference.brokenDown
+            switch component {
+            case .month:
+                comps.certain(.year, reference.year ?? 0)
+                comps.certain(.month, reference.month ?? 1)
+                comps.imply(.day, 1)
+            case .year:
+                comps.certain(.year, reference.year ?? 0)
+                comps.imply(.month, 1)
+                comps.imply(.day, 1)
+            default:
+                break
+            }
+            return comps
+        }
+
+        let shift = Self.shiftable(component, offset)
+        guard let target = calendar.date(byAdding: shift.component, value: shift.value, to: context.reference.instant) else {
+            return nil
+        }
+        comps.implyAll(from: target, calendar: calendar)
+        return comps
+    }
+
+    /// Foundation's Calendar does not shift by `.quarter` - adding one leaves the
+    /// date untouched - so express a quarter as three months. Everything else
+    /// passes through unchanged.
+    static func shiftable(_ component: Calendar.Component, _ value: Int) -> (component: Calendar.Component, value: Int) {
+        component == .quarter ? (.month, value * 3) : (component, value)
     }
 
     private func parseNumber(_ text: String, integers: WordTable<Int>) -> Int? {
