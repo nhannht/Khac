@@ -313,7 +313,20 @@ enum DurationExpression {
         // Opt-in per locale, because a bare unit word is otherwise a duration, and
         // English "week" or "month" alone would silently become one with no oracle
         // case to catch it.
-        let elided = context.locale.options.elidesDurationCount ? "|(?:" + units + ")" : ""
+        // Only in the abbreviation-accepting fragment. That parameter already
+        // separates the two shapes this helper serves, and the elided form belongs
+        // to just one of them.
+        //
+        // Widening both broke seven previously-passing Slavic cases. RelativeUnitParser's
+        // modifierAlt builds its fragment with `abbreviations: false` for the
+        // modifier-plus-explicit-count shape ("last eight minutes"); with a bare
+        // unit admitted there, a zero-valued phrase modifier plus the unit
+        // ("на этой неделе") matched modifierAlt FIRST, its extraction then rejected
+        // offset 0 because "this 2 weeks" is not a phrase, and the regex had already
+        // committed to that alternative - so bareModifierAlt, which owns that shape
+        // correctly, never got a second attempt at the same span.
+        let elided = (context.locale.options.elidesDurationCount && abbreviations)
+            ? "|(?:" + units + ")" : ""
         return (filler, "[0-9]{1,4}(?:\\.[0-9]{1,3})?", quantifiers + "|" + integers, units, elided)
     }
 }
