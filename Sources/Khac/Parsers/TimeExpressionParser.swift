@@ -41,11 +41,36 @@ struct TimeExpressionParser: Parser {
             .map { $0 + "|" } ?? ""
         let rangeConnector = "\\s{0,3}(?:" + connectorWords + "\\-|\\u2013)\\s{0,3}"
 
+        // A trailing signed 3-4 digit run is a TIMEZONE OFFSET, not the end of a
+        // range: "06:36:02 -0500" is one time in one zone, not 06:36:02 to 05:00.
+        // Without this the dash is eaten as a range connector, the bare "0500"
+        // fails the >24 check in passesLoneNumberFilters, and that filter voids
+        // the WHOLE match - so the time AND the offset are both lost and only the
+        // date survives. Declining the range here leaves the primary intact for
+        // ExtractTimezoneOffsetRefiner to claim the offset from.
+        //
+        // chrono does the same thing at the same point, guarding the following
+        // match before it attaches the range (AbstractTimeExpressionParser,
+        // `followingMatch[0].match(/^\s*([+-])\s*\d{3,4}$/)` -> return the primary
+        // alone). The digit count is what keeps it surgical: a real bare-number
+        // range end is 1-2 digits ("8 - 11pm", "1pm-3", "10 - 20"), a zone offset
+        // is 3-4. Only the sign forms are excluded, so word connectors
+        // ("2019 to 2020") are untouched.
+        //
+        // It sits INSIDE the optional range group, and that placement is load
+        // bearing rather than stylistic. Outside the group, a failed guard fails
+        // the whole alternative and the engine BACKTRACKS the primary side to a
+        // shorter reading that satisfies it - "06:36:02 -0500" then matched as
+        // "06:36", silently dropping the seconds, with nothing in the suite
+        // covering that shape. Inside the group, a failed guard just skips the
+        // group and the primary is never shortened.
+        let notTimezoneOffset = "(?!\\s{0,3}[-\\u2013]\\s{0,3}[0-9]{3,4}(?![0-9]))"
+
         return makeRegex(
             "(?<![\\p{L}\\p{N}])" +
             prefixGroup +
             side(context, "") +
-            "(?:" + rangeConnector + side(context, "2") + ")?" +
+            "(?:" + notTimezoneOffset + rangeConnector + side(context, "2") + ")?" +
             "(?!/)(?=[^\\p{L}\\p{N}_]|$)"
         )
     }

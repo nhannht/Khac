@@ -36,18 +36,20 @@ final class ISORejectionTests: XCTestCase {
         )
     }
 
-    /// KNOWN FAILING, tracked as KHAC-9 with the cause in KHAC-8. Asserted rather
-    /// than omitted, so it stays visible and reports the moment it starts passing.
+    /// KNOWN FAILING, tracked as KHAC-9. Asserted rather than omitted, so it stays
+    /// visible and reports the moment it starts passing.
     ///
     /// Month 0 must fall through rather than be consumed - the same rule that
     /// keeps "2023-13-01" reading as 13 January - so this input still reaches the
-    /// scavenging path. What it scavenges is KHAC-8's bug, not this one: "00-10"
-    /// is read as the bare time "00" carrying a "-10" TIMEZONE OFFSET, giving
-    /// tzOffset -600, plus a second spurious "00:00". Fixing the sign handling in
-    /// the time parser is what closes this, and doing it here instead would mean
-    /// special-casing month 0 to paper over an unrelated defect.
+    /// scavenging path. What it hits there is a DIFFERENT defect from the one the
+    /// negative-offset guard fixed: "00-10" is read as the bare time "00" carrying
+    /// a "-10" hour-only timezone offset, giving tzOffset -600, plus a second
+    /// spurious "00:00". The guard covers 3-4 digit offsets like "-0500"; a 1-2
+    /// digit signed run after a bare number is still claimed as an offset.
+    ///
+    /// Special-casing month 0 here would paper over that rather than fix it.
     func testImpossibleMonthInISOTimestampYieldsNothing() {
-        XCTExpectFailure("KHAC-9 residual: blocked on KHAC-8's negative-offset handling")
+        XCTExpectFailure("KHAC-9 residual: a 1-2 digit signed run is still read as an hour offset")
         XCTAssertTrue(parse("2023-00-10T10:00:00").isEmpty)
     }
 
@@ -86,13 +88,22 @@ final class ISORejectionTests: XCTestCase {
         XCTAssertTrue(parse("2023-02-29").isEmpty)
     }
 
-    /// A timezone offset outside the real -12:00 to +14:00 range used to be stored
-    /// as a CERTAIN component while resolution silently ignored it, since
-    /// Foundation returns no zone for an out-of-range offset. The reported
-    /// component and the resolved instant then disagreed.
-    func testOutOfRangeTimezoneOffsetIsRejected() {
-        XCTAssertTrue(parse("2023-11-06T06:36:02+19:00").isEmpty)
-        XCTAssertTrue(parse("2023-11-06T06:36:02-15:00").isEmpty)
+    /// An impossible offset used to be stored as a CERTAIN component while
+    /// resolution silently ignored it, since Foundation returns no zone past its
+    /// 18-hour limit - so the reported component and the resolved instant
+    /// disagreed with each other.
+    ///
+    /// The offset is DROPPED and the timestamp KEPT. The date and clock are
+    /// perfectly good when only the zone is junk, and this matches what
+    /// ExtractTimezoneOffsetRefiner already did, so the two paths agree.
+    func testOutOfRangeTimezoneOffsetIsDroppedNotFatal() {
+        for text in ["2023-11-06T06:36:02+19:00", "2023-11-06T06:36:02-15:00", "2023-11-06T06:36:02+05:99"] {
+            let r = parse(text).first
+            XCTAssertNotNil(r, "\(text) still states a valid date and clock")
+            XCTAssertNil(r?.start.get(.timezoneOffset), "\(text) has no usable zone")
+            XCTAssertEqual(r?.start.get(.hour), 6)
+            XCTAssertEqual(r?.start.get(.second), 2)
+        }
     }
 
     /// The real extremes must still parse, including the fractional-hour zones.

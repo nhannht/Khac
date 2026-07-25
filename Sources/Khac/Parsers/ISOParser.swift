@@ -62,7 +62,21 @@ struct ISOParser: Parser {
                     let minuteOffset = match.int(named: "zmin") ?? 0
                     var offset = hourOffset * 60
                     offset += hourOffset < 0 ? -minuteOffset : minuteOffset
-                    c.certain(.timezoneOffset, offset)
+                    // Same bounds ExtractTimezoneOffsetRefiner already applies, so
+                    // the two paths stop disagreeing: a minute field is a minute
+                    // field, and no real zone sits more than 14 hours from GMT.
+                    // Out of bounds the offset is DROPPED and the rest of the
+                    // timestamp kept - the date and clock are fine, only the zone
+                    // is nonsense, and rejecting the match would reopen the
+                    // scavenging hole the range check above just closed.
+                    //
+                    // Storing it was silently self-contradictory:
+                    // TimeZone(secondsFromGMT:) returns nil past Foundation's
+                    // 18-hour limit, so date() fell through to the reference zone
+                    // while the component still reported a certain offset.
+                    if minuteOffset < 60, abs(offset) <= 14 * 60 {
+                        c.certain(.timezoneOffset, offset)
+                    }
                 }
             }
         }
