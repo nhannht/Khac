@@ -306,8 +306,23 @@ struct ZHTimeExpressionParser: Parser {
         let cjk = "[" + ZHLocale.numerals.characterClass + "]+"
         let number = "(?:[0-9]+|" + cjk + ")"
         let from = regexAlternation(ZHLocale.fromWords) ?? "(?!)"
-        return "(?:" + from + ")?"
-            + "(?:" + zhDayTimeOfDayGroup(s) + ")?[\\s,，]*"
+        // The `[\s,，]*` separator belongs to each optional group that PRECEDES it,
+        // never to the hour. chrono writes it once, outside both groups, as
+        // `(?:from)?(?:daytod)?[\s,，]*hour`, so when neither group participates the
+        // run is still live and a match can BEGIN with whitespace: `"  11:00 "`
+        // reports the span `"  11:00"` from index 0 rather than `"11:00"` from index
+        // 2. Alone that only widens a span harmlessly. Under composition it destroys
+        // the correct answer, because the widened span strictly CONTAINS another
+        // locale's correct one and the overlap filter's containment pass drops the
+        // contained result before any score is compared - measured against nl, which
+        // lost its `11:00` outright.
+        //
+        // Attaching the run to each preceding group keeps every case that needs it
+        // (`早上 6 点` has a space between the time-of-day word and the hour) while
+        // making it impossible for whitespace to be the first thing a match eats.
+        // Same fix as the trailing runs below, same reason.
+        return "(?:" + from + "[\\s,，]*)?"
+            + "(?:" + zhDayTimeOfDayGroup(s) + "[\\s,，]*)?"
             + "(?<hour\(s)>" + number + ")\\s*(?:" + ZHLocale.hourMarkerPattern + "|:|：)\\s*"
             // 正 and 整 both mean "on the hour", so they are a minute of 0 rather
             // than a number.
