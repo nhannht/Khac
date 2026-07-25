@@ -37,10 +37,13 @@ public struct Khac {
     }
 }
 
-/// The built-in locales. Empty until the EN/VI executors' locale types land;
-/// the Leader wires ENLocale()/VILocale() here at integration so the core module
-/// never hard-depends on types it does not own. Engine tests use MockLocale and
-/// Khac(localeInstances:) and are never blocked on this.
+/// The built-in locales, in the order `Khac()` tries them.
+///
+/// Both public initializers resolve through here - `Khac()` takes this list whole
+/// and `Khac(locales:)` selects from it by id - so a locale is reachable from the
+/// public API only once it is listed. A locale type that exists but is missing
+/// here parses nothing for every caller who does not name the instance directly,
+/// which is why PublicAPITests exercises the no-argument initializer.
 func defaultLocales() -> [KhacLocale] {
-    []
+    [ENLocale(), VILocale()]
 }
