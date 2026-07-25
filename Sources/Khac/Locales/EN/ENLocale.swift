@@ -80,6 +80,11 @@ public struct ENLocale: KhacLocale {
     public var options: LocaleOptions {
         LocaleOptions(dateOrder: .monthDay, weekStart: 1)
     }
+
+    /// Bespoke grammar the data tables cannot express - see ENParsers.swift.
+    public var additionalParsers: [Parser] {
+        [ENWeekendParser(), ENCasualCompoundParser()]
+    }
 }
 
 // MARK: - Vocabulary data
