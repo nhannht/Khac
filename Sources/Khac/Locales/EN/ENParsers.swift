@@ -27,6 +27,10 @@ struct ENWeekendParser: Parser {
             "(?:on\\s+)?" +
             "(?:(?<mod>" + modifiers + ")\\s+)?" +
             "(?<word>weekend|weekday)" +
+            // chrono carries the modifier in BOTH positions for these words, in
+            // the same parser that serves ordinary weekdays. Khac splits that
+            // parser, and the split dropped this half.
+            weekPostfixModifierGroup(context) +
             "(?=[^\\p{L}\\p{N}_]|$)"
         )
     }
@@ -35,8 +39,11 @@ struct ENWeekendParser: Parser {
         guard context.options.mode != .strict else { return nil }
         guard let word = match.string(named: "word")?.lowercased() else { return nil }
 
+        // Prefix first, then postfix - chrono's `prefix || postfix`. They cannot
+        // both bind in practice, since a modifier consumed as the prefix is not
+        // available to the postfix slot.
         var offset: Int? = nil
-        if let modText = match.string(named: "mod"),
+        if let modText = match.string(named: "mod") ?? match.string(named: "post"),
            let value = WordTable(context.locale.vocabulary.relativeModifiers).value(for: modText) {
             offset = value
         }

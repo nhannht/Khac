@@ -16,7 +16,6 @@ struct WeekdayParser: Parser {
         let vocab = context.locale.vocabulary
         let weekdays = WordTable(vocab.weekdays).alternation
         let modifiers = WordTable(vocab.relativeModifiers).alternation
-        let weekWords = weekWordAlternation(context) ?? "week"
         let prefix = regexAlternation(context.locale.patterns.weekdayPrefixWords)
 
         let prefixGroup = prefix.map { "(?:" + $0 + "\\s+)?" } ?? ""
@@ -44,7 +43,7 @@ struct WeekdayParser: Parser {
             "(?:(?<pre>" + modifiers + ")\\s+)?" +
             "(?<wd>" + weekdays + ")" +
             "(?:\\s*,)?" +
-            "(?:\\s*(?:of\\s+)?(?<post>" + modifiers + ")\\s+" + weekWords + ")?" +
+            weekPostfixModifierGroup(context) +
             suffixGroup +
             "(?=[^\\p{L}\\p{N}_]|$)"
         )
@@ -80,14 +79,5 @@ struct WeekdayParser: Parser {
         comps.implyDate(date, calendar: calendar)
         comps.certain(.weekday, target)
         return .components(comps)
-    }
-
-    /// Alternation of the locale's words for a week (timeUnits mapped to
-    /// .weekOfYear), used by the "... next week" postfix.
-    private func weekWordAlternation(_ context: ParsingContext) -> String? {
-        let words = context.locale.vocabulary.timeUnits
-            .filter { $0.value == .weekOfYear }
-            .map { $0.key }
-        return regexAlternation(words)
     }
 }

@@ -38,6 +38,38 @@ struct WordTable<Value> {
     }
 }
 
+// MARK: - The postfix week modifier
+
+/// Alternation of the locale's words for a week (timeUnits mapped to
+/// `.weekOfYear`).
+func weekWordAlternation(_ context: ParsingContext) -> String? {
+    let words = context.locale.vocabulary.timeUnits
+        .filter { $0.value == .weekOfYear }
+        .map { $0.key }
+    return regexAlternation(words)
+}
+
+/// chrono's POSTFIX modifier slot: "Monday next week", "weekend of last week".
+/// Optional, and captures into the group named `post`.
+///
+/// chrono carries prefix and postfix in ONE parser
+/// (`ENWeekdayParser.ts`), so every word it serves gets both positions for free.
+/// Khac splits that parser in two - a generic weekday one driven by vocabulary,
+/// and a locale parser for the words that resolve by rule rather than lookup -
+/// and the split silently dropped the postfix from the second half. It looked
+/// handled, because a glue-word merge still pulled "next week" into the reported
+/// span while the modifier itself was ignored:
+///
+///     "weekend next week"   was 2012-08-11, chrono 2012-08-18
+///
+/// So the fragment lives here rather than in either parser. Two hand-synced
+/// copies of it is what produced that bug.
+func weekPostfixModifierGroup(_ context: ParsingContext) -> String {
+    let modifiers = WordTable(context.locale.vocabulary.relativeModifiers).alternation
+    let weekWords = weekWordAlternation(context) ?? "week"
+    return "(?:\\s*(?:of\\s+)?(?<post>" + modifiers + ")\\s+" + weekWords + ")?"
+}
+
 // MARK: - Calendar validity
 
 /// True when (year, month, day) is a real calendar date: the month is 1...12 and
