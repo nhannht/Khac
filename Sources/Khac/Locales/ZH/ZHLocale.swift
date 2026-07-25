@@ -215,8 +215,20 @@ extension ZHLocale {
     /// and hant 由|從|自.
     static let fromWords = ["从", "自", "由", "從"]
 
-    /// Clock hour markers. Union of hans 点|时 and hant 點|時.
-    static let hourMarkers = ["点", "时", "點", "時"]
+    /// Clock hour markers as a regex fragment, union of hans 点|时 and hant 點|時.
+    ///
+    /// A fragment rather than a word list because 时 and 時 need a lookahead that a
+    /// plain alternation cannot carry: 时间 and 時間 are the NOUN "time", not a
+    /// clock hour, so a 时/時 followed by 间/間 is not an hour marker. Without the
+    /// guard `1時間` (Japanese for "one hour", a duration) reads as 1 o'clock.
+    ///
+    /// chrono's ja carries exactly this guard, written `時(?!間)`; its zh omits it,
+    /// because chrono's zh is never asked to parse text its ja might also see.
+    /// Under one engine both locales read the same string, so the guard has to be
+    /// on both. It is not merely an accommodation for Japanese - 時間 is a single
+    /// word in Chinese too, and reading a clock hour out of it is wrong in either
+    /// language. 点 and 點 need no guard; they are unambiguous.
+    static let hourMarkerPattern = "(?:点|點|(?:时|時)(?!间|間))"
 
     /// Duration units to the calendar component they count. Union of the hans and
     /// hant Ago and Deadline patterns, which dispatch on the unit's FIRST

@@ -105,9 +105,24 @@ struct JASlashDateParser: Parser {
         let slash = "[/／]"
         return makeRegex(
             cjkWordBoundary
+            // Refuse a PREFIX or SUFFIX of a longer slash-separated run: in
+            // "2/29/2014" the leading "2/29" is not a date, and in "4/13/1"
+            // neither "4/13" nor "13/1" is. chrono's JPSlashDateFormatParser has
+            // no such guard, and the shared NumericDateParser does - quoting
+            // chrono's own SlashDateFormatParser for it - so this follows the
+            // engine rather than the ja port.
+            //
+            // Not a cross-locale accommodation: without it this parser answers
+            // "2/29" for "2/29/2014" in Japanese text too, silently dropping the
+            // year the writer stated. It went unnoticed because no ja oracle case
+            // writes a three-field slash date with a two-digit-or-less year, and
+            // it surfaced only once EN's corpus - which guards this exact shape -
+            // ran through the same engine.
+            + "(?<!" + cjkArabicDigit + slash + ")"
             + "(?:(?<year>" + cjkArabicDigit + "{4})" + slash + ")?"
             + "(?<month>[0-1０-１]?" + cjkArabicDigit + ")"
             + slash + "(?<day>[0-3０-３]?" + cjkArabicDigit + ")"
+            + "(?!" + cjkArabicDigit + ")(?!" + slash + cjkArabicDigit + ")"
         )
     }
 
@@ -326,7 +341,11 @@ struct JATimeExpressionParser: Parser {
             // 時間 is "hour" the DURATION, not a clock hour, so `1時間` is not a
             // time. chrono's own (?!間).
             + "(?:時(?!間)|:|：)\\s*"
-            + "(?:(?<minute\(suffix)>" + cjkArabicDigit + "+|半|" + cjk + ")\\s*(?:分|:|：)?\\s*)?"
+            // Each \s* sits INSIDE the group that requires its marker. Written
+            // as chrono writes it - `\s*(?:分|:|：)?\s*` - a trailing run is
+            // consumed even when no marker follows, and the whitespace lands in
+            // the reported span.
+            + "(?:(?<minute\(suffix)>" + cjkArabicDigit + "+|半|" + cjk + ")(?:\\s*(?:分|:|：))?)?"
             + "(?:(?<second\(suffix)>" + number + ")\\s*秒)?"
             + "(?:\\s*(?<tmer\(suffix)>" + meridiemWords + "))?"
     }

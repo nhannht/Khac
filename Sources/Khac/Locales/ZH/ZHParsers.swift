@@ -306,14 +306,21 @@ struct ZHTimeExpressionParser: Parser {
         let cjk = "[" + ZHLocale.numerals.characterClass + "]+"
         let number = "(?:[0-9]+|" + cjk + ")"
         let from = regexAlternation(ZHLocale.fromWords) ?? "(?!)"
-        let hourMarker = regexAlternation(ZHLocale.hourMarkers) ?? "(?!)"
         return "(?:" + from + ")?"
             + "(?:" + zhDayTimeOfDayGroup(s) + ")?[\\s,，]*"
-            + "(?<hour\(s)>" + number + ")\\s*(?:" + hourMarker + "|:|：)\\s*"
+            + "(?<hour\(s)>" + number + ")\\s*(?:" + ZHLocale.hourMarkerPattern + "|:|：)\\s*"
             // 正 and 整 both mean "on the hour", so they are a minute of 0 rather
             // than a number.
-            + "(?:(?<minute\(s)>[0-9]+|半|正|整|" + cjk + ")\\s*(?:分|:|：)?\\s*)?"
-            + "(?:(?<second\(s)>" + number + ")\\s*(?:秒)?)?"
+            //
+            // Each \s* sits INSIDE the group that requires its marker. chrono
+            // writes these as `\s*(?:分|:|：)?\s*` and `\s*(?:秒)?`, where the run
+            // is consumed even when no marker follows it, so "10:00:00 - 15/15"
+            // reports the span "10:00:00 " with a trailing space. Harmless while zh
+            // parses alone, wrong the moment another locale claims the same clock:
+            // the longer span CONTAINS the correct one, and the overlap filter's
+            // containment pass drops the correct one outright.
+            + "(?:(?<minute\(s)>[0-9]+|半|正|整|" + cjk + ")(?:\\s*(?:分|:|：))?)?"
+            + "(?:(?<second\(s)>" + number + ")(?:\\s*秒)?)?"
             + "(?:\\s*(?<lmer\(s)>" + latinMeridiem + "))?"
     }
 

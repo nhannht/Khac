@@ -24,7 +24,13 @@ import Khac
 
 /// Evaluates one oracle case against the real engine and reports why it failed.
 struct ZHOracleRunner {
-    let khac = Khac(localeInstances: [ZHLocale()])
+    let khac: Khac
+
+    /// Defaults to this locale ALONE, which is what the corpus asserts. The
+    /// composition test below injects a multi-locale instance instead.
+    init(khac: Khac = Khac(localeInstances: [ZHLocale()])) {
+        self.khac = khac
+    }
 
     /// All oracle dates are interpreted against one fixed Gregorian/UTC calendar,
     /// so cases are deterministic regardless of the machine running them.
@@ -226,5 +232,44 @@ final class ZHOracleScoreboardTests: XCTestCase {
             passed, Self.floor,
             "ZH oracle regressed below the ratchet floor - \(passed) passing, floor is \(Self.floor)"
         )
+    }
+}
+
+/// Guards what the per-locale runner above structurally CANNOT see: every oracle
+/// runner in this package builds a single-locale `Khac`, while `Khac()` composes
+/// `defaultLocales()` and `Engine.run` concatenates all their results before one
+/// final cross-locale overlap filter. Registering this locale - the open item
+/// flagged to engine - is what activates that path, so the regression would
+/// otherwise be found by whoever registers it rather than here.
+///
+/// A bare numeric slash date has no locale-independent reading, so a locale whose
+/// `dateOrder` differs legitimately disagrees: `8/5` is August 5th in en and ja and
+/// May 8th in vi. Two such results tie on span, certain-count, length, index AND
+/// parserRank (both come from the shared NumericDateParser), so the winner falls
+/// through to a tiebreak that is deterministic but arbitrary with respect to
+/// locale. This is NOT specific to CJK and it is not new: on today's
+/// `defaultLocales()` of en+vi the EN oracle case `": 8/1/2012"` already resolves
+/// to January 8th, and no test catches it because ENOracleTests runs EN alone.
+///
+/// So the conflicts are listed by input rather than absorbed into a lower count. A
+/// NEW conflict fails this test; fixing the tiebreak makes the list shrink and
+/// fails it too, which is the point.
+final class ZHCompositionTests: XCTestCase {
+    /// Empty, and that is the finding: Chinese always writes its date markers
+    /// (年月日号), so it never competes for a bare numeric slash date the way
+    /// Japanese does.
+    static let knownCrossLocaleConflicts: Set<String> = []
+
+    func testComposesWithTheOtherLocales() {
+        let composed = Khac(localeInstances: [ENLocale(), VILocale(), JALocale(), ZHLocale()])
+        let runner = ZHOracleRunner(khac: composed)
+        var unexpected: [String] = []
+        for c in zhOracleCases where zhDeferrals[c.input] == nil {
+            let reasons = runner.reasons(for: c)
+            if !reasons.isEmpty, !Self.knownCrossLocaleConflicts.contains(c.input) {
+                unexpected.append("\(c.input.debugDescription): " + reasons.joined(separator: "; "))
+            }
+        }
+        XCTAssertEqual(unexpected, [], "ZH regressed under multi-locale composition")
     }
 }

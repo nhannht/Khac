@@ -19,7 +19,13 @@ import Khac
 
 /// Evaluates one oracle case against the real engine and reports why it failed.
 struct JAOracleRunner {
-    let khac = Khac(localeInstances: [JALocale()])
+    let khac: Khac
+
+    /// Defaults to this locale ALONE, which is what the corpus asserts. The
+    /// composition test below injects a multi-locale instance instead.
+    init(khac: Khac = Khac(localeInstances: [JALocale()])) {
+        self.khac = khac
+    }
 
     /// All oracle dates are interpreted against one fixed Gregorian/UTC calendar,
     /// so cases are deterministic regardless of the machine running them.
@@ -189,6 +195,52 @@ final class JAOracleScoreboardTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(
             passed, Self.floor,
             "JA oracle regressed below the ratchet floor - \(passed) passing, floor is \(Self.floor)"
+        )
+    }
+}
+
+/// Guards what the per-locale runner above structurally CANNOT see: every oracle
+/// runner in this package builds a single-locale `Khac`, while `Khac()` composes
+/// `defaultLocales()` and `Engine.run` concatenates all their results before one
+/// final cross-locale overlap filter. Registering this locale - the open item
+/// flagged to engine - is what activates that path, so the regression would
+/// otherwise be found by whoever registers it rather than here.
+///
+/// A bare numeric slash date has no locale-independent reading, so a locale whose
+/// `dateOrder` differs legitimately disagrees: `8/5` is August 5th in en and ja and
+/// May 8th in vi. Two such results tie on span, certain-count, length, index AND
+/// parserRank (both come from the shared NumericDateParser), so the winner falls
+/// through to a tiebreak that is deterministic but arbitrary with respect to
+/// locale. This is NOT specific to CJK and it is not new: on today's
+/// `defaultLocales()` of en+vi the EN oracle case `": 8/1/2012"` already resolves
+/// to January 8th, and no test catches it because ENOracleTests runs EN alone.
+///
+/// So the conflicts are listed by input rather than absorbed into a lower count. A
+/// NEW conflict fails this test; fixing the tiebreak makes the list shrink and
+/// fails it too, which is the point.
+final class JACompositionTests: XCTestCase {
+    /// Inputs whose reading another registered locale legitimately disputes.
+    /// `8/5` is August 5th in Japanese and May 8th in Vietnamese.
+    static let knownCrossLocaleConflicts: Set<String> = ["8/5"]
+
+    func testComposesWithTheOtherLocales() {
+        let composed = Khac(localeInstances: [ENLocale(), VILocale(), JALocale(), ZHLocale()])
+        let runner = JAOracleRunner(khac: composed)
+        var unexpected: [String] = []
+        var conflictsThatNowPass: [String] = []
+        for c in jaOracleCases where jaDeferrals[c.input] == nil {
+            let failed = !runner.reasons(for: c).isEmpty
+            let known = Self.knownCrossLocaleConflicts.contains(c.input)
+            if failed && !known {
+                unexpected.append("\(c.input.debugDescription): " + runner.reasons(for: c).joined(separator: "; "))
+            } else if !failed && known {
+                conflictsThatNowPass.append(c.input)
+            }
+        }
+        XCTAssertEqual(unexpected, [], "JA regressed under multi-locale composition")
+        XCTAssertEqual(
+            conflictsThatNowPass, [],
+            "a listed cross-locale conflict now passes - remove it from knownCrossLocaleConflicts"
         )
     }
 }
