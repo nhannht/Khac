@@ -111,28 +111,86 @@ final class VITests: XCTestCase {
         XCTAssertEqual(r2?.start.get(.hour), 8)
     }
 
-    // KHAC-FIX: chrono's reference only has "ngày mai", never bare "mai",
-    // which silently breaks "sáng mai" (tomorrow morning, very common - "sáng"
-    // alone already implies TODAY). Khac does NOT add bare "mai" as an
-    // unconditional dayReferences entry - "Mai" is an extremely common
-    // Vietnamese given name, and case-insensitive matching would misread it as
-    // "tomorrow" in any sentence naming that person. Instead Khac adds the
-    // compound phrase "sáng mai" (and its siblings: trưa/chiều/tối/đêm/nửa đêm
-    // mai) as its own dayReferences key, scoping the fix to the actual
-    // compound rather than a bare token.
+    // KHAC-FIX: chrono's reference only has "ngày mai", never bare "mai", which
+    // silently breaks "sáng mai" (tomorrow morning, very common - "sáng" alone
+    // already implies TODAY). Khac does NOT add bare "mai" as an unconditional
+    // dayReferences entry: "Mai" is an extremely common Vietnamese given name and
+    // case-insensitive matching would misread it as "tomorrow" in any sentence
+    // naming that person. "mai" is a dayShiftSuffixes entry, recognized only
+    // directly after a time-of-day word.
     //
-    // OPEN QUESTION for engine (day is asserted below, hour deliberately is
-    // not): dayReferences only carries a day offset, not an hour. Whether "sáng
-    // mai" ALSO ends up with hour=9 (from CasualTimeParser's separate "sáng"
-    // match merging in) or defaults to the seeded implied hour (noon) depends
-    // on whether the overlap filter treats the longer "sáng mai" dayReferences
-    // match and the shorter "sáng" timeOfDay match as competitors (one wins,
-    // hour=9 is lost) or lets a merge refiner combine them (hour=9 preserved).
-    // Not asserting hour until that is confirmed - asserting it wrong would be
-    // worse than not asserting it.
+    // The HOUR assertions below are the point of this test. An earlier fix
+    // encoded "sáng mai" and its siblings as whole dayReferences keys, which got
+    // the day right and the hour wrong: the compound matched as one token, took
+    // the day-reference path, and inherited its clock from the REFERENCE. That
+    // was a confidently wrong answer rather than a missing one, and the open
+    // question this test used to carry ("does a separate sáng match merge the
+    // hour back in?") had the answer no - the compound key had already swallowed
+    // "sáng", so no separate token survived to merge.
+    //
+    // Each reference below is chosen so a leaked hour is unmistakable rather than
+    // coincidentally close to the right answer.
     func testCasualCompoundMai() {
-        let r = single("sáng mai", ref(2012, 8, 10, 12))
-        XCTAssertEqual(r?.start.get(.day), 11) // tomorrow, not today - this part is unconditionally correct
+        // Reference 20:00: a leak would answer 20:00, the correct answer is 09:00.
+        let sang = single("sáng mai", ref(2012, 8, 10, 20))
+        XCTAssertEqual(sang?.start.get(.day), 11)
+        XCTAssertEqual(sang?.start.get(.hour), 9, "sáng supplies the hour, not the reference clock")
+
+        // Reference 06:00, correct answer 19:00.
+        let toi = single("tối mai", ref(2012, 8, 10, 6))
+        XCTAssertEqual(toi?.start.get(.day), 11)
+        XCTAssertEqual(toi?.start.get(.hour), 19)
+
+        // Reference 20:00, correct answer 12:00 and CERTAIN (noon is stated).
+        let trua = single("trưa mai", ref(2012, 8, 10, 20))
+        XCTAssertEqual(trua?.start.get(.day), 11)
+        XCTAssertEqual(trua?.start.get(.hour), 12)
+        XCTAssertEqual(trua?.start.isCertain(.hour), true)
+
+        // Reference 09:00, correct answer 22:00.
+        let dem = single("đêm mai", ref(2012, 8, 10, 9))
+        XCTAssertEqual(dem?.start.get(.day), 11)
+        XCTAssertEqual(dem?.start.get(.hour), 22)
+
+        let chieu = single("chiều mai", ref(2012, 8, 10, 20))
+        XCTAssertEqual(chieu?.start.get(.day), 11)
+        XCTAssertEqual(chieu?.start.get(.hour), 15)
+    }
+
+    // "nửa đêm" is the one time-of-day word with a CERTAIN hour 0, and the only
+    // one whose bare form takes a coming-day roll. With "mai" stating the day
+    // explicitly the roll must not also apply, or the answer lands two days out
+    // and still looks plausible. Reference 15:00 is past the 2 AM roll threshold,
+    // so an unsuppressed roll would show as day 12.
+    func testCasualCompoundNuaDemMaiDoesNotDoubleRoll() {
+        let r = single("nửa đêm mai", ref(2012, 8, 10, 15))
+        XCTAssertEqual(r?.start.get(.day), 11, "the stated shift replaces the midnight roll, it does not stack")
+        XCTAssertEqual(r?.start.get(.hour), 0)
+        XCTAssertEqual(r?.start.isCertain(.hour), true)
+    }
+
+    // The shift must not eat an explicit time that follows: an explicit hour still
+    // overrides the time-of-day word's implied one. This case passed even while
+    // the bare form was broken, because "sáng" survived as a separate token here,
+    // which is exactly what proved the compound-key design was at fault.
+    func testCasualCompoundMaiWithExplicitTime() {
+        let r = single("sáng mai lúc 7 giờ", ref(2012, 8, 10, 20))
+        XCTAssertEqual(r?.start.get(.day), 11)
+        XCTAssertEqual(r?.start.get(.hour), 7)
+    }
+
+    // The false-positive surface the whole adjacency gate exists to close. "Mai"
+    // here is a name in a vocative, not a date, and matching is case-insensitive.
+    func testBareMaiIsNotADate() {
+        XCTAssertTrue(parseVI("Mai ơi, đợi tôi với", ref(2012, 8, 10, 12)).isEmpty)
+        XCTAssertTrue(parseVI("hoa mai nở rất đẹp", ref(2012, 8, 10, 12)).isEmpty)
+    }
+
+    // "ngày mai" stays an ordinary dayReferences entry and must not be disturbed
+    // by "mai" also existing as a shift suffix.
+    func testNgayMaiStillResolves() {
+        let r = single("ngày mai", ref(2012, 8, 10, 12))
+        XCTAssertEqual(r?.start.get(.day), 11)
     }
 
     func testCasualIsCertain() {

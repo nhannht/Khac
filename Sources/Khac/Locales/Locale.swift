@@ -99,6 +99,24 @@ public struct Vocabulary {
     /// Named times of day. hour is 24h; optional meridiem disambiguates when the
     /// hour alone is ambiguous. "noon": (12, nil), "tối": (19, .pm).
     public var timeOfDay: [String: (hour: Int, meridiem: Meridiem?)]
+    /// Day-shift words that attach as a SUFFIX to a time-of-day word: Vietnamese
+    /// "sáng mai" (tomorrow morning) is "sáng" + the shift "mai": +1.
+    ///
+    /// A shift word is recognized ONLY directly after a time-of-day word, never
+    /// on its own. That adjacency is the whole point of the field. Vietnamese
+    /// "Mai" is an extremely common given name and matching is case-insensitive,
+    /// so a bare day-reference entry would read "Mai ơi, đợi tôi với" as
+    /// "tomorrow"; gating on the preceding time-of-day word closes that surface
+    /// without enumerating compounds.
+    ///
+    /// Encoding those compounds as whole `dayReferences` keys instead is what
+    /// this field replaces, and it could not work: `dayReferences` carries a day
+    /// offset only, so a key like "sáng mai" resolved the day and then took its
+    /// CLOCK from the reference, silently answering 20:00 for "sáng mai" asked at
+    /// 20:00. Keeping the two words as two tokens lets each supply its own half.
+    ///
+    /// Empty for locales without the pattern.
+    public var dayShiftSuffixes: [String: Int]
     /// Hour-DEPENDENT time-of-day words that adjust an ATTACHED numeric hour
     /// ("1 giờ trưa", "10 giờ đêm"), keyed by the same lowercase word as
     /// `meridiem`/`timeOfDay`. Resolved BEFORE the flat `meridiem` table, so a
@@ -154,8 +172,10 @@ public struct Vocabulary {
         eraOffsets: [String: Int] = [:],
         fullMonthNames: Set<String> = [],
         fullTimeUnitNames: Set<String> = [],
-        casualQuantifiers: [String: Double] = [:]
+        casualQuantifiers: [String: Double] = [:],
+        dayShiftSuffixes: [String: Int] = [:]
     ) {
+        self.dayShiftSuffixes = dayShiftSuffixes
         self.weekdays = weekdays
         self.months = months
         self.integerWords = integerWords

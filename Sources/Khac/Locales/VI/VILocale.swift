@@ -94,41 +94,15 @@ public struct VILocale: KhacLocale {
                 "hôm qua": -1,
                 "hôm kia": -2,
                 "ngày mai": 1,
-                // KHAC-FIX: chrono only has "ngày mai", never bare "mai", which
-                // silently breaks "sáng mai" (tomorrow morning, very common) -
-                // "sáng" alone already implies TODAY, so bare "mai" going
-                // unmatched leaves the day wrong. But bare "mai" as an
-                // unconditional dayReferences entry is NOT safe: "Mai" is an
-                // extremely common Vietnamese given name (also "hoa mai",
-                // apricot blossom), and matching is case-insensitive, so a bare
-                // entry would misread "Mai ơi, đợi tôi với" (a name/vocative) as
-                // "tomorrow". Khac scopes the fix to the actual compound
-                // phrases instead - each time-of-day word immediately followed
-                // by "mai" as ONE dayReferences key - which fixes the reported
-                // gap without the false-positive surface of a bare token. This
-                // does not carry the hour (dayReferences is day-offset only);
-                // the merge with CasualTimeParser's own "sáng"/"chiều"/etc.
-                // match still supplies the implied hour, same mechanism as
-                // "hôm nay buổi sáng". Do NOT add bare "kia"/"qua" either -
-                // "qua" alone is genuinely ambiguous (come over / across / last
-                // time), not just "yesterday".
-                "sáng mai": 1, "trưa mai": 1, "chiều mai": 1,
-                "tối mai": 1, "đêm mai": 1, "nửa đêm mai": 1,
-                // KNOWN GAP, deliberate: "mai" and "kia" are structurally the
-                // same suffix day-shift pattern attached to a time-of-day word
-                // (nay=0/mai=+1/kia=+2, same shape as this/last/next attaching
-                // to time-unit words in relativeModifiers) - review-vi caught
-                // that "sáng kia" (day-after-tomorrow morning) has the
-                // IDENTICAL silent-wrong-day bug as "sáng mai" did, and that
-                // the compound-key fix above loses the HOUR (a confidently
-                // wrong noon default, not just an absent value) because
-                // TimeExpressionParser doesn't exist yet to merge with. Asked
-                // engine whether an adjacency-gated day-shift token (mai/kia
-                // recognized only right after a timeOfDay word, mirroring the
-                // "sau khi" exclusion technique) is a cleaner generic fix than
-                // more hardcoded compound entries. NOT adding "sáng kia" etc.
-                // compounds until that's resolved - doubling down on the same
-                // wrong-hour shape would compound the problem, not fix it.
+                // Bare "mai" is deliberately NOT here, and neither are the
+                // "sáng mai" style compounds that used to be. "mai" is a day
+                // shift attached to a time-of-day word and lives in
+                // `dayShiftSuffixes` below; see the note there for why the
+                // compound-key encoding was wrong rather than merely incomplete.
+                //
+                // Do NOT add bare "kia"/"qua" here either. "qua" alone is
+                // genuinely ambiguous (come over / across / last time), not just
+                // "yesterday".
                 "ngày kia": 2,
                 // "bây giờ"/"lúc này" moved OUT to patterns.nowWords - engine
                 // added a dedicated PatternSet field for "now" words since they
@@ -183,6 +157,42 @@ public struct VILocale: KhacLocale {
                 // "Trước Công nguyên" = BC. Keys are lowercase per Vocabulary's
                 // case-insensitive-matching contract.
                 "tcn": -1,
+            ],
+            dayShiftSuffixes: [
+                // KHAC-FIX: chrono has only "ngày mai", never a bare "mai", so
+                // "sáng mai" (tomorrow morning, an everyday phrase) left "mai"
+                // unmatched and answered with TODAY, since "sáng" alone implies
+                // today.
+                //
+                // This was first fixed by adding "sáng mai", "trưa mai" and the
+                // rest as whole `dayReferences` keys. That fixed the day and broke
+                // the hour, which is worse: `dayReferences` carries a day offset
+                // only, so the compound matched as one opaque token, took the
+                // day-reference path, and inherited its CLOCK from the reference.
+                // "sáng mai" asked at 20:00 answered 20:00 tomorrow. The comment
+                // there claimed a merge with a separate "sáng" match would supply
+                // the hour, but the compound key had already swallowed "sáng", so
+                // no separate token survived for anything to merge with. Bare
+                // phrases are the common case, so the fix missed nearly every
+                // input it existed for.
+                //
+                // Two words carrying two facts are two tokens. "sáng" supplies the
+                // hour through the ordinary time-of-day path, "mai" supplies the
+                // day, and adjacency keeps bare "Mai" (a very common given name)
+                // from ever matching alone.
+                //
+                // "kia" (+2, "sáng kia" = day-after-tomorrow morning) is NOT here
+                // yet, and adding it is a one-line change once decided. It is
+                // deliberately pending a product decision, not an oversight:
+                // unlike "ngày kia"/"hôm kia", where the head noun lexicalizes the
+                // direction, "sáng"/"chiều"/"tối" carry no direction of their own
+                // (compare "hôm qua buổi sáng", "sáng nay", "sáng mai"), so a
+                // forward reading is a defensible default rather than a verified
+                // fact, and chrono has no precedent to follow. Today "sáng kia"
+                // parses as bare "sáng" and answers TODAY, which is wrong; the
+                // options are to reject the phrase or to take a documented
+                // forward default.
+                "mai": 1,
             ]
         )
     }

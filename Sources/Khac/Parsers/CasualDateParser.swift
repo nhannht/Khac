@@ -36,6 +36,14 @@ struct CasualDateParser: Parser {
             .map { "(?:" + $0 + "\\s{0,3})?" } ?? ""
         let timesOfDay = WordTable(vocab.timeOfDay).alternation
         let now = regexAlternation(context.locale.patterns.nowWords) ?? "(?!)"
+        // A day-shift word attaches only DIRECTLY AFTER a time-of-day word, which
+        // is what keeps it from matching on its own: Vietnamese "mai" is also a
+        // very common given name. Absent for locales without the pattern, in which
+        // case the fragment is empty and the branch is exactly what it was.
+        let dayShift = WordTable(vocab.dayShiftSuffixes)
+        let shiftSuffix = dayShift.isEmpty
+            ? ""
+            : "(?:\\s{1,3}(?<btodshift>" + dayShift.alternation + "))?"
 
         // Order matters: NSRegularExpression takes the first matching alternative
         // at a position, so the day-anchored time-of-day combo must precede the
@@ -47,7 +55,7 @@ struct CasualDateParser: Parser {
             "(?<nowg>" + now + ")",
             "(?<anchor>" + anchors + ")\\s{0,3}" + todPrefix + "(?<atod>" + timesOfDay + ")",
             "(?<dref>" + dayRefs + ")",
-            todPrefix + "(?<btod>" + timesOfDay + ")",
+            todPrefix + "(?<btod>" + timesOfDay + ")" + shiftSuffix,
         ].joined(separator: "|")
 
         return makeRegex(boundaryBefore + "(?:" + body + ")" + boundaryAfter)
@@ -101,9 +109,20 @@ struct CasualDateParser: Parser {
             return .components(comps)
         }
 
-        // Bare time of day: "morning", "noon", "midnight", "tonight".
+        // Bare time of day: "morning", "noon", "midnight", "tonight", optionally
+        // carrying a day-shift suffix ("sáng mai" = tomorrow morning).
         if let btodText = match.string(named: "btod") {
-            applyTimeOfDay(btodText, to: &comps, context: context, allowDayRoll: true)
+            var shifted = false
+            if let shiftText = match.string(named: "btodshift"),
+               let offset = WordTable(context.locale.vocabulary.dayShiftSuffixes).value(for: shiftText),
+               let target = calendar.date(byAdding: .day, value: offset, to: context.reference.instant) {
+                comps.assignDate(target, calendar: calendar)
+                shifted = true
+            }
+            // A stated shift already fixes the day, so midnight must NOT also take
+            // the coming-day roll - that would land two days out and still look
+            // plausible. Same reason the day-anchored branch above passes false.
+            applyTimeOfDay(btodText, to: &comps, context: context, allowDayRoll: !shifted)
             return .components(comps)
         }
 
