@@ -99,4 +99,30 @@ final class PublicAPITests: XCTestCase {
             "an empty locale selection has nothing to parse with"
         )
     }
+
+    // MARK: - Time zone
+
+    /// The caller's zone travels on the reference and nowhere else. Same text and
+    /// the same wall-clock answer under two zones must land on absolute instants
+    /// separated by the offset between them. This is the coverage that was missing
+    /// while a never-read `Options.timeZone` sat next to it looking like the route.
+    func testReferenceTimeZoneReachesResolution() {
+        func parsedInstant(in identifier: String) -> Date? {
+            guard let zone = TimeZone(identifier: identifier) else { return nil }
+            var comps = DateComponents()
+            comps.year = 2012; comps.month = 8; comps.day = 10; comps.hour = 12
+            var cal = ReferencePoint.defaultCalendar
+            cal.timeZone = zone
+            guard let instant = cal.date(from: comps) else { return nil }
+            return Khac().parseDate("August 10, 2012 3pm", reference: ReferencePoint(instant: instant, calendar: cal))
+        }
+        guard let saigon = parsedInstant(in: "Asia/Ho_Chi_Minh"),
+              let tokyo = parsedInstant(in: "Asia/Tokyo") else {
+            return XCTFail("both references must resolve 3pm on the stated day")
+        }
+        XCTAssertEqual(
+            saigon.timeIntervalSince(tokyo), 2 * 3600, accuracy: 1,
+            "15:00 at UTC+7 is two hours later in absolute time than 15:00 at UTC+9"
+        )
+    }
 }
