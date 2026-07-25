@@ -1,9 +1,13 @@
 // CasualDateParser.swift - today / tomorrow / yesterday, "now", and time-of-day.
 //
-// Three lexical categories, all data-driven from the locale:
+// Four lexical categories, all data-driven from the locale:
 //   - "now": the exact reference instant, every clock component certain.
 //   - Day references ("today", "tomorrow", "yesterday"): reference plus an offset
 //     of whole days, at the reference's own time of day (implySimilarTime).
+//   - Day-shift suffixes (VI "mai" in "sáng mai"): the same day reference written
+//     after a time of day. A separate match gated on a lookbehind, resolving to a
+//     certain calendar date and no clock, so the date-time merge can join it to
+//     whichever result claimed the time of day.
 //   - Times of day ("morning", "noon", "midnight", "tonight"): a clock time from
 //     vocabulary.timeOfDay, optionally anchored to a day ("yesterday afternoon",
 //     "this morning"). Morning/afternoon/evening imply their hour (a following
@@ -36,7 +40,25 @@ struct CasualDateParser: Parser {
             .map { "(?:" + $0 + "\\s{0,3})?" } ?? ""
         let timesOfDay = WordTable(vocab.timeOfDay).alternation
         let now = regexAlternation(context.locale.patterns.nowWords) ?? "(?!)"
-        // A day-shift word attaches only DIRECTLY AFTER a time-of-day word, and is
+        // A day-shift word is the locale's day reference in SUFFIX position:
+        // Vietnamese "sáng mai" is "sáng" (the clock) plus "mai" (the day). It
+        // matches ON ITS OWN, behind a LOOKBEHIND for the time-of-day word, and
+        // resolves to exactly what "ngày mai" resolves to - a certain calendar
+        // date, no clock. MergeDateTimeRefiner then joins the two halves, which
+        // is the same path "7 giờ sáng ngày mai" already takes.
+        //
+        // The lookbehind is what makes this work, and consuming the time-of-day
+        // word into this match is what broke it. "7 giờ sáng mai" holds ONE time
+        // of day, and TimeExpressionParser needs it to read the hour 7. While the
+        // shift was a suffix of this parser's own time-of-day branch, both parsers
+        // claimed "sáng" and the overlap filter had to kill one of them: a "sáng
+        // mai" carrying three derived certains (year, month, day - none of them
+        // written by anyone) outranked a "7 giờ sáng" carrying two STATED ones,
+        // and the stated hour lost. Reading the word without consuming it leaves
+        // it to whichever parser actually claims it, and the two results stop
+        // competing for a span they never disagreed about.
+        //
+        // The gate is DIRECT adjacency to a time-of-day word, and the word is
         // matched CASE-SENSITIVELY via ICU's scoped (?-i:) against this pattern's
         // otherwise case-insensitive matching.
         //
@@ -54,9 +76,6 @@ struct CasualDateParser: Parser {
         // reader as well, and there a stated date wins. That direction is the one
         // this codebase takes every time - a loud miss beats a quiet wrong answer.
         let dayShift = WordTable(vocab.dayShiftSuffixes)
-        let shiftSuffix = dayShift.isEmpty
-            ? ""
-            : "(?:\\s{1,3}(?<btodshift>(?-i:" + dayShift.alternation + ")))?"
 
         // Order matters: NSRegularExpression takes the first matching alternative
         // at a position, so the day-anchored time-of-day combo must precede the
@@ -64,14 +83,24 @@ struct CasualDateParser: Parser {
         // The prefix sits OUTSIDE the capture group: it is consumed into the
         // match span, but the group must hold only the time-of-day word itself,
         // since that is what gets looked up in the vocabulary.
-        let body = [
+        //
+        // The shift alternative goes LAST, and its position is the one here that
+        // does not matter: its lookbehind only holds at a spot no other
+        // alternative can start at, since a shift word is in no other table.
+        // Last is simply where an optional, locale-dependent branch belongs.
+        var alternatives = [
             "(?<nowg>" + now + ")",
             "(?<anchor>" + anchors + ")\\s{0,3}" + todPrefix + "(?<atod>" + timesOfDay + ")",
             "(?<dref>" + dayRefs + ")",
-            todPrefix + "(?<btod>" + timesOfDay + ")" + shiftSuffix,
-        ].joined(separator: "|")
+            todPrefix + "(?<btod>" + timesOfDay + ")",
+        ]
+        if !dayShift.isEmpty {
+            alternatives.append(
+                "(?<=" + timesOfDay + "\\s{1,3})(?<dshift>(?-i:" + dayShift.alternation + "))"
+            )
+        }
 
-        return makeRegex(boundaryBefore + "(?:" + body + ")" + boundaryAfter)
+        return makeRegex(boundaryBefore + "(?:" + alternatives.joined(separator: "|") + ")" + boundaryAfter)
     }
 
     func extract(_ context: ParsingContext, _ match: TextMatch) -> ParserResult? {
@@ -122,20 +151,29 @@ struct CasualDateParser: Parser {
             return .components(comps)
         }
 
-        // Bare time of day: "morning", "noon", "midnight", "tonight", optionally
-        // carrying a day-shift suffix ("sáng mai" = tomorrow morning).
-        if let btodText = match.string(named: "btod") {
-            var shifted = false
-            if let shiftText = match.string(named: "btodshift"),
-               let offset = WordTable(context.locale.vocabulary.dayShiftSuffixes).value(for: shiftText),
-               let target = calendar.date(byAdding: .day, value: offset, to: context.reference.instant) {
-                comps.assignDate(target, calendar: calendar)
-                shifted = true
+        // Day-shift suffix: the same day reference as the branch above, written
+        // after a time of day ("sáng mai" = tomorrow morning). It supplies the DAY
+        // and nothing else - the time-of-day word supplies the clock through its
+        // own match, and the date-time merge puts the two together.
+        //
+        // The midnight roll needs no suppressing here, unlike when this was a
+        // suffix of the branch below. "nửa đêm" still rolls to the coming day on
+        // its own, but that roll is IMPLIED, and the merge takes its calendar date
+        // from this side, where the day is certain. A stated day replaces a guessed
+        // one rather than stacking on top of it.
+        if let shiftText = match.string(named: "dshift") {
+            guard let offset = WordTable(context.locale.vocabulary.dayShiftSuffixes).value(for: shiftText),
+                  let target = calendar.date(byAdding: .day, value: offset, to: context.reference.instant) else {
+                return nil
             }
-            // A stated shift already fixes the day, so midnight must NOT also take
-            // the coming-day roll - that would land two days out and still look
-            // plausible. Same reason the day-anchored branch above passes false.
-            applyTimeOfDay(btodText, to: &comps, context: context, allowDayRoll: !shifted)
+            comps.assignDate(target, calendar: calendar)
+            comps.implySimilarTime(to: context.reference)
+            return .components(comps)
+        }
+
+        // Bare time of day: "morning", "noon", "midnight", "tonight".
+        if let btodText = match.string(named: "btod") {
+            applyTimeOfDay(btodText, to: &comps, context: context, allowDayRoll: true)
             return .components(comps)
         }
 

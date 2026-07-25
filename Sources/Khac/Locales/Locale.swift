@@ -120,11 +120,25 @@ public struct Vocabulary {
     /// it, while a misread name creates a plausible wrong entry nobody is told
     /// about.
     ///
-    /// Encoding those compounds as whole `dayReferences` keys instead is what
-    /// this field replaces, and it could not work: `dayReferences` carries a day
-    /// offset only, so a key like "sáng mai" resolved the day and then took its
-    /// CLOCK from the reference, silently answering 20:00 for "sáng mai" asked at
-    /// 20:00. Keeping the two words as two tokens lets each supply its own half.
+    /// A shift word resolves to exactly what the locale's equivalent day
+    /// reference resolves to - a certain calendar date and no clock - and it
+    /// matches ALONE, reading the time-of-day word through a lookbehind rather
+    /// than consuming it. That is what keeps it out of the way of a stated hour:
+    /// "7 giờ sáng mai" holds one time of day, and TimeExpressionParser needs it
+    /// to read the 7. The date-time merge then joins the two halves, the same way
+    /// it already joins "7 giờ sáng" to a spelled-out "ngày mai".
+    ///
+    /// Two encodings were tried before and both failed on the same word:
+    ///
+    /// - Whole `dayReferences` keys ("sáng mai" as one entry). `dayReferences`
+    ///   carries a day offset only, so the compound resolved the day and then took
+    ///   its CLOCK from the reference, answering 20:00 for "sáng mai" asked at
+    ///   20:00.
+    /// - A suffix of the time-of-day match ("sáng mai" as one span). This got the
+    ///   bare phrase right and lost a stated hour: "7 giờ sáng mai" produced two
+    ///   results that both claimed "sáng", and the one whose three certain fields
+    ///   were DERIVED from the reference outranked the one whose two were written
+    ///   down, so the answer was 09:00 rather than 07:00.
     ///
     /// Empty for locales without the pattern.
     public var dayShiftSuffixes: [String: Int]

@@ -150,6 +150,7 @@ including negative UTC offsets.
   ngày 15 tháng 3 năm 2020            2020-03-15 12:00
   mùng 2 tháng 9                      2024-09-02 12:00
   sáng mai                            2024-06-10 09:00
+  7 giờ sáng mai                      2024-06-10 07:00
   thứ hai tới                         2024-06-10 12:00
   hai tuần trước                      2024-05-26 12:00
   12 giờ đêm                          2024-06-09 00:00
@@ -206,9 +207,6 @@ where chrono's Vietnamese is wrong, each marked KHAC-FIX in the source:
 Stated plainly, because a parser that hides them is worse than one that does not
 have the feature.
 
-- **A stated hour can lose to a compound date phrase.** `"7 giờ sáng mai"`
-  answers 09:00 rather than 07:00, because the two matches overlap and one is
-  discarded instead of the pair merging. Same class in English.
 - **Uncapitalized text can misread a name as a date.** Vietnamese `mai` is a day
   shift and `Mai` is a common given name, and only capitalization separates them.
   `"chiều Mai đến"` is handled, but `"chiều mai đến"` is genuinely ambiguous to a

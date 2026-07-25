@@ -110,6 +110,7 @@ final class ReadmeExamplesTests: XCTestCase {
             ("ngày 15 tháng 3 năm 2020", "2020-03-15 12:00"),
             ("mùng 2 tháng 9", "2024-09-02 12:00"),
             ("sáng mai", "2024-06-10 09:00"),
+            ("7 giờ sáng mai", "2024-06-10 07:00"),
             ("thứ hai tới", "2024-06-10 12:00"),
             ("hai tuần trước", "2024-05-26 12:00"),
             ("12 giờ đêm", "2024-06-09 00:00"),
@@ -149,10 +150,28 @@ final class ReadmeExamplesTests: XCTestCase {
         XCTAssertEqual(ymdhm(khac.parseDate("sáng mai", reference: reference()) ?? .distantPast), "2024-06-10 09:00")
     }
 
-    /// The limitation the README states outright. Asserted so the README cannot
-    /// silently become wrong: if this starts answering 07:00, the doc needs an edit.
-    func testStatedLimitationIsStillTrue() {
-        let r = Khac(locales: [.vietnamese]).parse("7 giờ sáng mai", reference: reference()).first
-        XCTAssertEqual(r?.start.get(.hour), 9, "README documents this as answering 09:00, not 07:00")
+    /// The limitation the README used to state outright, now deleted from it.
+    /// "7 giờ sáng mai" answered 09:00 because a "sáng mai" carrying three DERIVED
+    /// certains outranked a "7 giờ sáng" carrying two STATED ones. The doc claimed
+    /// the same class existed in English; it does not, and never did - English
+    /// writes no day word inside a time-of-day word's span, so the shorter casual
+    /// match is always strictly contained and the containment pre-pass drops it.
+    /// Both halves are asserted here so neither can go stale again.
+    func testStatedHourNoLongerLosesToADerivedDate() {
+        let vi = Khac(locales: [.vietnamese])
+        XCTAssertEqual(
+            ymdhm(vi.parseDate("7 giờ sáng mai", reference: reference()) ?? .distantPast),
+            "2024-06-10 07:00",
+            "the written hour is the one the reader stated"
+        )
+
+        let en = Khac(locales: [.english])
+        for input in ["7am tomorrow morning", "at 7 tomorrow morning", "7 in the morning tomorrow"] {
+            XCTAssertEqual(
+                ymdhm(en.parseDate(input, reference: reference()) ?? .distantPast),
+                "2024-06-10 07:00",
+                "\(input): the English class the README claimed has no reproducer"
+            )
+        }
     }
 }

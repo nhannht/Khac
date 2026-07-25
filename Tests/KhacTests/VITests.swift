@@ -179,6 +179,71 @@ final class VITests: XCTestCase {
         XCTAssertEqual(r?.start.get(.hour), 7)
     }
 
+    // KHAC-11. A written hour must survive the shift suffix, and the two worst
+    // cases are the ones where Khac is deliberately MORE correct than chrono:
+    // "1 giờ trưa" is 13:00 and "12 giờ đêm" is midnight, and adding "mai" used to
+    // discard both corrections silently.
+    //
+    // The cause was a partial overlap, not a missing rule. While the suffix was
+    // consumed by the time-of-day branch, "7 giờ sáng mai" held two results that
+    // both claimed "sáng": a "sáng mai" whose three certain components (year,
+    // month, day) were all DERIVED from the reference, against a "7 giờ sáng"
+    // whose two were literally written. Certain-count decides overlaps, so the
+    // derived three won and the stated hour was thrown away.
+    //
+    // Every expectation below is the bare form's own answer with the day moved,
+    // which is the whole point: the suffix states a day and says nothing about
+    // the clock, so it must not be able to change one.
+    func testStatedHourSurvivesTheDayShiftSuffix() {
+        let r0 = ref(2012, 8, 10, 12)
+
+        // The bare forms, as the contract the shifted forms have to match.
+        XCTAssertEqual(single("7 giờ sáng", r0)?.start.get(.hour), 7)
+        XCTAssertEqual(single("1 giờ trưa", r0)?.start.get(.hour), 13)
+        XCTAssertEqual(single("12 giờ đêm", r0)?.start.get(.hour), 0)
+        XCTAssertEqual(single("lúc 7 giờ chiều", r0)?.start.get(.hour), 19)
+
+        for (text, hour) in [
+            ("7 giờ sáng mai", 7),
+            ("1 giờ trưa mai", 13),
+            ("12 giờ đêm mai", 0),
+            ("lúc 7 giờ chiều mai", 19),
+        ] {
+            let r = single(text, r0)
+            XCTAssertEqual(r?.start.get(.hour), hour, "\(text) must keep the written hour")
+            XCTAssertEqual(r?.start.isCertain(.hour), true, "\(text): the hour was stated, not guessed")
+            XCTAssertEqual(r?.start.get(.day), 11, "\(text) must land on the shifted day")
+            XCTAssertEqual(r?.text, text, "\(text): the whole phrase belongs to the one result")
+        }
+    }
+
+    // A shift suffix reaching a RANGE, which the old encoding could not do at all:
+    // "7 đến 9 giờ sáng" is 16 characters against "sáng mai"'s 8, so the range won
+    // the overlap on length and the shift was dropped without trace. Both ends
+    // have to move, or the interval silently spans yesterday to tomorrow.
+    func testDayShiftSuffixMovesBothEndsOfARange() {
+        let r = single("7 đến 9 giờ sáng mai", ref(2012, 8, 10, 12))
+        XCTAssertEqual(r?.start.get(.day), 11)
+        XCTAssertEqual(r?.start.get(.hour), 7)
+        XCTAssertEqual(r?.end?.get(.day), 11, "the end of the range takes the shifted day too")
+        XCTAssertEqual(r?.end?.get(.hour), 9)
+    }
+
+    // The invariant the design rests on: a shift suffix IS the locale's day
+    // reference, written after a time of day instead of before it. So the two
+    // spellings must agree on everything but the matched text.
+    func testDayShiftSuffixAgreesWithTheDayReferenceWord() {
+        let r0 = ref(2012, 8, 10, 20)
+        for (suffix, spelled) in [
+            ("7 giờ sáng mai", "7 giờ sáng ngày mai"),
+            ("sáng mai lúc 7 giờ", "sáng ngày mai lúc 7 giờ"),
+        ] {
+            let a = single(suffix, r0)
+            let b = single(spelled, r0)
+            XCTAssertEqual(a?.date, b?.date, "\(suffix) must resolve exactly as \(spelled)")
+        }
+    }
+
     // The false-positive surface the whole adjacency gate exists to close. "Mai"
     // here is a name in a vocative, not a date.
     func testBareMaiIsNotADate() {

@@ -181,6 +181,15 @@ public struct VILocale: KhacLocale {
                 // day, and adjacency keeps bare "Mai" (a very common given name)
                 // from ever matching alone.
                 //
+                // The second attempt made "mai" a suffix of the time-of-day match,
+                // so "sáng mai" was one span. That fixed the bare phrase and lost a
+                // stated hour: in "7 giờ sáng mai" both this parser and
+                // TimeExpressionParser claimed "sáng", and a "sáng mai" carrying
+                // three DERIVED certains beat a "7 giờ sáng" carrying two written
+                // ones, answering 09:00 for a phrase that says 7. "mai" now matches
+                // alone, reading the time-of-day word through a lookbehind instead
+                // of eating it, and the date-time merge joins the halves.
+                //
                 // Keys are lowercase and matched case-sensitively; see the field's
                 // own documentation for why case is load-bearing here.
                 "mai": 1,
