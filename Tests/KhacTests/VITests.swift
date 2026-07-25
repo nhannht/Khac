@@ -244,6 +244,44 @@ final class VITests: XCTestCase {
         }
     }
 
+    // A shift word matches ALONE so the date-time merge can attach it, and that
+    // merge pairs results positionally, two at a time. With three results in a
+    // row the pairing can consume the shift word's partner before reaching it:
+    // "hôm nay 7 giờ sáng mai" pairs "hôm nay" with "7 giờ sáng" and arrives at
+    // "mai" with nothing left to bind to.
+    //
+    // An unattached one must never reach the caller. It resolves to tomorrow at
+    // the reference clock, which is a confident second event the writer never
+    // asked for - the same plausible wrong answer testBareMaiIsNotADate forbids,
+    // arriving by a different route. UnlikelyFilterRefiner drops it, exactly as
+    // it already drops a bare numeric hour that failed to merge.
+    func testAnUnattachedDayShiftIsNeverEmitted() {
+        let r0 = ref(2012, 8, 10, 12)
+        let shiftWords = Set(VILocale().vocabulary.dayShiftSuffixes.keys)
+
+        for text in [
+            "hôm nay 7 giờ sáng mai",
+            "thứ hai 7 giờ sáng mai",
+            "ngày 5 tháng 3 lúc 7 giờ sáng mai",
+            "hôm nay sáng mai",
+            "hôm qua 7 giờ sáng mai",
+            "thứ hai sáng mai",
+            "hôm nay 8 giờ và 7 giờ sáng mai",
+        ] {
+            for r in parseVI(text, r0) {
+                XCTAssertFalse(
+                    shiftWords.contains(r.text.lowercased()),
+                    "\(text): emitted a bare '\(r.text)', which is a name and a flower before it is a date"
+                )
+            }
+        }
+
+        // The clearest case pinned outright: one event, and it keeps the 7.
+        let r = single("hôm nay 7 giờ sáng mai", r0)
+        XCTAssertEqual(r?.start.get(.hour), 7)
+        XCTAssertEqual(r?.start.get(.day), 10)
+    }
+
     // The false-positive surface the whole adjacency gate exists to close. "Mai"
     // here is a name in a vocative, not a date.
     func testBareMaiIsNotADate() {

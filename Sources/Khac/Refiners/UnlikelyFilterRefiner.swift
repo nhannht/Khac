@@ -10,6 +10,13 @@
 //      what makes "June 10 - 31, 2022" produce nothing rather than a rolled-over
 //      July 1.
 //
+// Plus one of ours, the same shape as rule 1:
+//   3. A leftover day-shift suffix. CasualDateParser matches VI "mai" on its own
+//      so the date-time merge can attach it to the time of day before it; one
+//      that reaches here attached to nothing, and a bare shift word is not a
+//      date. "mai" alone is a given name and an apricot blossom, which is the
+//      whole reason the parser gates it on a preceding time of day.
+//
 // Runs after the date-time merge and BEFORE the range merge, chrono's position.
 
 import Foundation
@@ -21,7 +28,11 @@ struct UnlikelyFilterRefiner: Refiner {
     private static let plainNumber = makeRegex("^[0-9]*(\\.[0-9]*)?$", options: [])
 
     func refine(_ context: ParsingContext, _ results: [ParsedResult]) -> [ParsedResult] {
-        results.filter { result in
+        // Built once per pass, not per result. Empty for every locale without the
+        // pattern, which makes the rule below a no-op there.
+        let dayShift = WordTable(context.locale.vocabulary.dayShiftSuffixes)
+
+        return results.filter { result in
             // chrono removes only the FIRST space before testing - literally
             // `text.replace(" ", "")` - and that quirk is load-bearing: the
             // space-separated "2014 12 28" still holds a space afterwards and
@@ -34,6 +45,15 @@ struct UnlikelyFilterRefiner: Refiner {
             let ns = condensed as NSString
             if ns.length > 0,
                Self.plainNumber.firstMatch(in: condensed, range: NSRange(location: 0, length: ns.length)) != nil {
+                return false
+            }
+            // A result that is nothing but a day-shift word never found the time
+            // of day it modifies. Emitting it would answer with a confident
+            // "tomorrow" the writer never wrote as a date on its own - the exact
+            // reading testBareMaiIsNotADate exists to forbid. normalizedText,
+            // not text, because this re-reads a result through NFC-folded
+            // vocabulary.
+            if !dayShift.isEmpty, dayShift.value(for: result.normalizedText) != nil {
                 return false
             }
             guard isPlausible(result.start, context) else { return false }
