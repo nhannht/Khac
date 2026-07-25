@@ -26,8 +26,22 @@ struct ISOParser: Parser {
         guard let year = match.int(named: "y"),
               let month = match.int(named: "mo"),
               let day = match.int(named: "d") else { return nil }
-        guard (1...31).contains(day),
-              isRealDate(year: year, month: month, day: day, calendar: context.reference.calendar) else { return nil }
+        // RANGE validation only, deliberately. Calendar validity is decided later,
+        // at the RESULT level, by UnlikelyFilterRefiner - which is chrono's own
+        // mechanism and the same ruling B2/B3 settled on.
+        //
+        // Rejecting an impossible date HERE looks stricter and is worse. A
+        // rejected match consumes nothing, the engine resumes one character in,
+        // and TimeExpressionParser then scavenges fragments out of the wreckage:
+        // "2023-02-30T10:00:00" yielded "00:00" anchored to the REFERENCE day, so
+        // asking about an impossible date got you today at midnight. Accepting the
+        // span and letting the refiner drop the whole result leaves nothing behind
+        // to scavenge.
+        //
+        // Month stays range-checked here because it must NOT be consumed:
+        // "2023-13-01" has to fall through to NumericDateParser, which reads it as
+        // 13 January, matching chrono.
+        guard (1...12).contains(month), (1...31).contains(day) else { return nil }
 
         var c = context.createParsingComponents()
         c.certain(.year, year)
