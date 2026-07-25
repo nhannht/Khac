@@ -157,10 +157,19 @@ public struct VILocale: KhacLocale {
                 "nửa đêm": (0, .am),
             ],
             meridiemHourRules: [
-                // "1 giờ trưa" = 13:00 but "11 giờ trưa"/"12 giờ trưa" stay as-is
-                // (already in the noon region). baseline .pm covers the untested
-                // 2-10 range with the ordinary +12 reading.
-                "trưa": MeridiemHourRule(baseline: .pm, overrides: [11: 11, 12: 12]),
+                // "1 giờ trưa" = 13:00, but 10, 11 and 12 are already in the noon
+                // region and stay as stated. chrono's own VITimeExpressionParser
+                // cuts this boundary at < 10, not < 11 (read from master source by
+                // review-vi, not inferred): hours 1-9 take PM+12, 10 and 11 stay
+                // AM, 12 is PM. Khac's table omitted 10, so "10 giờ trưa" resolved
+                // to 22:00 - a time trưa never reaches, since it does not extend
+                // into evening or night at all.
+                //
+                // Hours 2-9 keep the +12 baseline, matching chrono exactly. "8 giờ
+                // trưa" = 20:00 is a stretch natively, but the input is rare and
+                // the project rule is to follow chrono where native judgment is
+                // uncertain. Hour 10 was not that case: it was simply wrong.
+                "trưa": MeridiemHourRule(baseline: .pm, overrides: [10: 10, 11: 11, 12: 12]),
                 // KHAC-FIX: chrono's own JS reference treats "đêm" uniformly like
                 // chiều/tối (PM, +12 if hour<12), which wrongly reads "12 giờ đêm"
                 // as noon and "1 giờ đêm" as 13:00. Native meaning (review-vi

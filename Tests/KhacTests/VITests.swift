@@ -212,13 +212,22 @@ final class VITests: XCTestCase {
         XCTAssertEqual(single("10 giờ đêm", r0)?.start.get(.hour), 22)
     }
 
-    // "trưa" noon-region branch. chrono gets this right; ported as-is.
+    // "trưa" noon-region branch. This was described as ported from chrono as-is,
+    // and it was not: chrono cuts the AM boundary at hour < 10, Khac's table
+    // started it at 11, so hour 10 fell through to the PM baseline and "10 giờ
+    // trưa" resolved to 22:00. review-vi caught it against chrono's real master
+    // source, and it is wrong natively too - trưa never reaches evening or night.
+    // Hour 10 is now covered here so the boundary cannot silently move again.
     func testMeridiemTruaNoonRegion() {
         let r0 = ref(2012, 8, 10, 12)
 
         let r1 = single("1 giờ trưa", r0)
         XCTAssertEqual(r1?.start.get(.hour), 13)
         XCTAssertEqual(r1?.start.get(.meridiem), Meridiem.pm.rawValue)
+
+        let r10 = single("10 giờ trưa", r0)
+        XCTAssertEqual(r10?.start.get(.hour), 10, "10 giờ trưa is late morning, never 22:00")
+        XCTAssertEqual(r10?.start.get(.meridiem), Meridiem.am.rawValue)
 
         let r2 = single("11 giờ trưa", r0)
         XCTAssertEqual(r2?.start.get(.hour), 11)
@@ -227,6 +236,20 @@ final class VITests: XCTestCase {
         let r3 = single("12 giờ trưa", r0)
         XCTAssertEqual(r3?.start.get(.hour), 12)
         XCTAssertEqual(r3?.start.get(.meridiem), Meridiem.pm.rawValue)
+    }
+
+    // review-vi: "N giờ buổi X" resolves correctly, but by an undocumented
+    // two-step that no test protected. VI leaves timeOfDayConnectorWords unset, so
+    // TimeExpressionParser cannot swallow "buổi" between the numeral and the
+    // trailing time-of-day word. Instead "7 giờ" parses alone with a certain hour
+    // and no meridiem, "buổi tối" parses alone as an implied PM, and
+    // MergeDateTimeRefiner's pm-promotion recombines them. Correct today, but it
+    // rests entirely on merge classification and ranking, which this session
+    // rewrote wholesale - so it gets an explicit guard.
+    func testNumericHourWithBuoiTimeOfDay() {
+        let r0 = ref(2012, 8, 10, 12)
+        XCTAssertEqual(single("7 giờ buổi tối", r0)?.start.get(.hour), 19)
+        XCTAssertEqual(single("3 giờ buổi sáng", r0)?.start.get(.hour), 3)
     }
 
     func testMeridiemSangMidnight() {
@@ -357,40 +380,46 @@ final class VITests: XCTestCase {
         XCTAssertEqual(results.first?.text, "thứ ba")
     }
 
-    // WALL, day assertion deferred until the structural fix lands (self-caught
-    // before this landed as a false green - see message to engine/main/review-vi):
-    // "này" is a suffix modifier with no week-word following ("thứ hai này",
-    // nothing after), and WeekdayParser's regex has only a pre-weekday slot
-    // and a post-weekday-plus-weekword slot - no bare-suffix slot at all. So
-    // "này" is never captured; the match falls through to the no-modifier
-    // (nearest) path. For THIS specific reference (Thu), nearest happens to
-    // compute the same day as .this_ would, but that is a coincidence of this
-    // reference date, not a passing implementation - a Saturday reference
-    // proves it.
+    // review-vi: the guard is implemented as an exclusion applied to WHICHEVER
+    // modifier matched, not as a special case for "sau", so it already covers
+    // every modifier followed by "khi". "trước khi" is at least as common in real
+    // Vietnamese as "sau khi", and "tới khi" occurs too, but only "sau khi" was
+    // tested - so narrowing the exclusion back to "sau" specifically would have
+    // regressed both with nothing to catch it.
+    func testWeekdayTruocKhiGuard() {
+        let results = parseVI("thứ hai trước khi đi công tác", ref(2012, 8, 10, 12))
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.first?.text, "thứ hai")
+    }
+
+    func testWeekdayToiKhiGuard() {
+        let results = parseVI("thứ hai tới khi có tin báo", ref(2012, 8, 10, 12))
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.first?.text, "thứ hai")
+    }
+
+    // KHAC-FIX: chrono's own VIWeekdayParser.ts captures "này" in its modifier
+    // regex but never gives it a modifierType branch (only tới/sau/qua are
+    // mapped), so chrono silently drops it and resolves as if no modifier were
+    // present. Khac maps "này" to Weekday.Modifier.this_, a real and
+    // deterministic mapping. The forward-only RESOLUTION that .this_ produces is
+    // chrono's pre-existing shared convention rather than something Khac
+    // invented: Vietnamese marks tense with đã/sẽ rather than on the date phrase,
+    // so "thứ Hai này" is exactly as forward/backward-ambiguous as English "this
+    // Monday", and no VI-specific reason to diverge survives scrutiny.
     //
-    // RESOLVED (review-vi, reversing their earlier ruling after I raised that
-    // chrono's own .this_ = forwardDays is a deliberate, shared, faithful-port
-    // convention, not a gap): "này" wires to Weekday.Modifier.this_ like every
-    // other locale, no VI-specific override, no new Modifier case. Vietnamese
-    // has no tense marking on the date phrase itself (đã/sẽ carry that), so
-    // "thứ Hai này" is exactly as forward/backward-ambiguous as English "this
-    // Monday" - no VI-specific reason to diverge from chrono's forward-only
-    // resolution survives scrutiny. Once the structural fix lands, this
-    // becomes day=13 (ref Thu Aug9 -> forward to Mon Aug13), NOT day=6 - add
-    // that assertion back in then. See WeekdayParser.swift and
-    // Weekday.daysToWeekday in ParserSupport.swift.
-    //
-    // This IS still a correction over chrono, though, distinct from the date
-    // math above: chrono's own VIWeekdayParser.ts captures "này" in its
-    // modifier regex but never gives it a modifierType branch (only
-    // tới/sau/qua are mapped), so chrono silently drops "này" - unhandled, as
-    // if no modifier were present. Khac's fix is giving "này" a real,
-    // deterministic mapping to .this_ (see VILocale.vocabulary.relativeModifiers
-    // "này" entry); the forward-only RESOLUTION that .this_ itself produces is
-    // the pre-existing shared convention, not something Khac invented.
+    // The day assertion was deferred across several sessions while WeekdayParser
+    // had no bare-suffix slot and "này" fell through to the nearest-weekday path.
+    // That structural fix has landed, and review-vi re-verified the mechanism at
+    // DISCRIMINATING references - Wed 2012-08-08 and Thu 2012-08-09, where
+    // forward (Mon Aug 13) and nearest/backward (Mon Aug 6) disagree - so the
+    // assertion is live again. It matters: .weekday alone is 1 for every
+    // candidate Monday, so without the day a regression straight back to the
+    // nearest path would pass unnoticed.
     func testWeekdayNayIsCurrentPeriod() {
         let r = single("thứ hai này", weekdayRef) // ref Thu 2012-08-09
         XCTAssertEqual(r?.start.get(.weekday), 1)
+        XCTAssertEqual(r?.start.get(.day), 13, "này resolves forward to Mon Aug 13, not back to Aug 6")
     }
 
     // Native addition, reclaimed from the forwardDate section (E3): this was
