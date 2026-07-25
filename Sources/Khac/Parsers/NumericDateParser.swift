@@ -37,8 +37,16 @@ struct NumericDateParser: Parser {
         // A "." separator is only a date when a 4-digit year is present
         // ("02.07.2013", "2014.12.28"). Otherwise it is a decimal or version
         // number ("6.5 kilograms", "1.1.3"), never a date.
+        //
+        // That reasoning depends on the locale writing decimals with a period,
+        // which is not universal. German writes them with a comma and dots dates as
+        // "30.12.16", where there is nothing to be ambiguous WITH - so the guard
+        // was refusing that locale's standard numeric date to protect against a
+        // collision it does not have. A locale whose decimal mark is not the period
+        // opts out via `options.dotIsUnambiguousDateSeparator`; every other locale
+        // keeps the 4-digit-year requirement exactly.
         let separator = match.string(named: "sep")
-        if separator == "." {
+        if separator == ".", !context.locale.options.dotIsUnambiguousDateSeparator {
             let hasFourDigitYear = aText.count == 4 || bText.count == 4 || cText?.count == 4
             if !hasFourDigitYear { return nil }
         }

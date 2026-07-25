@@ -4,6 +4,23 @@
   "seen": 154,
   "ported": 154,
   "excluded": [],
+  "droppedClaims": [
+    {
+      "where": "fr_time_exp.test.ts",
+      "input": "Vendredi à 2 pm",
+      "claim": "start.timezoneOffset"
+    },
+    {
+      "where": "fr_time_exp.test.ts",
+      "input": "Vendredi à 2 pm j'ai rdv...",
+      "claim": "start.timezoneOffset"
+    },
+    {
+      "where": "fr_time_exp.test.ts",
+      "input": "Vendredi à 2 pm je vais faire quelque chose",
+      "claim": "start.timezoneOffset"
+    }
+  ],
   "reasons": {},
   "tables": [
     {

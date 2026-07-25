@@ -63,6 +63,38 @@ public struct MeridiemHourRule: Sendable, Hashable {
     }
 }
 
+/// Which month-NAME constructions a locale's grammar actually has.
+///
+/// Every other locale switch in this file turns a construct on by SUPPLYING the
+/// words it needs, and a construct with no words is unreachable. Month-name forms
+/// break that rule: `dayFirst` and `monthOnly` are built from the SAME
+/// vocabulary, so filling `months` at all handed a locale every form at once,
+/// with no lever to decline one.
+///
+/// Finnish is the case that proved it. chrono ships exactly one month-name parser
+/// for Finnish, day-first, and no bare-month form - which its own day>31 guard
+/// makes explicit by skipping the whole span rather than falling back. So
+/// "32 elokuuta" must produce NOTHING, and a shared parser that also offers
+/// monthOnly answers with a bare August instead. That is not a missing data hook,
+/// it is a grammar wider than the locale's.
+///
+/// Default is everything, so a locale that says nothing behaves exactly as before.
+public struct MonthNameForms: OptionSet, Sendable, Hashable {
+    public let rawValue: Int
+    public init(rawValue: Int) { self.rawValue = rawValue }
+
+    /// "10 August 2012", with an optional day range and year.
+    public static let dayFirst = MonthNameForms(rawValue: 1 << 0)
+    /// "August 10, 2012".
+    public static let monthFirst = MonthNameForms(rawValue: 1 << 1)
+    /// "2012 March 18" and "2024-August".
+    public static let yearFirst = MonthNameForms(rawValue: 1 << 2)
+    /// A month with no day: "September 2012", "in August".
+    public static let monthOnly = MonthNameForms(rawValue: 1 << 3)
+
+    public static let all: MonthNameForms = [.dayFirst, .monthFirst, .yearFirst, .monthOnly]
+}
+
 /// Numeric date field order for a locale, e.g. 3/4 as day/month vs month/day.
 public enum DateOrder: Sendable, Hashable {
     case dayMonth
@@ -142,6 +174,31 @@ public struct Vocabulary {
     ///
     /// Empty for locales without the pattern.
     public var dayShiftSuffixes: [String: Int]
+    /// The same thing on the other side of the time-of-day word: a day shift
+    /// written BEFORE it, as Russian "прошлым вечером" (last evening) and
+    /// Ukrainian do. Resolves identically - a certain calendar date, no clock,
+    /// matched alone with the time-of-day word read through a LOOKAHEAD rather
+    /// than consumed - so the date-time merge joins the two halves exactly as it
+    /// does for the suffix form.
+    ///
+    /// This exists because the concept was, briefly, a data field on one side and
+    /// a hand-written parser on the other. Vietnamese put the suffix form in
+    /// `dayShiftSuffixes`; Russian and Ukrainian need the prefix form, and the
+    /// alternative was a bespoke parser per Slavic locale for a shape Vietnamese
+    /// already expressed as data. Two code paths for one concept, kept in step by
+    /// hand, is the thing this design is meant not to have.
+    ///
+    /// One asymmetry with the suffix table is deliberate: the suffix form matches
+    /// CASE-SENSITIVELY and this one does not. That rule is Vietnamese-specific
+    /// and load-bearing there - "mai" is tomorrow, "Mai" is a common given name,
+    /// and pro-drop makes "chiều Mai đến" and "chiều mai đến" structurally
+    /// identical, so case is the only signal separating them. A PREFIX sits where
+    /// a sentence-initial capital is ordinary and carries no information, so
+    /// requiring lowercase there would reject correct input to guard against an
+    /// ambiguity that only arises after the time word.
+    ///
+    /// Empty for locales without the pattern.
+    public var dayShiftPrefixes: [String: Int]
     /// Hour-DEPENDENT time-of-day words that adjust an ATTACHED numeric hour
     /// ("1 giờ trưa", "10 giờ đêm"), keyed by the same lowercase word as
     /// `meridiem`/`timeOfDay`. Resolved BEFORE the flat `meridiem` table, so a
@@ -198,9 +255,11 @@ public struct Vocabulary {
         fullMonthNames: Set<String> = [],
         fullTimeUnitNames: Set<String> = [],
         casualQuantifiers: [String: Double] = [:],
-        dayShiftSuffixes: [String: Int] = [:]
+        dayShiftSuffixes: [String: Int] = [:],
+        dayShiftPrefixes: [String: Int] = [:]
     ) {
         self.dayShiftSuffixes = dayShiftSuffixes
+        self.dayShiftPrefixes = dayShiftPrefixes
         self.weekdays = weekdays
         self.months = months
         self.integerWords = integerWords
@@ -255,6 +314,44 @@ public struct PatternSet {
     /// is never matched, so the match starts at the weekday (e.g. Vietnamese
     /// "vào thứ hai" -> match text "thứ hai"). This is per-locale, not global.
     public var weekdayPrefixWords: [String]
+    /// Optional prepositions before a bare DAY REFERENCE that are part of the
+    /// match, e.g. Russian "с"/"со" and Ukrainian "з"/"із"/"від" ("с сегодня" ->
+    /// match text "с сегодня", per the RU oracle). Same rule as
+    /// `weekdayPrefixWords`: populate only when the locale's oracle puts the
+    /// preposition INSIDE the span, leave empty to have the match start at the day
+    /// word. English and Vietnamese leave it empty.
+    public var dayReferencePrefixWords: [String]
+    /// Optional prepositions leading a FULL month-name date (day and month), part
+    /// of the match: English "on" ("on 10 August 2012"), Russian "с" ("с 10 по 22
+    /// августа 2012"). English had this spelled into the parser as a literal.
+    ///
+    /// Deliberately SEPARATE from `bareMonthPrefixWords`, and one shared field was
+    /// tried first and reverted. Sharing broke English: with "on" also leading the
+    /// month-only reading, "on Sept 2" matched as "on Sept". A parser's scan
+    /// advances past its first accepted match, so an alternative that can start
+    /// EARLIER wins over a fuller reading further along, whatever the overlap
+    /// ranking would have said. Splitting them is also what Russian wants
+    /// independently: it takes "с" here and "в" on the bare month.
+    public var monthPrefixWords: [String]
+    /// Optional prepositions leading a month with NO day: Russian "в" ("в
+    /// январе"), Ukrainian "в"/"у". Empty for English, which is load-bearing
+    /// rather than incidental - see `monthPrefixWords`.
+    public var bareMonthPrefixWords: [String]
+    /// Words that TRAIL a year and belong to the match, e.g. Russian
+    /// "года"/"году" in "25 мая 2020 года". The mirror of `yearMarkerWords`,
+    /// which only ever precedes the digits, so a locale writing the marker after
+    /// the year had nowhere to put it and lost the word from its span. Empty for
+    /// English and Vietnamese.
+    public var yearSuffixWords: [String]
+    /// Suffixes glued DIRECTLY to a day's digits, with no whitespace between:
+    /// English "10th", Dutch "12de"/"1ste", German "10." - the period is an
+    /// ordinal marker there, not punctuation. Written as data because the shape
+    /// differs per language and was previously fixed to the English set.
+    ///
+    /// Distinct from `ordinals` in Vocabulary, which spells a day as a WORD
+    /// ("tenth"). This is the digit form's tail, and it attaches with no
+    /// whitespace tolerance, which is what lets German "15.Sep" parse.
+    public var dayOrdinalSuffixes: [String]
     /// Connectors between a numeric hour and a TRAILING time-of-day word, e.g.
     /// English "at" ("8 at night") and "in the" ("3 in the afternoon"). May be
     /// multi-word (internal spaces match any whitespace run). Leave EMPTY for a
@@ -318,6 +415,11 @@ public struct PatternSet {
         rangeConnectorWords: [String] = [],
         nowWords: [String] = [],
         weekdayPrefixWords: [String] = [],
+        dayReferencePrefixWords: [String] = [],
+        monthPrefixWords: [String] = [],
+        bareMonthPrefixWords: [String] = [],
+        dayOrdinalSuffixes: [String] = [],
+        yearSuffixWords: [String] = [],
         timeOfDayConnectorWords: [String] = [],
         yearMarkerWords: [String] = [],
         weekdaySuffixExclusionWords: [String] = [],
@@ -338,6 +440,11 @@ public struct PatternSet {
         self.rangeConnectorWords = rangeConnectorWords
         self.nowWords = nowWords
         self.weekdayPrefixWords = weekdayPrefixWords
+        self.dayReferencePrefixWords = dayReferencePrefixWords
+        self.monthPrefixWords = monthPrefixWords
+        self.bareMonthPrefixWords = bareMonthPrefixWords
+        self.dayOrdinalSuffixes = dayOrdinalSuffixes
+        self.yearSuffixWords = yearSuffixWords
         self.timeOfDayConnectorWords = timeOfDayConnectorWords
         self.yearMarkerWords = yearMarkerWords
         self.weekdaySuffixExclusionWords = weekdaySuffixExclusionWords
@@ -362,11 +469,40 @@ public struct LocaleOptions {
     /// prefix form ("next Monday") and leave this false. Additive: enabling it
     /// only adds a match position, it never changes the prefix/week-word forms.
     public var weekdaySuffixModifier: Bool
+    /// Whether a duration may state its UNIT with no count at all, the count
+    /// being 1: Russian "через неделю" is "in a week" with nothing standing where
+    /// "a" stands in English.
+    ///
+    /// Off by default, and that default is load-bearing rather than cautious. The
+    /// duration clause otherwise reads a bare unit word as a duration, so English
+    /// "week" or "month" alone would become one - and no English oracle case
+    /// covers it, so nothing would catch the regression. A locale that elides the
+    /// count opts in; the other thirteen are untouched.
+    public var elidesDurationCount: Bool
+    /// Whether a period between numbers is unambiguously a DATE separator, so
+    /// "30.12.16" is a date without needing a 4-digit year to vouch for it.
+    ///
+    /// Set it for a locale whose decimal mark is NOT the period - German writes
+    /// 6,5 for six and a half, so "30.12.16" cannot be a decimal and dotting the
+    /// date is the standard form. Left false, the parser requires a 4-digit year
+    /// before reading a dotted triple as a date, which is what keeps "6.5
+    /// kilograms" and the version number "1.1.3" out of English results.
+    public var dotIsUnambiguousDateSeparator: Bool
+    /// Which month-name constructions this locale accepts. Defaults to all four;
+    /// narrow it for a locale whose real grammar has fewer, so the shared parser
+    /// stops offering a form the language does not use. See `MonthNameForms`.
+    public var monthNameForms: MonthNameForms
 
-    public init(dateOrder: DateOrder = .dayMonth, weekStart: Int = 2, weekdaySuffixModifier: Bool = false) {
+    public init(dateOrder: DateOrder = .dayMonth, weekStart: Int = 2, weekdaySuffixModifier: Bool = false,
+                elidesDurationCount: Bool = false,
+                dotIsUnambiguousDateSeparator: Bool = false,
+                monthNameForms: MonthNameForms = .all) {
         self.dateOrder = dateOrder
         self.weekStart = weekStart
         self.weekdaySuffixModifier = weekdaySuffixModifier
+        self.elidesDurationCount = elidesDurationCount
+        self.dotIsUnambiguousDateSeparator = dotIsUnambiguousDateSeparator
+        self.monthNameForms = monthNameForms
     }
 }
 

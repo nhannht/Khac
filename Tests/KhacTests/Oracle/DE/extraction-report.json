@@ -4,6 +4,18 @@
   "seen": 124,
   "ported": 124,
   "excluded": [],
+  "droppedClaims": [
+    {
+      "where": "de_time_exp.test.ts",
+      "input": "um 14 Uhr",
+      "claim": "start.timezoneOffset"
+    },
+    {
+      "where": "de_time_exp.test.ts",
+      "input": "am Freitag um 14 Uhr cetteln wir etwas an",
+      "claim": "start.timezoneOffset"
+    }
+  ],
   "reasons": {},
   "tables": [
     {
