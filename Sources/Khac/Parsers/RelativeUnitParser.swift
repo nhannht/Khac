@@ -16,7 +16,13 @@ struct RelativeUnitParser: Parser {
     func pattern(_ context: ParsingContext) -> NSRegularExpression {
         let vocab = context.locale.vocabulary
         let patterns = context.locale.patterns
-        let units = WordTable(vocab.timeUnits).alternation
+        // Strict mode accepts only spelled-out units: "5 minutes ago" parses,
+        // "5m ago" does not. A locale that declares no full-name set is
+        // unaffected and behaves the same in both modes.
+        let unitTable = context.options.mode == .strict && !vocab.fullTimeUnitNames.isEmpty
+            ? vocab.timeUnits.filter { vocab.fullTimeUnitNames.contains(WordTable<Int>.fold($0.key)) }
+            : vocab.timeUnits
+        let units = WordTable(unitTable).alternation
         let integers = WordTable(vocab.integerWords).alternation
         let number = "(?:[0-9]{1,4}|" + integers + ")"
 

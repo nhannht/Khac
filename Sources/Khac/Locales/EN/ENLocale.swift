@@ -32,7 +32,8 @@ public struct ENLocale: KhacLocale {
             meridiem: Self.meridiem,
             timeOfDay: Self.timeOfDay,
             eraMarkers: Self.eraMarkers,
-            fullMonthNames: Self.fullMonthNames
+            fullMonthNames: Self.fullMonthNames,
+            fullTimeUnitNames: Self.fullTimeUnitNames
         )
     }
 
@@ -40,12 +41,20 @@ public struct ENLocale: KhacLocale {
         PatternSet(
             timePrefixWords: ["at", "@"],
             dateConnectorWords: ["of"],
-            clockHourWords: ["h", "o'clock", "oclock"],
+            // "h" is deliberately NOT here. In chrono's constants.ts it is only
+            // ever a duration abbreviation, never a clock-hour marker. Listing it
+            // made "1h ago" parse as the clock time 01:00 with hour AND minute
+            // certain, which then beat the correct, longer "1h ago" duration
+            // match, because certain-count outranks match length in the H0 order.
+            clockHourWords: ["o'clock", "oclock", "o clock"],
             clockMinuteWords: ["min", "mins", "minute", "minutes"],
             clockSecondWords: ["sec", "secs", "second", "seconds"],
-            relativePastWords: ["ago", "before"],
-            relativeFutureWords: ["in", "within"],
-            futureSuffixWords: ["later", "from now", "after"],
+            // "earlier" means PAST despite living in chrono's "later" test file:
+            // "15 minutes earlier" is -15 minutes, confirmed by the arithmetic in
+            // both the ago and later oracle files.
+            relativePastWords: ["ago", "before", "earlier"],
+            relativeFutureWords: ["in", "within", "for"],
+            futureSuffixWords: ["later", "from now", "after", "out"],
             rangeConnectorWords: ["to", "until", "till", "through"],
             nowWords: ["now"],
             weekdayPrefixWords: ["on"]
@@ -136,15 +145,30 @@ private extension ENLocale {
     /// "quarter"/"quarters" added to match chrono's TIME_UNIT_DICTIONARY - found
     /// during the source audit review-code prompted. Foundation's
     /// Calendar.Component has a native .quarter case, confirmed compiling.
+    /// Single-letter and short forms are chrono's own TIME_UNIT_DICTIONARY
+    /// ("3w later", "-3y", "+1m", "in 1 mon"). Note "m" is MINUTE and "mo"/"mon"
+    /// are month - the longest-first alternation keeps them apart. "h" is a
+    /// duration abbreviation here and, per chrono, is NOT a clock-hour marker;
+    /// see the note on `clockHourWords`.
     static let timeUnits: [String: Calendar.Component] = [
-        "second": .second, "seconds": .second, "sec": .second, "secs": .second,
-        "minute": .minute, "minutes": .minute, "min": .minute, "mins": .minute,
-        "hour": .hour, "hours": .hour, "hr": .hour, "hrs": .hour,
-        "day": .day, "days": .day,
-        "week": .weekOfYear, "weeks": .weekOfYear,
-        "month": .month, "months": .month,
+        "second": .second, "seconds": .second, "sec": .second, "secs": .second, "s": .second,
+        "minute": .minute, "minutes": .minute, "min": .minute, "mins": .minute, "m": .minute,
+        "hour": .hour, "hours": .hour, "hr": .hour, "hrs": .hour, "h": .hour,
+        "day": .day, "days": .day, "d": .day,
+        "week": .weekOfYear, "weeks": .weekOfYear, "w": .weekOfYear,
+        "month": .month, "months": .month, "mo": .month, "mon": .month, "mos": .month,
         "quarter": .quarter, "quarters": .quarter, "qtr": .quarter,
-        "year": .year, "years": .year,
+        "year": .year, "years": .year, "yr": .year, "yrs": .year, "y": .year,
+    ]
+
+    /// The spelled-out time units, so strict mode can refuse shorthand. Every
+    /// strict oracle negative in this family is an abbreviation - "5m ago",
+    /// "5 h ago", "15s later", "in 15m", "5hr before" - and every strict
+    /// positive spells the unit out.
+    static let fullTimeUnitNames: Set<String> = [
+        "second", "seconds", "minute", "minutes", "hour", "hours",
+        "day", "days", "week", "weeks", "month", "months",
+        "quarter", "quarters", "year", "years",
     ]
 
     /// Source: ENWeekdayParser.ts's own modifier resolution recognizes exactly

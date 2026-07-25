@@ -118,6 +118,14 @@ public struct Vocabulary {
     /// opts IN to rejecting a bare month-only match of at most three characters
     /// unless the word appears here.
     public var fullMonthNames: Set<String>
+    /// Which keys of `timeUnits` are FULL words rather than abbreviations,
+    /// lowercased. Strict mode accepts only these, so "5 minutes ago" parses but
+    /// "5m ago" and "5 h ago" do not - an abbreviation is exactly the kind of
+    /// loose shorthand strict mode exists to refuse.
+    ///
+    /// Leave EMPTY to switch the restriction off, so a locale that does not
+    /// declare it behaves identically in both modes.
+    public var fullTimeUnitNames: Set<String>
 
     public init(
         weekdays: [String: Int] = [:],
@@ -131,7 +139,8 @@ public struct Vocabulary {
         timeOfDay: [String: (hour: Int, meridiem: Meridiem?)] = [:],
         meridiemHourRules: [String: MeridiemHourRule] = [:],
         eraMarkers: [String: Int] = [:],
-        fullMonthNames: Set<String> = []
+        fullMonthNames: Set<String> = [],
+        fullTimeUnitNames: Set<String> = []
     ) {
         self.weekdays = weekdays
         self.months = months
@@ -145,6 +154,7 @@ public struct Vocabulary {
         self.meridiemHourRules = meridiemHourRules
         self.eraMarkers = eraMarkers
         self.fullMonthNames = fullMonthNames
+        self.fullTimeUnitNames = fullTimeUnitNames
     }
 }
 
