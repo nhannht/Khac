@@ -21,11 +21,14 @@ khac.parse("from Aug 10 to Aug 14")         // [ParsedResult], each with .interv
 Swift Package Manager:
 
 ```swift
-.package(url: "https://github.com/nhannht/Khac.git", from: "0.1.0")
+.package(url: "https://github.com/nhannht/Khac.git", branch: "master")
 ```
 
 Then add `Khac` to your target's dependencies. Requires Swift 5.10, macOS 12,
 iOS 15, tvOS 15, or watchOS 8.
+
+Nothing is tagged yet, so there is no version to pin to. Track the branch, or
+pin a commit, until the first release.
 
 ## Usage
 
