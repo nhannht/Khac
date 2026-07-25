@@ -56,6 +56,34 @@ func isRealDate(year: Int, month: Int, day: Int, calendar: Calendar) -> Bool {
     return back.year == year && back.month == month && back.day == day
 }
 
+/// The year (refYear-1, refYear, refYear+1) whose month/day lands closest to
+/// the reference instant. Mirrors chrono's findYearClosestToRef; used by every
+/// parser that reads a month and day but no year. The global-argmin over three
+/// candidates is provably equivalent to chrono's sequential if/elseif, since at
+/// most one of the two shifted years can be closer than the reference year.
+func yearClosestToReference(month: Int, day: Int, context: ParsingContext) -> Int {
+    let calendar = context.reference.calendar
+    let refYear = context.reference.brokenDown.year ?? 2000
+    let reference = context.reference.instant
+
+    var best = refYear
+    var bestDistance = Double.infinity
+    for candidate in [refYear - 1, refYear, refYear + 1] {
+        var dc = DateComponents()
+        dc.year = candidate
+        dc.month = month
+        dc.day = day
+        dc.hour = 12
+        guard let date = calendar.date(from: dc) else { continue }
+        let distance = abs(date.timeIntervalSince(reference))
+        if distance < bestDistance {
+            bestDistance = distance
+            best = candidate
+        }
+    }
+    return best
+}
+
 // MARK: - Reference and calendar helpers
 
 extension ReferencePoint {

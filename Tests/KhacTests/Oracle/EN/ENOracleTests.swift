@@ -156,7 +156,7 @@ final class ENOracleTests: XCTestCase {
 final class ENOracleScoreboardTests: XCTestCase {
     /// Cases known to pass. Raise this after every improvement; never lower it
     /// to accommodate a regression.
-    static let floor = 547
+    static let floor = 555
 
     func testScoreboard() {
         let runner = ENOracleRunner()

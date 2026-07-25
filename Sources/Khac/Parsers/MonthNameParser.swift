@@ -230,6 +230,7 @@ struct MonthNameParser: Parser {
             resolvedYear = yearClosestToReference(month: month, day: day ?? 1, context: context)
             comps.imply(.year, resolvedYear)
         }
+        // (yearClosestToReference is the shared helper in ParserSupport.swift.)
 
         // A named month makes an impossible day impossible outright: there is no
         // 29 February 2014. NumericDateParser already rejects these; the same
@@ -247,9 +248,11 @@ struct MonthNameParser: Parser {
         }
 
         // A day range inside one month-name date ("August 10 - 22, 2012"): the
-        // end shares everything with the start and overrides the day alone.
-        if let day2 = dayValue(day2Text), day2 >= 1, day2 <= 31,
-           isRealDate(year: resolvedYear, month: month, day: day2, calendar: context.reference.calendar) {
+        // end shares everything with the start and overrides the day alone. An
+        // IMPOSSIBLE end day (June 31) is still emitted: UnlikelyFilterRefiner
+        // then drops the whole result, which is what makes "June 10 - 31, 2022"
+        // produce nothing at all rather than silently shedding its end.
+        if let day2 = dayValue(day2Text), day2 >= 1, day2 <= 31 {
             var end = comps
             end.certain(.day, day2)
             return .result(context.createResult(match: match, start: comps, end: end))
@@ -258,28 +261,4 @@ struct MonthNameParser: Parser {
         return .components(comps)
     }
 
-    /// The year (refYear-1, refYear, refYear+1) whose month/day lands closest to
-    /// the reference instant. Mirrors chrono's findYearClosestToRef.
-    private func yearClosestToReference(month: Int, day: Int, context: ParsingContext) -> Int {
-        let calendar = context.reference.calendar
-        let refYear = context.reference.brokenDown.year ?? 2000
-        let reference = context.reference.instant
-
-        var best = refYear
-        var bestDistance = Double.infinity
-        for candidate in [refYear - 1, refYear, refYear + 1] {
-            var dc = DateComponents()
-            dc.year = candidate
-            dc.month = month
-            dc.day = day
-            dc.hour = 12
-            guard let date = calendar.date(from: dc) else { continue }
-            let distance = abs(date.timeIntervalSince(reference))
-            if distance < bestDistance {
-                bestDistance = distance
-                best = candidate
-            }
-        }
-        return best
-    }
 }

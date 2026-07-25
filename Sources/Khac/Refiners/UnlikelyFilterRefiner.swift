@@ -22,7 +22,15 @@ struct UnlikelyFilterRefiner: Refiner {
 
     func refine(_ context: ParsingContext, _ results: [ParsedResult]) -> [ParsedResult] {
         results.filter { result in
-            let condensed = result.text.filter { !$0.isWhitespace }
+            // chrono removes only the FIRST space before testing - literally
+            // `text.replace(" ", "")` - and that quirk is load-bearing: the
+            // space-separated "2014 12 28" still holds a space afterwards and
+            // survives, while a lone "00" or "12 28" is condemned. Replicate
+            // it exactly.
+            var condensed = result.text
+            if let firstSpace = condensed.firstIndex(of: " ") {
+                condensed.remove(at: firstSpace)
+            }
             let ns = condensed as NSString
             if ns.length > 0,
                Self.plainNumber.firstMatch(in: condensed, range: NSRange(location: 0, length: ns.length)) != nil {
@@ -30,6 +38,13 @@ struct UnlikelyFilterRefiner: Refiner {
             }
             guard isPlausible(result.start, context) else { return false }
             if let end = result.end, !isPlausible(end, context) {
+                return false
+            }
+            // Strict mode refuses a result that never got past a bare weekday.
+            // The parser itself must NOT reject it (chrono doesn't): "Friday
+            // 12-30-16" needs the weekday to exist long enough to merge, and
+            // only the still-unmerged leftover is dropped here.
+            if context.options.mode == .strict, result.start.isOnlyWeekdayComponent {
                 return false
             }
             return true

@@ -15,11 +15,16 @@ struct NumericDateParser: Parser {
         // `b` allows 4 digits so a two-field month/year ("04/2016") can match at
         // all; in the three-field form the greedy run still stops at the next
         // separator, so "8/10/2012" keeps b = "10".
+        //
+        // The boundary lookarounds also refuse a digit-slash on either flank,
+        // chrono's SlashDateFormatParser guard: in "4/13/1" neither "4/13"
+        // (followed by /1) nor "13/1" (preceded by 4/) is a date - the whole
+        // token is a version number.
         makeRegex(
-            "(?<![0-9])" +
-            "(?<a>[0-9]{1,4})(?<sep>[/.])(?<b>[0-9]{1,4})" +
+            "(?<![0-9])(?<![0-9]/)" +
+            "(?<a>[0-9]{1,4})(?<sep>[/.\\- ])(?<b>[0-9]{1,4})" +
             "(?:\\k<sep>(?<c>[0-9]{1,4}))?" +
-            "(?![0-9])"
+            "(?![0-9])(?!/[0-9])"
         )
     }
 
@@ -32,10 +37,18 @@ struct NumericDateParser: Parser {
         // A "." separator is only a date when a 4-digit year is present
         // ("02.07.2013", "2014.12.28"). Otherwise it is a decimal or version
         // number ("6.5 kilograms", "1.1.3"), never a date.
-        if match.string(named: "sep") == "." {
+        let separator = match.string(named: "sep")
+        if separator == "." {
             let hasFourDigitYear = aText.count == 4 || bText.count == 4 || cText?.count == 4
             if !hasFourDigitYear { return nil }
         }
+        // A "-" needs all three fields: "12-30-16" and "2024-13-01" are dates,
+        // but a two-field "7-8" is a plain number range (chrono only accepts a
+        // yearless two-field form with a slash).
+        if separator == "-", cText == nil { return nil }
+        // A space separator is the year-first form ONLY: "2014 12 28". Any
+        // other spaced number pair is prose.
+        if separator == " ", aText.count != 4 || cText == nil { return nil }
 
         var year: Int?
         var month: Int
@@ -45,8 +58,11 @@ struct NumericDateParser: Parser {
             // Three fields.
             if aText.count == 4 || a > 31 {
                 // Year-first: YYYY/MM/DD. Here `c` is the DAY, so it carries no
-                // digit-count rule - only a year field does.
-                guard let resolved = resolvedMonthDay(month: b, day: c, context) else { return nil }
+                // digit-count rule - only a year field does. This is the ONE
+                // branch where strict mode refuses the month/day swap
+                // (chrono's ENYearMonthDayParser strictMonthDateOrder); the
+                // plain slash/dash forms below swap in both modes.
+                guard let resolved = resolvedMonthDay(month: b, day: c, strictRefusesSwap: true, context) else { return nil }
                 year = a
                 month = resolved.month
                 day = resolved.day
@@ -97,6 +113,11 @@ struct NumericDateParser: Parser {
         }
         if let year = year {
             comps.certain(.year, year)
+        } else if let day = day {
+            // No year stated: the nearest one, as chrono's SlashDateFormatParser
+            // does via findYearClosestToRef - "5/31" in December 1999 is May of
+            // the COMING year, not the ref year's own past May.
+            comps.imply(.year, yearClosestToReference(month: month, day: day, context: context))
         }
         return .components(comps)
     }
@@ -113,11 +134,16 @@ struct NumericDateParser: Parser {
     /// cannot BE a month but the other one can, the two swap - "14/4" is the 14th
     /// of April even in a month-first locale, because there is no 14th month.
     ///
-    /// Strict mode does not guess. It takes the declared order at face value and
-    /// rejects, which is why "2024/13/1" matches casually but not strictly.
-    private func resolvedMonthDay(month: Int, day: Int, _ context: ParsingContext) -> (month: Int, day: Int)? {
+    /// Only the year-first form refuses the swap in strict mode (chrono's
+    /// ENYearMonthDayParser strictMonthDateOrder), which is why "2024-13-01" is
+    /// casual-only while a strict "30-12-16" still reads as December 30th -
+    /// chrono's SlashDateFormatParser swaps unconditionally.
+    private func resolvedMonthDay(
+        month: Int, day: Int, strictRefusesSwap: Bool = false, _ context: ParsingContext
+    ) -> (month: Int, day: Int)? {
         if (1...12).contains(month) { return (month, day) }
-        guard context.options.mode != .strict, (1...12).contains(day) else { return nil }
+        if strictRefusesSwap, context.options.mode == .strict { return nil }
+        guard (1...12).contains(day) else { return nil }
         return (month: day, day: month)
     }
 

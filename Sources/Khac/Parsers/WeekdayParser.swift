@@ -55,9 +55,11 @@ struct WeekdayParser: Parser {
         let weekdays = WordTable(vocab.weekdays)
         guard let target = weekdays.value(for: match.string(named: "wd") ?? "") else { return nil }
 
-        // A bare weekday names no calendar date on its own, so strict mode
-        // rejects it, matching the other parsers' gate.
-        guard context.options.mode != .strict else { return nil }
+        // Strict mode does NOT reject here, though a bare weekday names no
+        // calendar date on its own. It must exist long enough to merge with an
+        // adjacent explicit date ("Friday 12-30-16"); the still-unmerged
+        // leftover is dropped by UnlikelyFilterRefiner's strict rule instead -
+        // chrono's own split (ENWeekdayParser vs UnlikelyFormatFilter).
 
         let modifiers = WordTable(vocab.relativeModifiers)
         var modifier: Weekday.Modifier? = nil
