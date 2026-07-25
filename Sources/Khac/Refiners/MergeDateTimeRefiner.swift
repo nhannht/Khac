@@ -77,6 +77,23 @@ struct MergeDateTimeRefiner: MergingRefiner {
 
         if time.isCertain(.hour) {
             merged.certain(.hour, time.get(.hour) ?? 0)
+            // The minute is marked certain whenever the HOUR is, even when the
+            // time side only implied it: "tomorrow at 5pm" states no minute and
+            // the merged result still claims one. That reads as a port slip,
+            // because the second and millisecond branches immediately below MIRROR
+            // the source's certainty instead of asserting it. It is not. chrono
+            // does the same thing at the same place
+            // (calculation/mergingCalculation.ts:38-40, v2.10.1):
+            //
+            //     if (timeComponent.isCertain("hour")) {
+            //         dateTimeComponent.assign("hour", timeComponent.get("hour"));
+            //         dateTimeComponent.assign("minute", timeComponent.get("minute"));
+            //
+            // `assign` is this port's `certain`. So the inconsistency is chrono's,
+            // faithfully ported, and mirroring the source here would DIVERGE. It
+            // matters because certain-count is the first overlap key (SPEC 3a-H0),
+            // so changing it can reorder a contested overlap without changing any
+            // resolved instant. KHAC-13.
             merged.certain(.minute, time.get(.minute) ?? 0)
             if time.isCertain(.second) {
                 merged.certain(.second, time.get(.second) ?? 0)
