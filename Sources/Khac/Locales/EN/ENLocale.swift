@@ -61,6 +61,13 @@ public struct ENLocale: KhacLocale {
             rangeConnectorWords: ["to", "until", "till", "through"],
             nowWords: ["now"],
             weekdayPrefixWords: ["on"],
+            // Both of these were spelled out inside MonthNameParser until the
+            // Phase 2 locales needed their own: "on" led a month-name date, and
+            // st/nd/rd/th tailed a day's digits. Russian wants "в"/"с" and
+            // "го"/"ого", German a bare "." Stating English here changes nothing
+            // about English and stops the parser asserting it for everyone.
+            monthPrefixWords: ["on"],
+            dayOrdinalSuffixes: ["st", "nd", "rd", "th"],
             timeOfDayConnectorWords: ["at", "in the"],
             durationFillerWords: ["around", "about", "~"],
             durationConnectorWords: ["and"],
