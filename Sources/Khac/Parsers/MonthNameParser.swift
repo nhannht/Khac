@@ -28,8 +28,12 @@ struct MonthNameParser: Parser {
         let ordinalSuffix = "(?:st|nd|rd|th)?"
         // chrono's ORDINAL_NUMBER_PATTERN: a spelled-out ordinal, or digits with
         // an optional ordinal suffix. The locale already carries the words.
+        // The numeric form is RANGE-restricted to 1-31 in the pattern itself, so
+        // a two-digit number that cannot be a day never claims the day slot and
+        // the alternation falls through to the month-plus-year reading: "Aug 96"
+        // is August 1996, not a rejected 96th of August.
         let ordinalWords = WordTable(vocab.ordinals).alternation
-        let day = "(?:" + ordinalWords + "|[0-9]{1,2}(?![0-9])" + ordinalSuffix + ")"
+        let day = "(?:" + ordinalWords + "|(?:3[01]|[12][0-9]|0?[1-9])(?![0-9])" + ordinalSuffix + ")"
         let rangeConnector = "(?:to|-|\\u2013|until|through|till)"
         // Optional locale year-marker word before the year, e.g. VI "năm" in
         // "tháng 4 năm 1975". Empty for locales without one (English keeps its
@@ -114,7 +118,8 @@ struct MonthNameParser: Parser {
     /// locale on the same engine.
     private func yearGroup(prefix: String, _ context: ParsingContext) -> String {
         let vocab = context.locale.vocabulary
-        let era = WordTable(vocab.eraMarkers).alternation
+        let eraWords = Array(vocab.eraMarkers.keys) + Array(vocab.eraOffsets.keys)
+        let era = regexAlternation(eraWords.map { WordTable<Int>.fold($0) }) ?? "(?!)"
         let meridiemWords = WordTable(vocab.meridiem).alternation
         let monthWords = WordTable(vocab.months).alternation
         let clockWords = regexAlternation(context.locale.patterns.clockHourWords) ?? "(?!)"
@@ -179,11 +184,18 @@ struct MonthNameParser: Parser {
         // its own: "mar" and "jan" in running prose are far more often a name or
         // a typo than a month. chrono rejects a month-only match of at most three
         // characters unless the word is a full month name, which is why bare
-        // "may" survives and bare "mar" does not. Only applies to a locale that
+        // "may" survives and bare "mar" does not. A preceding "in" vouches for
+        // the abbreviation - "in Jan" is a date. chrono gets the same effect by
+        // consuming the "in" into its match before measuring its length; the
+        // result span is the month either way. Only applies to a locale that
         // declares its full month names; one that does not is unaffected.
         if isMonthOnly, !vocab.fullMonthNames.isEmpty, match.text.count <= 3,
            !vocab.fullMonthNames.contains(WordTable<Int>.fold(monthText)) {
-            return nil
+            let ns = context.text as NSString
+            let before = ns.substring(to: match.range.location)
+            let vouched = makeRegex("(?:^|[^\\p{L}\\p{N}_])in\\s{0,3}$")
+                .firstMatch(in: before, range: NSRange(location: 0, length: (before as NSString).length)) != nil
+            if !vouched { return nil }
         }
 
         func dayValue(_ text: String?) -> Int? {
@@ -221,8 +233,14 @@ struct MonthNameParser: Parser {
             if !hasEra && yearText.count <= 2 {
                 value = value + (value > 50 ? 1900 : 2000)
             }
-            if let eraText = eraText, let sign = eraTable.value(for: eraText), sign < 0 {
-                value = -value
+            if let eraText = eraText {
+                // An OFFSET era shifts the count ("2555 BE" is 2012 CE); a sign
+                // era negates it. A word lives in exactly one table.
+                if let offset = WordTable(context.locale.vocabulary.eraOffsets).value(for: eraText) {
+                    value += offset
+                } else if let sign = eraTable.value(for: eraText), sign < 0 {
+                    value = -value
+                }
             }
             comps.certain(.year, value)
             resolvedYear = value

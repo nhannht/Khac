@@ -33,6 +33,7 @@ public struct ENLocale: KhacLocale {
             timeOfDay: Self.timeOfDay,
             meridiemHourRules: Self.meridiemHourRules,
             eraMarkers: Self.eraMarkers,
+            eraOffsets: Self.eraOffsets,
             fullMonthNames: Self.fullMonthNames,
             fullTimeUnitNames: Self.fullTimeUnitNames,
             casualQuantifiers: Self.casualQuantifiers
@@ -346,5 +347,11 @@ private extension ENLocale {
     static let eraMarkers: [String: Int] = [
         "ad": 1, "a.d.": 1, "ce": 1,
         "bc": -1, "b.c.": -1, "bce": -1,
+    ]
+
+    /// Buddhist era: a plain -543 offset, chrono's parseYear rule ("2555 BE" is
+    /// 2012 CE). An offset cannot live in the sign-based eraMarkers table.
+    static let eraOffsets: [String: Int] = [
+        "be": -543, "b.e.": -543,
     ]
 }
