@@ -79,8 +79,25 @@ struct MonthNameParser: Parser {
             "(?<omonth>" + months + ")" +
             "(?:(?:\\s*[.,/\\-]\\s*|\\s+)(?:of\\s+)?" + yearMarkerGroup + yearGroup(prefix: "o", context) + ")?"
 
+        // Year-first forms, which neither of the above can reach: `little`
+        // requires the day first and caps it at two digits, so a four-digit year
+        // can never start it, and NumericDateParser is purely numeric and cannot
+        // read a month NAME.
+        let dateSeparator = "(?:\\s{0,3}[-/,]\\s{0,3}|\\s{1,3})"
+        // "2012/Aug/10", "The Deadline is 2018 March 18"
+        let yearFirstDay =
+            yearGroup(prefix: "z", context) + dateSeparator +
+            "(?<zmonth>" + months + ")" + dateSeparator +
+            "(?<zday>" + day + ")"
+        // "2024 Aug", "2024-August", "2024 AD August"
+        let yearFirstMonth =
+            yearGroup(prefix: "y", context) + dateSeparator + "(?:of\\s{1,3})?" +
+            "(?<ymonth>" + months + ")"
+
+        let alternatives = [little, middle, yearFirstDay, yearFirstMonth, monthOnly]
+            .joined(separator: "|")
         return makeRegex(
-            boundaryBefore + "(?:" + little + "|" + middle + "|" + monthOnly + ")" + "(?=[^\\p{L}\\p{N}_]|$)"
+            boundaryBefore + "(?:" + alternatives + ")" + "(?=[^\\p{L}\\p{N}_]|$)"
         )
     }
 
@@ -136,6 +153,16 @@ struct MonthNameParser: Parser {
             day2Text = match.string(named: "mday2")
             yearText = year("m")
             eraText = match.string(named: "mera")
+        } else if let m = match.string(named: "zmonth") {
+            monthText = m
+            dayText = match.string(named: "zday")
+            yearText = year("z")
+            eraText = match.string(named: "zera")
+        } else if let m = match.string(named: "ymonth") {
+            monthText = m
+            dayText = nil
+            yearText = year("y")
+            eraText = match.string(named: "yera")
         } else if let m = match.string(named: "omonth") {
             monthText = m
             dayText = nil
