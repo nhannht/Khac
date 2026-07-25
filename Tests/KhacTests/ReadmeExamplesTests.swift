@@ -128,6 +128,19 @@ final class ReadmeExamplesTests: XCTestCase {
         XCTAssertTrue(khac.parse("10 - 10.1", reference: reference()).isEmpty)
     }
 
+    /// The day-shift gate limitation the README states. A bare clock is not a
+    /// time-of-day word, so the shift does not attach. Asserted because it is a
+    /// documented SHORTFALL: if it ever starts working, the README is wrong and
+    /// should say so rather than under-selling the parser.
+    func testDayShiftNeedsATimeOfDayWord() {
+        let vi = Khac(locales: [.vietnamese])
+        // Works: "sáng" is a time-of-day word.
+        XCTAssertEqual(ymdhm(vi.parseDate("7 giờ sáng mai", reference: reference()) ?? .distantPast), "2024-06-10 07:00")
+        // Does not: a bare clock leaves the shift unattached, so the day stays today.
+        XCTAssertEqual(vi.parse("8 giờ mai", reference: reference()).first?.start.get(.day), 9)
+        XCTAssertEqual(vi.parse("15:30 mai", reference: reference()).first?.start.get(.day), 9)
+    }
+
     /// The marked-versus-unmarked invalid day asymmetry, as the README states it.
     /// An earlier draft claimed "0 August" produced nothing; it degrades to the
     /// month instead, and this test is why the README does not say otherwise.

@@ -159,10 +159,13 @@ including negative UTC offsets.
 ## Results
 
 ```
-  swift test        172 tests, 0 failures
+  swift test        190 tests, 0 failures, exit 0
   EN oracle         561 / 561 cases
-  VI suite           80 tests
+  VI suite           84 tests
 ```
+
+Verified stable across three consecutive runs. The oracle count is the number
+worth watching, because it is the one held by a ratchet floor that only goes up.
 
 The English oracle is ported from wanasit/chrono's own test suite, case by case,
 and reports per source file. It holds a ratchet floor that only goes up.
@@ -207,6 +210,10 @@ where chrono's Vietnamese is wrong, each marked KHAC-FIX in the source:
 Stated plainly, because a parser that hides them is worse than one that does not
 have the feature.
 
+- **A day shift needs a time-of-day word before it.** `"7 giờ sáng mai"` resolves
+  to 07:00 tomorrow, but `"8 giờ mai"` and `"15:30 mai"` answer today, because a
+  bare clock is not a time-of-day word. The gate is deliberately narrow: it is
+  what keeps `"chiều Mai đến"` from reading a person's name as a date.
 - **Uncapitalized text can misread a name as a date.** Vietnamese `mai` is a day
   shift and `Mai` is a common given name, and only capitalization separates them.
   `"chiều Mai đến"` is handled, but `"chiều mai đến"` is genuinely ambiguous to a
