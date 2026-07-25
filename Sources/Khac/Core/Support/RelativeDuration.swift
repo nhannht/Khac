@@ -168,6 +168,52 @@ enum DurationExpression {
         return "(?:" + clause + "(?:" + separator + clause + "){0,4})"
     }
 
+    /// Recover a whole relative expression - duration AND direction - from text
+    /// that has already been matched, such as a produced result's own text.
+    ///
+    /// This is what lets a refiner re-anchor "2 days after tomorrow" without
+    /// re-running any parser. Direction comes from the locale's own direction
+    /// words, never from hardcoded literals: chrono's equivalent refiners regex
+    /// English words ("before", "after", a leading sign) out of the output text,
+    /// which cannot serve Vietnamese and would betray the data-driven contract
+    /// this engine exists to keep.
+    static func relative(in text: String, _ context: ParsingContext) -> RelativeDuration? {
+        let patterns = context.locale.patterns
+        let trimmed = text.trimmingCharacters(in: .whitespaces)
+
+        func ends(with words: [String]) -> Bool {
+            guard let alt = regexAlternation(words) else { return false }
+            return matches(trimmed, "\\s" + alt + "$")
+        }
+        func begins(with words: [String]) -> Bool {
+            guard let alt = regexAlternation(words) else { return false }
+            return matches(trimmed, "^" + alt + "(?![\\p{L}\\p{N}_])")
+        }
+
+        let direction: RelativeDirection
+        if matches(trimmed, "^-") {
+            direction = .past
+        } else if matches(trimmed, "^\\+") {
+            direction = .future
+        } else if ends(with: patterns.relativePastWords) {
+            direction = .past
+        } else if ends(with: patterns.futureSuffixWords) || begins(with: patterns.relativeFutureWords) {
+            direction = .future
+        } else {
+            return nil
+        }
+
+        let parsed = clauses(in: trimmed, context)
+        guard !parsed.isEmpty else { return nil }
+        let duration = RelativeDuration(parsed, direction: direction)
+        return duration.isEmpty ? nil : duration
+    }
+
+    private static func matches(_ text: String, _ pattern: String) -> Bool {
+        let ns = text as NSString
+        return makeRegex(pattern).firstMatch(in: text, range: NSRange(location: 0, length: ns.length)) != nil
+    }
+
     /// Read the clauses back out of a matched duration substring. Order is
     /// preserved, and an unreadable clause is skipped rather than failing the
     /// whole duration.

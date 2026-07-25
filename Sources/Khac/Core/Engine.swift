@@ -29,6 +29,9 @@ enum Engine {
     /// is applied separately (it must run last and across locales too).
     static var mergeRefiners: [Refiner] {
         [
+            // Re-anchoring runs FIRST: "2 days after tomorrow" must become one
+            // date before anything tries to read it as a range or a date+time.
+            MergeRelativeAnchorRefiner(),
             MergeWeekdayRefiner(),
             MergeDateTimeRefiner(),
             MergeDateRangeRefiner(),
