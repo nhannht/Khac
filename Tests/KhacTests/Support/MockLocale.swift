@@ -34,6 +34,11 @@ struct MockLocale: KhacLocale {
             "night": (22, .pm), "tonight": (22, .pm),
             "noon": (12, nil), "midnight": (0, nil),
         ],
+        // "night" is hour-dependent as a suffix ("2 at night" = 2am, "9 at night"
+        // = 21), exercising the meridiemHourRules path.
+        meridiemHourRules: [
+            "night": MeridiemHourRule(baseline: .am, overrides: [6: 18, 7: 19, 8: 20, 9: 21, 10: 22, 11: 23]),
+        ],
         eraMarkers: ["bc": -1, "ad": 1]
     )
 
@@ -44,7 +49,11 @@ struct MockLocale: KhacLocale {
         relativePastWords: ["ago"],
         relativeFutureWords: ["in"],
         rangeConnectorWords: ["to", "until"],
-        nowWords: ["now"]
+        nowWords: ["now"],
+        timeOfDayConnectorWords: ["at", "in the"],
+        // Synthetic year marker to exercise the generic year-marker path
+        // (real locales use e.g. VI "năm"): "august anno 1975", "anno 1976".
+        yearMarkerWords: ["anno"]
     )
 
     var options: LocaleOptions = LocaleOptions(dateOrder: .monthDay, weekStart: 1)

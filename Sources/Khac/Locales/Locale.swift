@@ -42,6 +42,27 @@ public enum Meridiem: Int, Sendable, Hashable {
     case pm = 1
 }
 
+/// Resolves a numeric clock hour that carries an hour-DEPENDENT time-of-day word,
+/// where a flat am/pm cannot express the meaning. Vietnamese "trưa" (midday) and
+/// "đêm" (night) are the motivating cases: "1 giờ trưa" = 13:00 but "11 giờ trưa"
+/// = 11:00; "12 giờ đêm" = 00:00 but "10 giờ đêm" = 22:00.
+///
+/// `baseline` is the default am/pm reading applied like an ordinary meridiem word
+/// (am: 12 -> 0, else keep; pm: keep 12, else +12). `overrides` maps a stated
+/// 1-12 clock hour to an explicit 24h hour and WINS over the baseline. So "trưa"
+/// is `.pm` with 11 and 12 kept as-is; "đêm" is `.am` with 8-11 pushed to evening.
+public struct MeridiemHourRule: Sendable, Hashable {
+    /// Default am/pm reading for hours not listed in `overrides`.
+    public var baseline: Meridiem
+    /// Stated hour (1-12) -> explicit 24h hour, overriding `baseline`.
+    public var overrides: [Int: Int]
+
+    public init(baseline: Meridiem, overrides: [Int: Int] = [:]) {
+        self.baseline = baseline
+        self.overrides = overrides
+    }
+}
+
 /// Numeric date field order for a locale, e.g. 3/4 as day/month vs month/day.
 public enum DateOrder: Sendable, Hashable {
     case dayMonth
@@ -78,6 +99,12 @@ public struct Vocabulary {
     /// Named times of day. hour is 24h; optional meridiem disambiguates when the
     /// hour alone is ambiguous. "noon": (12, nil), "tối": (19, .pm).
     public var timeOfDay: [String: (hour: Int, meridiem: Meridiem?)]
+    /// Hour-DEPENDENT time-of-day words that adjust an ATTACHED numeric hour
+    /// ("1 giờ trưa", "10 giờ đêm"), keyed by the same lowercase word as
+    /// `meridiem`/`timeOfDay`. Resolved BEFORE the flat `meridiem` table, so a
+    /// word here must NOT also appear in `meridiem`. Leave empty for locales
+    /// whose time-of-day words are all flat am/pm (English).
+    public var meridiemHourRules: [String: MeridiemHourRule]
     /// Era markers applied to a year: "bc"/"tcn": -1, "ad"/"scn": +1.
     public var eraMarkers: [String: Int]
 
@@ -91,6 +118,7 @@ public struct Vocabulary {
         dayReferences: [String: Int] = [:],
         meridiem: [String: Meridiem] = [:],
         timeOfDay: [String: (hour: Int, meridiem: Meridiem?)] = [:],
+        meridiemHourRules: [String: MeridiemHourRule] = [:],
         eraMarkers: [String: Int] = [:]
     ) {
         self.weekdays = weekdays
@@ -102,6 +130,7 @@ public struct Vocabulary {
         self.dayReferences = dayReferences
         self.meridiem = meridiem
         self.timeOfDay = timeOfDay
+        self.meridiemHourRules = meridiemHourRules
         self.eraMarkers = eraMarkers
     }
 }
@@ -142,6 +171,18 @@ public struct PatternSet {
     /// is never matched, so the match starts at the weekday (e.g. Vietnamese
     /// "vào thứ hai" -> match text "thứ hai"). This is per-locale, not global.
     public var weekdayPrefixWords: [String]
+    /// Connectors between a numeric hour and a TRAILING time-of-day word, e.g.
+    /// English "at" ("8 at night") and "in the" ("3 in the afternoon"). May be
+    /// multi-word (internal spaces match any whitespace run). Leave EMPTY for a
+    /// locale whose time-of-day word attaches directly ("3 giờ chiều").
+    public var timeOfDayConnectorWords: [String]
+    /// Words that MARK a following year, e.g. Vietnamese "năm" ("tháng 4 năm
+    /// 1975" = April 1975, "năm 1975" = the year 1975). Consumed two ways: as an
+    /// optional connector before the year in a month-name date, and as a gate for
+    /// a standalone year (parallel to an era marker). Leave EMPTY for a locale
+    /// with no such word - English "of" ("June of 2022") stays built into the
+    /// month parser and is NOT driven by this field.
+    public var yearMarkerWords: [String]
 
     public init(
         timePrefixWords: [String] = [],
@@ -154,7 +195,9 @@ public struct PatternSet {
         futureSuffixWords: [String] = [],
         rangeConnectorWords: [String] = [],
         nowWords: [String] = [],
-        weekdayPrefixWords: [String] = []
+        weekdayPrefixWords: [String] = [],
+        timeOfDayConnectorWords: [String] = [],
+        yearMarkerWords: [String] = []
     ) {
         self.timePrefixWords = timePrefixWords
         self.dateConnectorWords = dateConnectorWords
@@ -167,6 +210,8 @@ public struct PatternSet {
         self.rangeConnectorWords = rangeConnectorWords
         self.nowWords = nowWords
         self.weekdayPrefixWords = weekdayPrefixWords
+        self.timeOfDayConnectorWords = timeOfDayConnectorWords
+        self.yearMarkerWords = yearMarkerWords
     }
 }
 

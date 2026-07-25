@@ -20,12 +20,29 @@ struct YearParser: Parser {
 
     func pattern(_ context: ParsingContext) -> NSRegularExpression {
         let era = WordTable(context.locale.vocabulary.eraMarkers).alternation
+        // Era-suffix form: a year followed by an era marker ("88 AD", "234 BCE").
+        var alternatives = ["(?<yr>[0-9]{1,4})\\s{0,3}(?<era>" + era + ")"]
+        // Year-marker-prefix form: a marker word then a 3-4 digit year ("năm
+        // 1976", "năm 938"). Only when the locale defines a year marker. Requires
+        // 3+ digits so a bare small number after the word is never a year.
+        if let marker = regexAlternation(context.locale.patterns.yearMarkerWords) {
+            alternatives.append(marker + "\\s*(?<yr2>[0-9]{3,4})")
+        }
         return makeRegex(
-            boundaryBefore + "(?<yr>[0-9]{1,4})\\s{0,3}(?<era>" + era + ")" + boundaryAfter
+            boundaryBefore + "(?:" + alternatives.joined(separator: "|") + ")" + boundaryAfter
         )
     }
 
     func extract(_ context: ParsingContext, _ match: TextMatch) -> ParserResult? {
+        // Year-marker-prefix form ("năm 1976"): the marker fixes it as a year,
+        // no era, taken literally.
+        if let yearText = match.string(named: "yr2"), let year = Int(yearText) {
+            var comps = context.createParsingComponents()
+            comps.certain(.year, year)
+            return .components(comps)
+        }
+
+        // Era-suffix form ("88 AD"): the era sets the sign.
         guard let yearText = match.string(named: "yr"),
               let eraText = match.string(named: "era"),
               var year = Int(yearText) else { return nil }

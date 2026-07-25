@@ -257,6 +257,26 @@ final class ParserTests: XCTestCase {
         XCTAssertNil(firstResult("  11 ", reference(2016, 10, 1)), "a lone number is not a time")
     }
 
+    func testNumericHourWithTimeOfDaySuffix() {
+        // C7 mechanism: a trailing time-of-day word (optional connector) resolves
+        // the numeric hour. "night" is hour-DEPENDENT via meridiemHourRules; an
+        // early hour stays am, an evening hour goes pm.
+        let ref = reference(2016, 10, 1, 8)
+        XCTAssertEqual(firstResult("1 at night", ref)?.start.get(.hour), 1, "early-hour night stays am")
+        XCTAssertEqual(firstResult("2 at night", ref)?.start.get(.hour), 2)
+        XCTAssertEqual(firstResult("9 at night", ref)?.start.get(.hour), 21, "evening-hour night is pm")
+        XCTAssertEqual(firstResult("11 at night", ref)?.start.get(.hour), 23)
+        // "afternoon"/"morning" are flat (their own meridiem), reached via "in the".
+        XCTAssertEqual(firstResult("1 in the afternoon", ref)?.start.get(.hour), 13)
+        XCTAssertEqual(firstResult("6 in the morning", ref)?.start.get(.hour), 6)
+    }
+
+    func testTimeOfDaySuffixMatchIncludesWholePhrase() {
+        let r = firstResult("1 at night", reference(2016, 10, 1, 8))
+        XCTAssertEqual(r?.text, "1 at night", "the whole phrase is the match, not just the number")
+        XCTAssertEqual(r?.start.get(.hour), 1)
+    }
+
     // MARK: Month name
 
     func testMonthNameMiddleEndian() {
@@ -264,6 +284,20 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(r?.start.get(.month), 8)
         XCTAssertEqual(r?.start.get(.day), 10)
         XCTAssertEqual(r?.start.get(.year), 2012)
+    }
+
+    func testYearMarkerConnector() {
+        // Month + year-marker word + year: the marker is consumed, year captured.
+        let r = firstResult("august anno 1975", reference(2012, 1, 1))
+        XCTAssertEqual(r?.start.get(.month), 8)
+        XCTAssertEqual(r?.start.get(.year), 1975)
+        XCTAssertEqual(r?.start.isCertain(.day), false)
+    }
+
+    func testYearMarkerBareYear() {
+        // Marker + a 3-4 digit year, no month, no era: a standalone year.
+        XCTAssertEqual(firstResult("anno 1976", reference(2012, 1, 1))?.start.get(.year), 1976)
+        XCTAssertEqual(firstResult("anno 938", reference(2012, 1, 1))?.start.get(.year), 938)
     }
 
     // MARK: Relative unit

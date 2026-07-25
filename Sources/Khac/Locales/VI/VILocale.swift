@@ -140,16 +140,9 @@ public struct VILocale: KhacLocale {
                 "sáng": .am,
                 "chiều": .pm,
                 "tối": .pm,
-                // "trưa" (noon) and "đêm" (night) are DELIBERATELY excluded here.
-                // Both are hour-dependent: the same word means AM for some
-                // attached hours and PM for others (e.g. "1 giờ trưa" = 13:00 but
-                // "11 giờ trưa" = 11:00; "12 giờ đêm" = 00:00 but "10 giờ đêm" =
-                // 22:00). A flat Meridiem.am/.pm cannot express this - pending
-                // engine's answer on a hookup for hour-dependent meridiem
-                // resolution (proposed: additive `meridiemHourRules` field).
-                // chrono's own JS reference gets "đêm" wrong (treats it like
-                // chiều/tối, uniform PM/+12), which reads "12 giờ đêm" as noon;
-                // do not port that. TODO(vi): fill in once engine responds.
+                // "trưa" (noon) and "đêm" (night) are DELIBERATELY excluded here -
+                // both are hour-dependent (see meridiemHourRules below) and a word
+                // in meridiemHourRules must not also appear in this flat table.
             ],
             timeOfDay: [
                 // Standalone casual time-of-day (no explicit hour attached) -
@@ -162,6 +155,20 @@ public struct VILocale: KhacLocale {
                 "tối": (19, .pm),
                 "đêm": (22, .pm),
                 "nửa đêm": (0, .am),
+            ],
+            meridiemHourRules: [
+                // "1 giờ trưa" = 13:00 but "11 giờ trưa"/"12 giờ trưa" stay as-is
+                // (already in the noon region). baseline .pm covers the untested
+                // 2-10 range with the ordinary +12 reading.
+                "trưa": MeridiemHourRule(baseline: .pm, overrides: [11: 11, 12: 12]),
+                // KHAC-FIX: chrono's own JS reference treats "đêm" uniformly like
+                // chiều/tối (PM, +12 if hour<12), which wrongly reads "12 giờ đêm"
+                // as noon and "1 giờ đêm" as 13:00. Native meaning (review-vi
+                // confirmed all 5 values): đêm hours 1-4 and 12 are AM (deep night
+                // / midnight, baseline .am: 12->0, else keep); only 8-11 are PM
+                // (evening), explicit overrides. Hours 5-7 untested/rare in
+                // natural speech.
+                "đêm": MeridiemHourRule(baseline: .am, overrides: [8: 20, 9: 21, 10: 22, 11: 23]),
             ],
             eraMarkers: [
                 // "Trước Công nguyên" = BC. Keys are lowercase per Vocabulary's
@@ -199,7 +206,14 @@ public struct VILocale: KhacLocale {
             // thứ hai" -> match text "thứ hai"), and per the field's own doc
             // comment an unlisted prefix is simply never matched - which is
             // exactly the wanted behavior here, not a gap.
-            weekdayPrefixWords: []
+            weekdayPrefixWords: [],
+            // A6/A10 (engine): "năm" marks a following year both as the
+            // connector inside a month-name date ("tháng 4 năm 1975") and as
+            // the gate for a standalone year ("năm 1976"). Source-verified
+            // against chrono's real VIMonthYearParser.ts/VIYearParser.ts -
+            // "năm" is unconditionally sufficient in both roles; TCN only
+            // gates the fully-bare digit form ("179 TCN" with no "năm").
+            yearMarkerWords: ["năm"]
         )
     }
 

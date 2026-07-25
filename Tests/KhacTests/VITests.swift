@@ -325,14 +325,10 @@ final class VITests: XCTestCase {
 
     func testWeekdayLastModifier() {
         // REF Thu 2012-08-09; last Monday = 2012-08-06
-        // NOTE: "qua" is a bare suffix modifier (no week-word follows), which
-        // WeekdayParser's regex cannot capture yet (see the WALL note on
-        // testWeekdayNayIsCurrentPeriod) - this currently passes via the
-        // no-modifier nearest-occurrence fallback, not via "qua" actually
-        // being recognized. The asserted value (day=6) is unambiguous either
-        // way ("last" only ever means backward, no open semantics question
-        // here), so it stays correct once the regex gap is fixed - unlike the
-        // "này" test above, this one is not a landmine.
+        // D1 landed (WeekdayParser's suffix-modifier slot): "qua" is now
+        // genuinely captured as a bare suffix modifier (-1), not a
+        // coincidental nearest-occurrence fallback as before D1. Re-verified
+        // passing for the real reason.
         let r = single("thứ hai qua", weekdayRef)
         XCTAssertEqual(r?.start.get(.weekday), 1)
         XCTAssertEqual(r?.start.get(.day), 6)
@@ -340,10 +336,13 @@ final class VITests: XCTestCase {
 
     // "sau khi" is a conjunction ("after when"), not "sau" (next) + "khi". Must
     // not consume "sau" as a weekday modifier.
-    // NOTE: currently passes vacuously - "sau" is not captured as a suffix
-    // modifier in ANY context yet (same regex gap), so this guard is not
-    // actually exercised. It becomes load-bearing once the suffix-modifier
-    // slot is added; re-verify then.
+    // REGRESSION (post-D1, confirmed by test run, reported to engine): now
+    // that the suffix-modifier slot exists and is load-bearing, "sau" IS
+    // being captured as a suffix modifier before the "khi" exclusion check
+    // applies, so the match wrongly extends to "thứ hai sau". This guard is
+    // no longer passing vacuously - it is genuinely broken. Fix is
+    // engine-owned (WeekdayParser's suffix-modifier vs. exclusion-guard
+    // ordering), not something VILocale data can patch around.
     func testWeekdaySauKhiGuard() {
         let results = parseVI("thứ hai sau khi chiến tranh kết thúc", ref(2012, 8, 10, 12))
         XCTAssertEqual(results.count, 1)
@@ -351,7 +350,7 @@ final class VITests: XCTestCase {
     }
 
     // Native addition: same guard on a different weekday, confirming it is not
-    // hardcoded to "hai".
+    // hardcoded to "hai". Same post-D1 regression as above.
     func testWeekdaySauKhiGuardOtherWeekday() {
         let results = parseVI("gặp nhau thứ ba sau khi họp xong", ref(2012, 8, 10, 12))
         XCTAssertEqual(results.count, 1)
@@ -392,6 +391,20 @@ final class VITests: XCTestCase {
     func testWeekdayNayIsCurrentPeriod() {
         let r = single("thứ hai này", weekdayRef) // ref Thu 2012-08-09
         XCTAssertEqual(r?.start.get(.weekday), 1)
+    }
+
+    // Native addition, reclaimed from the forwardDate section (E3): this was
+    // originally testForwardDateSameWeekdayStays, asserted with forwardDate:
+    // true. Checked whether it holds under DEFAULT mode with that argument
+    // dropped - it does (default nearest-weekday resolution already gives
+    // today when today IS the target weekday), so it is not forward-roll-
+    // specific and belongs here as ordinary Phase-1 weekday coverage, not P2.
+    func testWeekdaySameDayStays() {
+        // weekdayRef is Thu 2012-08-09; "thứ năm" same day -> stays, not pushed
+        // a week forward.
+        let r = single("thứ năm", weekdayRef)
+        XCTAssertEqual(r?.start.get(.weekday), 4)
+        XCTAssertEqual(r?.start.get(.day), 9)
     }
 
     // MARK: - E. Standard D/M/Y dates
@@ -702,33 +715,35 @@ final class VITests: XCTestCase {
     }
 
     // MARK: - O. forwardDate option
+    //
+    // P2: forward-time day-roll [E3]. Main's E3 ruling: REMOVE Options.forwardDate
+    // for v0.1 (forward-roll is P2, not Phase 1). These 4 tests are deferred, not
+    // deleted - P2 re-activates them. Renamed off the "test" prefix so XCTest
+    // does not discover/run them. (A 5th test originally lived here,
+    // testForwardDateSameWeekdayStays - checked whether it holds under default
+    // mode with the forwardDate:true argument dropped; it does, so main reclaimed
+    // it as an active Phase-1 default-behavior test - see testWeekdaySameDayStays
+    // in the Weekday section instead.)
 
-    func testForwardDateTimeRollsToNextDay() {
+    func p2_testForwardDateTimeRollsToNextDay() {
         let r = single("7 giờ sáng", ref(2012, 8, 10, 8, 0), forwardDate: true)
         XCTAssertEqual(r?.start.get(.day), 11)
         XCTAssertEqual(r?.start.get(.hour), 7)
     }
 
-    func testForwardDateWeekdayRollsForward() {
+    func p2_testForwardDateWeekdayRollsForward() {
         // REF Tue 2012-08-14; last Monday Aug13 already passed -> next Monday Aug20.
         let r = single("thứ hai", ref(2012, 8, 14, 12), forwardDate: true)
         XCTAssertEqual(r?.start.get(.weekday), 1)
         XCTAssertEqual(r?.start.get(.day), 20)
     }
 
-    func testForwardDateSameWeekdayStays() {
-        // REF Thu 2012-08-09; "thứ năm" same day -> stays, not pushed a week forward.
-        let r = single("thứ năm", ref(2012, 8, 9, 12), forwardDate: true)
-        XCTAssertEqual(r?.start.get(.weekday), 4)
-        XCTAssertEqual(r?.start.get(.day), 9)
-    }
-
-    func testForwardDateSlashRollsToNextYear() {
+    func p2_testForwardDateSlashRollsToNextYear() {
         let r = single("15/3", ref(2012, 8, 10, 12), forwardDate: true)
         XCTAssertEqual(r?.start.get(.year), 2013)
     }
 
-    func testForwardDateMonthRollsToNextYear() {
+    func p2_testForwardDateMonthRollsToNextYear() {
         let r = single("tháng 3", ref(2012, 8, 10, 12), forwardDate: true)
         XCTAssertEqual(r?.start.get(.year), 2013)
     }
