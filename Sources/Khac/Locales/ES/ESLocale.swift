@@ -76,8 +76,17 @@ public struct ESLocale: KhacLocale {
 
     // Spanish: day-month numeric order ("8/2/2016" = 8 Feb 2016, confirmed by
     // the ES oracle's slash cases), week starts Monday.
+    //
+    // monthNameForms: .dayFirst only - chrono's own es/index.ts registers
+    // exactly one month-name parser, ESMonthNameLittleEndianParser, and
+    // nothing else (no month-first, year-first, or bare-month-only form).
+    // No ES oracle case exercises the gap this closes (unlike FR/PT, whose
+    // deferred cases needed it directly), but the underlying fact is
+    // identical, confirmed the same way: read chrono's own parser
+    // registration rather than inferred. Narrowing this is a fidelity fix
+    // with nothing to lose - ES is otherwise 75/75.
     public var options: LocaleOptions {
-        LocaleOptions(dateOrder: .dayMonth, weekStart: 2)
+        LocaleOptions(dateOrder: .dayMonth, weekStart: 2, monthNameForms: .dayFirst)
     }
 }
 

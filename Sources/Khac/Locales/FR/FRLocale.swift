@@ -141,8 +141,18 @@ public struct FRLocale: KhacLocale {
     // weekdaySuffixModifier: true - FRWeekdayParser's own "dernier"/"prochain"
     // are a direct SUFFIX on the weekday with no week-word ("vendredi
     // dernier" = last Friday), the same shape VI's suffix option exists for.
+    //
+    // monthNameForms: .dayFirst only - chrono's own fr/index.ts registers
+    // exactly one month-name parser, FRMonthNameLittleEndianParser, in both
+    // createConfiguration and createCasualConfiguration. No month-first,
+    // year-first, or bare-month-only parser exists for French at all, so a
+    // day rejected as invalid ("29 Février 2014") must void the WHOLE match
+    // rather than fall back to a bare-month reading the language does not
+    // have. This is what closes the KHAC-6 bare-month-after-bad-day gap for
+    // French, confirmed against chrono's own parser registration rather than
+    // inferred from the oracle.
     public var options: LocaleOptions {
-        LocaleOptions(dateOrder: .dayMonth, weekStart: 2, weekdaySuffixModifier: true)
+        LocaleOptions(dateOrder: .dayMonth, weekStart: 2, weekdaySuffixModifier: true, monthNameForms: .dayFirst)
     }
 }
 

@@ -121,25 +121,14 @@ final class FROracleTests: XCTestCase {
         // EN's documented "last night" deferral) - see FRLocale.dayReferences.
         "La deadline était la veille":
             "KHAC-6 deferral: \"la veille\" (the day before/eve) has no compositional home in Vocabulary",
-        // Bare month name (no day) matching when chrono's real FR output does
-        // not. Suspected either a genuine chrono FR behavioral difference from
-        // EN (which DOES accept a bare month name alone) or a mode-tagging
-        // slip in the oracle port (these read as casual but behave like the
-        // ES equivalents, which were correctly tagged `mode: .strict`).
-        // Reported to main for verification rather than resolved unilaterally
-        // - not edited in the generated oracle either way.
-        "32 Août 2014":
-            "KHAC-6 deferral: bare month name matches when chrono's real FR output does not (suspected mode-tagging or genuine FR-specific behavior, unresolved)",
-        "29 Février 2014":
-            "KHAC-6 deferral: bare month name matches when chrono's real FR output does not (suspected mode-tagging or genuine FR-specific behavior, unresolved)",
-        "32 Aout":
-            "KHAC-6 deferral: bare month name matches when chrono's real FR output does not (suspected mode-tagging or genuine FR-specific behavior, unresolved)",
-        "29 Fevrier":
-            "KHAC-6 deferral: bare month name matches when chrono's real FR output does not (suspected mode-tagging or genuine FR-specific behavior, unresolved)",
-        "le mois d'avril":
-            "KHAC-6 deferral: bare month name matches when chrono's real FR output does not (suspected mode-tagging or genuine FR-specific behavior, unresolved)",
-        "le mois d'avril prochain":
-            "KHAC-6 deferral: bare month name matches when chrono's real FR output does not (suspected mode-tagging or genuine FR-specific behavior, unresolved)",
+        // (Resolved: the bare-month-after-bad-day deferral that used to live
+        // here - "32 Août 2014", "29 Février 2014", "32 Aout", "29 Fevrier",
+        // "le mois d'avril", "le mois d'avril prochain" - is fixed by
+        // `options.monthNameForms = .dayFirst` above. It was never a
+        // mode-tagging slip or an FR-specific quirk: chrono's own fr/index.ts
+        // registers no bare-month parser at all, so an invalid day has
+        // nothing to fall back to. Confirmed against chrono's parser
+        // registration, not just the oracle.)
         // French's compact clock format ("8h10", "12h32") only requires a
         // marker on the FIRST unit; later digit groups are unmarked. Khac's
         // generic clock-word mechanism assumes every unit carries its own
@@ -266,10 +255,10 @@ final class FROracleTests: XCTestCase {
 /// The progress instrument, mirroring ENOracleScoreboardTests.
 final class FROracleScoreboardTests: XCTestCase {
     /// Cases known to pass. Raise this after every improvement; never lower it
-    /// to accommodate a regression. 34 of 154 are deferred (KHAC-6, see
+    /// to accommodate a regression. 28 of 154 are deferred (KHAC-6, see
     /// FROracleTests.knownDeferrals) pending engine fixes outside this
     /// locale's own data - see checkpoint reports to main.
-    static let floor = 120
+    static let floor = 126
 
     func testScoreboard() {
         let runner = FROracleRunner()

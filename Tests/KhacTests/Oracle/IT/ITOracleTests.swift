@@ -151,25 +151,34 @@ final class ITOracleTests: XCTestCase {
         // pomeriggio" (oggi = certain day) passes; this one does not.
         "ferie da stamattina a domani":
             "KHAC-6 deferral: MergeDateRangeRefiner's isDateLike gate rejects a bare time-of-day reference with nothing certain as a range side",
-        // Confirmed cross-locale (also seen in FR): a bare, UNMARKED invalid
-        // calendar day ("29 febbraio 2014", "agosto 32, 2014") should void
-        // the WHOLE match in casual mode, the same way it already does in
+        // UPDATE: this is NOT the same root cause as FR's identical-looking
+        // symptom, now that `options.monthNameForms` exists. FR/PT/ES all had
+        // NO bare-month parser at all in chrono's own registration, so
+        // `.dayFirst` fixed their 6+ cases outright. Italian is different:
+        // chrono's own it/configuration.ts explicitly pushes
+        // `new ITMonthNameParser()` in createCasualConfiguration - Italian
+        // DOES have a genuine bare-month construct ("febbraio", "settembre
+        // 2012" both real, both oracle-tested elsewhere in this locale) - so
+        // `monthNameForms` stays `.all` here and narrowing it would be wrong,
+        // not a fix. Confirmed by reading chrono's own configuration.ts, not
+        // guessed from the oracle.
+        //
+        // So this IS a real, separate casual-mode gap specific to locales
+        // that have BOTH a day-first form and a bare-month form: a bare,
+        // UNMARKED invalid calendar day ("29 febbraio 2014", "agosto 32,
+        // 2014") should void the WHOLE match, the same way it already does in
         // strict mode via MonthNameParser's explicit `day == nil` guard, and
         // the same way VI's `dayMarkerWords` lookbehind already voids a
-        // MARKED invalid day ("ngày 0 tháng 4"). Here there is no marker word
-        // at all (bare "29 febbraio"), so neither existing guard fires, and
-        // the rejected day/month construct falls through to a spurious bare
-        // "febbraio 2014" / "agosto 32" match. Two locales, 8 total cases now
-        // point the same way - reported to main as a confirmed casual-mode
-        // gap, not a per-locale oddity.
+        // MARKED invalid day ("ngày 0 tháng 4"). Reported to main as the
+        // confirmed, narrower form of this finding.
         "29 febbraio 2014":
-            "KHAC-6 deferral: casual mode falls back to a spurious bare-month match after an unmarked invalid day is rejected (confirmed cross-locale with FR)",
+            "KHAC-6 deferral: casual mode falls back to a spurious bare-month match after an unmarked invalid day is rejected (IT genuinely has monthOnly, so this is a separate gap from FR's - confirmed against chrono's own configuration.ts)",
         "agosto 32, 2014":
-            "KHAC-6 deferral: casual mode falls back to a spurious bare-month match after an unmarked invalid day is rejected (confirmed cross-locale with FR)",
+            "KHAC-6 deferral: casual mode falls back to a spurious bare-month match after an unmarked invalid day is rejected (IT genuinely has monthOnly, so this is a separate gap from FR's - confirmed against chrono's own configuration.ts)",
         "30 febbraio 2020":
-            "KHAC-6 deferral: casual mode falls back to a spurious bare-month match after an unmarked invalid day is rejected (confirmed cross-locale with FR)",
+            "KHAC-6 deferral: casual mode falls back to a spurious bare-month match after an unmarked invalid day is rejected (IT genuinely has monthOnly, so this is a separate gap from FR's - confirmed against chrono's own configuration.ts)",
         "0 marzo 2020":
-            "KHAC-6 deferral: casual mode falls back to a spurious bare-month match after an unmarked invalid day is rejected (confirmed cross-locale with FR)",
+            "KHAC-6 deferral: casual mode falls back to a spurious bare-month match after an unmarked invalid day is rejected (IT genuinely has monthOnly, so this is a separate gap from FR's - confirmed against chrono's own configuration.ts)",
         // Named timezone abbreviations (CET/CEST) resolving to a specific
         // offset are out of v1 scope - same class EN's own port excluded and
         // FR's port did not (see the FR checkpoint report). The 3 numeric-

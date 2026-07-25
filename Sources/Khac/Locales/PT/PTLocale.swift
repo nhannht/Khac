@@ -72,8 +72,14 @@ public struct PTLocale: KhacLocale {
 
     // Portuguese: day-month numeric order ("8/2/2016" = 8 Feb 2016, confirmed
     // by the PT oracle's slash cases), week starts Monday.
+    //
+    // monthNameForms: .dayFirst only - chrono's own pt/index.ts registers
+    // exactly one month-name parser, PTMonthNameLittleEndianParser, and
+    // nothing else. Same reasoning as FR: an invalid day must void the whole
+    // match rather than fall back to a bare-month reading Portuguese's own
+    // grammar does not offer.
     public var options: LocaleOptions {
-        LocaleOptions(dateOrder: .dayMonth, weekStart: 2)
+        LocaleOptions(dateOrder: .dayMonth, weekStart: 2, monthNameForms: .dayFirst)
     }
 }
 
