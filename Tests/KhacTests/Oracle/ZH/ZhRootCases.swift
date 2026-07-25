@@ -14,7 +14,7 @@ public let zhRootCases: [OracleCase] = [
         sourceFile: "zh.test.ts",
         input: "1994-11-05T08:15:30-05:30",
         reference: OracleDate(2012, 8, 8),
-        expectation: .match(text: "1994-11-05T08:15:30-05:30", start: OracleComponents(year: 1994, month: 11, day: 5, hour: 8, minute: 15, second: 30, timezoneOffset: -330), startDate: OracleDate(1994, 11, 5, 20, 45, 30))
+        expectation: .match(text: "1994-11-05T08:15:30-05:30", start: OracleComponents(year: 1994, month: 11, day: 5, hour: 8, minute: 15, second: 30, timezoneOffset: -330), startDate: OracleDate(1994, 11, 5, 13, 45, 30))
     ),
     OracleCase(
         sourceFile: "zh.test.ts",

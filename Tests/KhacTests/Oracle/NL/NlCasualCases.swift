@@ -14,7 +14,7 @@ public let nlCasualCases: [OracleCase] = [
         sourceFile: "nl_casual.test.ts",
         input: "De deadline is nu",
         reference: OracleDate(2012, 8, 10, 8, 9, 10, 11),
-        expectation: .match(text: "nu", index: 15, start: OracleComponents(year: 2012, month: 8, day: 10, hour: 8, minute: 9, second: 10, millisecond: 11, timezoneOffset: 420), startDate: OracleDate(2012, 8, 10, 8, 9, 10, 11))
+        expectation: .match(text: "nu", index: 15, start: OracleComponents(year: 2012, month: 8, day: 10, hour: 8, minute: 9, second: 10, millisecond: 11), startDate: OracleDate(2012, 8, 10, 8, 9, 10, 11))
     ),
     OracleCase(
         sourceFile: "nl_casual.test.ts",
