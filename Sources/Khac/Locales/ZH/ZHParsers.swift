@@ -20,6 +20,34 @@
 //    start hour against the end hour directly, where its ja compares the start
 //    hour MINUS 12. The two produce different answers for the same shape, so
 //    neither can be shared.
+//
+// A SEPARATOR RUN BELONGS INSIDE THE GROUP THAT NEEDS IT. Read this before
+// "simplifying" any `\s*` or `[\s,，]*` in this file back to where chrono puts it.
+//
+// chrono writes these runs LOOSE, outside the optional token they separate:
+// `(?:日|天)[\s,，]*(?<t3>tod)?` and `(year)?\s*(?:年)?[\s,，]*(month)`. The obvious
+// reading is that this is harmless, because if the optional group does not match
+// then surely the run has nothing to do. That reading is WRONG, and it is the exact
+// reasoning that leaves the bug in place.
+//
+// The run is GREEDY and the group after it can match EMPTY. So the run eats the
+// separator and then the optional group is satisfied by the empty string - there is
+// no failure, hence nothing for the regex engine to backtrack for. The separator
+// ends up inside the match with no token to justify it. That is why loose runs leak
+// UNCONDITIONALLY rather than in odd cases.
+//
+// Two properties make it expensive to find. A span one separator too wide still
+// resolves to the right instant, so this locale's own 168 cases cannot fail on it.
+// And under multi-locale composition it is fatal rather than cosmetic: the widened
+// span strictly CONTAINS another locale's correct span, and OverlapFilterRefiner's
+// containment pre-pass drops the contained result before any score is compared, so
+// the correct answer is destroyed rather than merely outranked. Measured against nl,
+// which lost its `11:00` outright.
+//
+// Four instances were found here and fixed (022dc83, 1827d54, d72d9ed); a sweep of
+// all 14 locales found none anywhere else, because the space-separated languages
+// separate on `\s+` between real tokens, where a required space cannot be absent and
+// so cannot float to a match edge. If you add a run, attach it to its token.
 
 import Foundation
 
@@ -51,13 +79,11 @@ private func zhDayTimeOfDayGroup(_ s: String) -> String {
     return "(?:"
         + "(?<d1\(s)>" + days + ")(?<t1\(s)>" + shortTod + ")"
         + "|(?<t2\(s)>" + tod + ")"
-        // The separator belongs INSIDE the optional time-of-day group. chrono writes
-        // it outside, as `(?:日|天)[\s,，]*(?<t3>tod)?`, and because the run is greedy
-        // while t3 can match empty, a trailing space or comma is consumed with no
-        // time-of-day word to justify it: `"明天 "` spans `"明天 "` and `"明天，"`
-        // spans `"明天，"`. This group IS the whole pattern in ZHCasualDateParser, so
-        // that run sits at the match END. See the note on `side` - same shape, and
-        // this is the third and last instance of it in this file.
+        // The separator belongs INSIDE the optional time-of-day group - see the
+        // separator-run note in the file header for why chrono's loose form leaks
+        // unconditionally. Left loose here it produced `"明天 "` spanning `"明天 "`
+        // and `"明天，"` spanning `"明天，"`, and this group IS the whole pattern in
+        // ZHCasualDateParser, so the run sits at the match END.
         + "|(?<d3\(s)>" + days + ")(?:日|天)(?:[\\s,，]*(?<t3\(s)>" + tod + "))?"
         + ")"
 }
