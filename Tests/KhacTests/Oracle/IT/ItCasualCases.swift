@@ -14,7 +14,7 @@ public let itCasualCases: [OracleCase] = [
         sourceFile: "it_casual.test.ts",
         input: "La scadenza è adesso",
         reference: OracleDate(2012, 8, 10, 8, 9, 10, 11),
-        expectation: .match(text: "adesso", index: 14, start: OracleComponents(year: 2012, month: 8, day: 10, hour: 8, minute: 9, second: 10, millisecond: 11, timezoneOffset: 420), startDate: OracleDate(2012, 8, 10, 8, 9, 10, 11))
+        expectation: .match(text: "adesso", index: 14, start: OracleComponents(year: 2012, month: 8, day: 10, hour: 8, minute: 9, second: 10, millisecond: 11), startDate: OracleDate(2012, 8, 10, 8, 9, 10, 11))
     ),
     OracleCase(
         sourceFile: "it_casual.test.ts",

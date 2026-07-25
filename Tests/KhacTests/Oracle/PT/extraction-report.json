@@ -4,6 +4,7 @@
   "seen": 60,
   "ported": 60,
   "excluded": [],
+  "droppedClaims": [],
   "reasons": {},
   "tables": [
     {

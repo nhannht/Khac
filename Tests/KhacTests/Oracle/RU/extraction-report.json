@@ -15,6 +15,7 @@
       "reason": "reference or options use a ParsingReference / timezone form this port does not model"
     }
   ],
+  "droppedClaims": [],
   "reasons": {
     "reference or options use a ParsingReference / timezone form this port does not model": 2
   },
