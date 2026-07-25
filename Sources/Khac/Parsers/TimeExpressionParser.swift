@@ -308,7 +308,12 @@ struct TimeExpressionParser: Parser {
     /// carries the range guards - a decimal end ("10 - 10.1") or a bare-to-bare
     /// range in strict mode voids the WHOLE match, both sides, not just the end.
     private func passesLoneNumberFilters(_ text: String, strict: Bool) -> Bool {
-        if range(text, "^[0-9]{1,2}$") { return false }        // bare "1" or "11" is not a time
+        // A single bare digit is never a time. A bare TWO-digit number is
+        // accepted here, exactly as chrono does: it must survive so "-5d 00"
+        // can merge its "00" onto the date. Whatever bare number does NOT merge
+        // into a larger expression is dropped later by UnlikelyFilterRefiner's
+        // digits-only rule - parser and filter are a matched pair.
+        if range(text, "^[0-9]$") { return false }
         if range(text, "^[0-9][0-9][0-9]+$") { return false }  // "203", "2014"
         if range(text, "^[0-9]+\\.[0-9]+$") { return false }   // bare "12.53", "35.49" is a decimal, not a time
         if range(text, "[0-9][apAP]$") { return false }        // "1a", "123p"

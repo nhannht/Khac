@@ -49,6 +49,12 @@ struct RelativeDuration {
     /// express). Callers reject these rather than emitting a zero-shift result.
     var isEmpty: Bool { clauses.isEmpty }
 
+    /// True when any clause names a clock unit. A time-bearing duration moves
+    /// the anchor's clock, not just its calendar date ("now + 40minutes").
+    var hasTimeClause: Bool {
+        clauses.contains { [.hour, .minute, .second, .nanosecond].contains($0.component) }
+    }
+
     /// Build from fractional clauses, cascading each clause's remainder into the
     /// next smaller unit (see `cascade`). Clauses naming the same component are
     /// summed, so "1 hour 30 min" and "1.5 hours" normalize identically.

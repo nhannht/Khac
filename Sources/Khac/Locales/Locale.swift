@@ -107,6 +107,10 @@ public struct Vocabulary {
     public var meridiemHourRules: [String: MeridiemHourRule]
     /// Era markers applied to a year: "bc"/"tcn": -1, "ad"/"scn": +1.
     public var eraMarkers: [String: Int]
+    /// Era markers that OFFSET a year rather than sign it: Buddhist era
+    /// "be": -543 ("2555 BE" is 2012 CE). A word lives in exactly one of the
+    /// two era tables - a sign cannot express an offset and vice versa.
+    public var eraOffsets: [String: Int]
     /// Which keys of `months` are FULL month names rather than abbreviations,
     /// lowercased. A bare abbreviation is too weak to be a date on its own: in
     /// running English prose "mar" or "jan" is far more often a name or a typo
@@ -147,6 +151,7 @@ public struct Vocabulary {
         timeOfDay: [String: (hour: Int, meridiem: Meridiem?)] = [:],
         meridiemHourRules: [String: MeridiemHourRule] = [:],
         eraMarkers: [String: Int] = [:],
+        eraOffsets: [String: Int] = [:],
         fullMonthNames: Set<String> = [],
         fullTimeUnitNames: Set<String> = [],
         casualQuantifiers: [String: Double] = [:]
@@ -162,6 +167,7 @@ public struct Vocabulary {
         self.timeOfDay = timeOfDay
         self.meridiemHourRules = meridiemHourRules
         self.eraMarkers = eraMarkers
+        self.eraOffsets = eraOffsets
         self.fullMonthNames = fullMonthNames
         self.fullTimeUnitNames = fullTimeUnitNames
         self.casualQuantifiers = casualQuantifiers
@@ -247,6 +253,13 @@ public struct PatternSet {
     /// Words joining the clauses of one compound duration: "1 day and 2 hours".
     /// A comma is handled structurally and needs no entry.
     public var durationConnectorWords: [String]
+    /// Single connector words allowed BETWEEN a date and a time being merged
+    /// into one result, beyond `timePrefixWords` (which are also accepted):
+    /// English "tomorrow AFTER 4pm", "Tuesday of next week BEFORE 2pm". The
+    /// merge also accepts one structural punctuation mark (, - . : ∙) with no
+    /// entry needed. Leave EMPTY for a locale whose date and time only ever
+    /// join with a time prefix ("13/3 lúc 8 giờ").
+    public var dateTimeGlueWords: [String]
 
     public init(
         timePrefixWords: [String] = [],
@@ -266,7 +279,8 @@ public struct PatternSet {
         dayMarkerWords: [String] = [],
         timeOfDayPrefixWords: [String] = [],
         durationFillerWords: [String] = [],
-        durationConnectorWords: [String] = []
+        durationConnectorWords: [String] = [],
+        dateTimeGlueWords: [String] = []
     ) {
         self.timePrefixWords = timePrefixWords
         self.dateConnectorWords = dateConnectorWords
@@ -286,6 +300,7 @@ public struct PatternSet {
         self.timeOfDayPrefixWords = timeOfDayPrefixWords
         self.durationFillerWords = durationFillerWords
         self.durationConnectorWords = durationConnectorWords
+        self.dateTimeGlueWords = dateTimeGlueWords
     }
 }
 

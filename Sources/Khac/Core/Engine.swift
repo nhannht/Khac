@@ -25,15 +25,33 @@ enum Engine {
         ]
     }
 
-    /// The shared merge refiners, applied before the overlap filter. The filter
-    /// is applied separately (it must run last and across locales too).
+    /// The shared merge refiners, applied before the final overlap filter. The
+    /// ORDER is chrono's own refiner order (locales/en/configuration.ts +
+    /// configurations.ts, after resolving every unshift/push), because several
+    /// behaviors only work in this sequence: overlaps drop before merging so a
+    /// contained fragment ("next week" inside "Friday of next week") cannot
+    /// block a merge; forward-dating runs on merged date-times but BEFORE the
+    /// range merge, so each side of "monday - friday" forwards independently
+    /// and the range repair untangles the order; the year suffix is claimed
+    /// after the date-time merge; and the range merge runs last of all.
     static var mergeRefiners: [Refiner] {
         [
-            // Re-anchoring runs FIRST: "2 days after tomorrow" must become one
-            // date before anything tries to read it as a range or a date+time.
+            OverlapFilterRefiner(),
+            // Re-anchoring runs before anything else touches the results: "2
+            // days after tomorrow" must become one date first, and a dangling
+            // "+2 weeks" must be merged before the timezone refiner could
+            // misread its sign as an offset.
             MergeRelativeAnchorRefiner(),
+            ExtractTimezoneOffsetRefiner(),
             MergeWeekdayRefiner(),
             MergeDateTimeRefiner(),
+            OverlapFilterRefiner(),
+            ForwardDateRefiner(),
+            UnlikelyFilterRefiner(),
+            // Second date-time pass: the first pass may have been blocked by a
+            // fragment the overlap filter has since removed.
+            MergeDateTimeRefiner(),
+            ExtractYearSuffixRefiner(),
             MergeDateRangeRefiner(),
         ]
     }

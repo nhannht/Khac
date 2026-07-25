@@ -62,7 +62,11 @@ public struct ENLocale: KhacLocale {
             weekdayPrefixWords: ["on"],
             timeOfDayConnectorWords: ["at", "in the"],
             durationFillerWords: ["around", "about", "~"],
-            durationConnectorWords: ["and"]
+            durationConnectorWords: ["and"],
+            // chrono's ENMergeDateTimeRefiner glue set, minus the punctuation the
+            // merge handles structurally: ^\s*(T|at|after|before|on|of|,|-|.|∙|:)?\s*$.
+            // "at" is also a timePrefixWord; listing it twice is harmless.
+            dateTimeGlueWords: ["at", "after", "before", "on", "of", "t"]
         )
     }
 

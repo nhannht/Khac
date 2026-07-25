@@ -56,14 +56,32 @@ struct MergeRelativeAnchorRefiner: Refiner {
         let calendar = context.reference.calendar
         guard let shifted = relative.apply(to: anchor.start.date(), calendar: calendar) else { return nil }
 
-        // Keep the anchor's own components - notably its clock, so a bare date's
-        // implied noon survives - and move only the calendar date, preserving how
-        // certain each field already was.
+        // Move the calendar date, preserving how certain each field already was:
+        // "02/02" stated its month and day, a bare weekday only implied them. The
+        // clock stays the anchor's own - a bare date's implied noon survives -
+        // UNLESS the duration itself names a clock unit: "now + 40minutes" must
+        // move the minutes, so a time-bearing duration carries the whole shifted
+        // instant over (chrono's createRelativeFromReference does the same).
         var merged = anchor.start
-        let moved = calendar.dateComponents([.year, .month, .day], from: shifted)
+        let moved = calendar.dateComponents(
+            [.year, .month, .day, .hour, .minute, .second, .nanosecond, .weekday], from: shifted
+        )
         assign(&merged, .year, moved.year, wasCertain: anchor.start.isCertain(.year))
         assign(&merged, .month, moved.month, wasCertain: anchor.start.isCertain(.month))
         assign(&merged, .day, moved.day, wasCertain: anchor.start.isCertain(.day))
+        if let weekday = moved.weekday {
+            merged.imply(.weekday, Weekday.chrono(fromFoundation: weekday))
+        }
+        if relative.hasTimeClause {
+            assign(&merged, .hour, moved.hour, wasCertain: anchor.start.isCertain(.hour))
+            assign(&merged, .minute, moved.minute, wasCertain: anchor.start.isCertain(.minute))
+            assign(&merged, .second, moved.second, wasCertain: anchor.start.isCertain(.second))
+            assign(
+                &merged, .millisecond,
+                ParsingComponents.milliseconds(fromNanoseconds: moved.nanosecond ?? 0),
+                wasCertain: anchor.start.isCertain(.millisecond)
+            )
+        }
 
         let original = context.normalization.original as NSString
         let start = min(a.index, b.index)

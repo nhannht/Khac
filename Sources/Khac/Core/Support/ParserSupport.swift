@@ -68,6 +68,35 @@ extension ReferencePoint {
     }
 }
 
+// MARK: - chrono's result-classification predicates
+//
+// The refiners decide what a result IS - a date, a time, a bare weekday - from
+// which components were explicitly parsed. These are chrono's own definitions
+// (src/results.ts), and their laxness is deliberate: a casual "morning" (implied
+// hour, nothing certain) is BOTH date-like and time-like, which is exactly what
+// lets it merge onto "sunday" as the time half.
+extension ParsingComponents {
+    /// No certain clock fields. The result can serve as the DATE half of a merge.
+    var isDateLikeOnly: Bool {
+        !isCertain(.hour) && !isCertain(.minute) && !isCertain(.second)
+    }
+
+    /// No certain calendar fields. The result can serve as the TIME half of a merge.
+    var isTimeLikeOnly: Bool {
+        !isCertain(.weekday) && !isCertain(.day) && !isCertain(.month) && !isCertain(.year)
+    }
+
+    /// A weekday was stated but no calendar day: "Monday", "next Friday".
+    var isOnlyWeekdayComponent: Bool {
+        isCertain(.weekday) && !isCertain(.day) && !isCertain(.month)
+    }
+
+    /// A month was stated but the year is a guess: "in December", "22-23 Feb".
+    var isDateWithUnknownYear: Bool {
+        isCertain(.month) && !isCertain(.year)
+    }
+}
+
 extension ParsingComponents {
     /// Imply the reference's clock time (hour/minute/second/millisecond) onto this
     /// component set, overriding the default noon implication. Used by casual date
