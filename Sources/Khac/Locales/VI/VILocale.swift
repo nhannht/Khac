@@ -192,6 +192,17 @@ public struct VILocale: KhacLocale {
                 //
                 // Keys are lowercase and matched case-sensitively; see the field's
                 // own documentation for why case is load-bearing here.
+                //
+                // KNOWN GAP, deliberate: the gate is a preceding TIME-OF-DAY WORD,
+                // so "8 giờ mai" and "15:30 mai" - a clock with no sáng/chiều/tối -
+                // still answer TODAY. Both are ordinary Vietnamese and both are
+                // wrong today. Widening the gate to any preceding TIME result would
+                // fix them, and was measured before being declined: a bare relative
+                // like "2 tuần nữa" has no certain calendar field either, so it
+                // passes the same test and "2 tuần nữa mai" would silently move
+                // from day 24 to tomorrow. Closing this needs a gate that separates
+                // a clock from a resolved shift, which the certain/implied model
+                // does not currently express - not a wider version of this one.
                 "mai": 1,
                 // "sáng kia" = day-after-tomorrow morning. The FORWARD reading is a
                 // deliberate product decision, not a verified linguistic fact, and
