@@ -233,6 +233,29 @@ final class VITests: XCTestCase {
     // "kia" = +2, a deliberate forward default rather than a verified fact; see
     // VILocale's dayShiftSuffixes note. Before this it parsed as bare "sáng" and
     // answered TODAY, which was wrong under either reading.
+    // "mùng"/"mồng" mark a day the same way "ngày" does, for the first days of a
+    // month. Both reviewers ruled these in: they are ordinary solar usage, not
+    // lunar-only. Two defects, one entry - a valid day already resolved but with
+    // the marker excluded from the reported span, which breaks any caller slicing
+    // on .text or .index; and an invalid marked day degraded silently instead of
+    // rejecting the way "ngày 0" does.
+    func testMungMarksTheDay() {
+        let r0 = ref(2012, 8, 10, 12)
+
+        let quocKhanh = single("mùng 2 tháng 9", r0)
+        XCTAssertEqual(quocKhanh?.start.get(.day), 2)
+        XCTAssertEqual(quocKhanh?.start.get(.month), 9)
+        XCTAssertEqual(quocKhanh?.text, "mùng 2 tháng 9", "the marker belongs inside the reported span")
+
+        let mong = single("mồng 1 tháng 5", r0)
+        XCTAssertEqual(mong?.start.get(.day), 1)
+        XCTAssertEqual(mong?.start.get(.month), 5)
+        XCTAssertEqual(mong?.text, "mồng 1 tháng 5")
+
+        // A marked invalid day rejects outright, same as "ngày 0 tháng 4".
+        XCTAssertTrue(parseVI("mùng 0 tháng 4 năm 2000", r0).isEmpty)
+    }
+
     func testCasualCompoundKia() {
         let sang = single("sáng kia", ref(2012, 8, 10, 20))
         XCTAssertEqual(sang?.start.get(.day), 12)

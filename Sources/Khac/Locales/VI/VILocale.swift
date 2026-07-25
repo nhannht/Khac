@@ -252,7 +252,13 @@ public struct VILocale: KhacLocale {
             // whole phrase, and its presence is what lets an invalid marked day
             // ("ngày 0 tháng 4") reject outright instead of silently degrading
             // to a bare "tháng 4" with the day dropped.
-            dayMarkerWords: ["ngày"],
+            // "mùng"/"mồng" mark the same slot for the first days of a month
+            // ("mùng 2 tháng 9", National Day). They are NOT lunar-only: those are
+            // ordinary solar-calendar dates in everyday use. Native usage stops at
+            // about day 10, which needs no range plumbing - a larger number simply
+            // does not occur, and treating it as an ordinary marked day is
+            // harmless. Both spellings are current; neither is a typo of the other.
+            dayMarkerWords: ["ngày", "mùng", "mồng"],
             // "buổi" is the period-of-day particle: "buổi sáng" is the morning.
             // It must be consumed as part of the time-of-day token, or a day
             // anchor and the time split into two results with an unmatched word
