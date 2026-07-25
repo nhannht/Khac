@@ -44,8 +44,16 @@ struct RelativeUnitParser: Parser {
         let pastAlt = "(?<pdur>" + duration + ")\\s{0,3}(?<psfx>" + past + ")"
         // Future suffix: "2 days later", "15 minute out"
         let futureSuffixAlt = "(?<fdur>" + duration + ")\\s{0,3}(?<fsfx>" + futureSuffix + ")"
-        // Future prefix: "in 5 days", "wait for 5 minutes"
-        let futurePrefixAlt = "(?<fpfx>" + futurePrefix + ")\\s{0,3}(?<fpdur>" + duration + ")"
+        // Future prefix: "in 5 days", "wait for 5 minutes". Under forwardDate
+        // the prefix itself is optional - chrono's PATTERN_WITH_OPTIONAL_PREFIX -
+        // because that option declares bare durations to mean the future:
+        // "give it 2 months" is a date two months out. Casual only; strict mode
+        // still demands the explicit prefix.
+        let prefixIsOptional = context.options.forwardDate && context.options.mode != .strict
+        let futurePrefixGroup = "(?<fpfx>" + futurePrefix + ")\\s{0,3}"
+        let futurePrefixAlt =
+            (prefixIsOptional ? "(?:" + futurePrefixGroup + ")?" : futurePrefixGroup)
+            + "(?<fpdur>" + duration + ")"
         // Explicit sign: "+15 minutes", "-3y", "-2hr5min"
         let signedAlt = "(?<sign>[+-])\\s{0,3}(?<sdur>" + duration + ")"
         // Modifier prefix WITH a count: "next 2 weeks", "past 2 days". Shorthand
