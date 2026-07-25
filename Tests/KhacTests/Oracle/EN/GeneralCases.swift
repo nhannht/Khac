@@ -84,10 +84,11 @@ public let generalCases: [OracleCase] = [
         reference: OracleDate(2017, 7, 7),
         expectation: .match(text: "07-27-2022, 02:00 AM", start: OracleComponents(year: 2022, month: 7, day: 27, hour: 2))
     ),
-    OracleCase(
-        sourceFile: "en.test.ts",
-        input: "Thursday 9AM",
-        reference: OracleDate(2020, 11, 29),
-        expectation: .match(text: "Thursday", start: OracleComponents(year: 2020, month: 11, day: 26))
-    ),
+    // NOT PORTED from en.test.ts: the "Thursday 9AM" case in "Test - Customize
+    // by removing time extraction". It runs a CUSTOM chrono with
+    // ENTimeExpressionParser deleted from the parser list - the assertion
+    // (text "Thursday" alone, the 9AM ignored) is a property of that surgery,
+    // not of the parsing engine, and a single-engine port cannot express a
+    // configuration with its time parser removed. Same class as the removed
+    // contradictory "Dec. 21" case (see KHAC-1).
 ]

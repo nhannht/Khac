@@ -111,14 +111,22 @@ public let timeUnitsCasualRelativeCases: [OracleCase] = [
         reference: OracleDate(2016, 10, 1, 12),
         expectation: .match(text: "-5d 00", start: OracleComponents(year: 2016, month: 9, day: 26, hour: 0, minute: 0), startDate: OracleDate(2016, 9, 26))
     ),
+    // The next two cases come from chrono's "Without custom parser without
+    // abbreviations" block, which runs a CUSTOM configuration: en.strict.clone()
+    // plus ENTimeUnitCasualRelativeFormatParser(false). Ported as .strict - the
+    // faithful single-engine equivalent, since strict is exactly the mode that
+    // refuses shorthand units. As casual they would contradict the "-3y" match
+    // case above, which chrono runs on the DEFAULT casual config.
     OracleCase(
         sourceFile: "en_time_units_casual_relative.test.ts",
         input: "-3y",
+        mode: .strict,
         expectation: .noMatch
     ),
     OracleCase(
         sourceFile: "en_time_units_casual_relative.test.ts",
         input: "last 2m",
+        mode: .strict,
         expectation: .noMatch
     ),
     OracleCase(

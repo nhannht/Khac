@@ -150,13 +150,13 @@ final class ENOracleTests: XCTestCase {
     func testNegativeCases() { run(negativeCases) }
 }
 
-/// The progress instrument. Prints how many of the 563 oracle cases the engine
+/// The progress instrument. Prints how many oracle cases the engine
 /// reproduces, broken down by chrono source file, and holds a ratchet floor so
 /// the number can only go up. Raise `floor` whenever it does.
 final class ENOracleScoreboardTests: XCTestCase {
     /// Cases known to pass. Raise this after every improvement; never lower it
     /// to accommodate a regression.
-    static let floor = 560
+    static let floor = 561
 
     func testScoreboard() {
         let runner = ENOracleRunner()
