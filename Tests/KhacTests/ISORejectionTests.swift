@@ -36,21 +36,34 @@ final class ISORejectionTests: XCTestCase {
         )
     }
 
-    /// KNOWN FAILING, tracked as KHAC-9. Asserted rather than omitted, so it stays
-    /// visible and reports the moment it starts passing.
-    ///
-    /// Month 0 must fall through rather than be consumed - the same rule that
-    /// keeps "2023-13-01" reading as 13 January - so this input still reaches the
-    /// scavenging path. What it hits there is a DIFFERENT defect from the one the
-    /// negative-offset guard fixed: "00-10" is read as the bare time "00" carrying
-    /// a "-10" hour-only timezone offset, giving tzOffset -600, plus a second
-    /// spurious "00:00". The guard covers 3-4 digit offsets like "-0500"; a 1-2
-    /// digit signed run after a bare number is still claimed as an offset.
-    ///
-    /// Special-casing month 0 here would paper over that rather than fix it.
+    /// Month 0 is ACCEPTED by ISOParser so that a full-span result exists to shadow
+    /// the fragments, and dropped afterwards by UnlikelyFilterRefiner. Declining it
+    /// left nothing to shadow, and "00-10" then leaked as a bare time carrying a
+    /// bogus -600 offset, plus a spurious "00:00".
     func testImpossibleMonthInISOTimestampYieldsNothing() {
-        XCTExpectFailure("KHAC-9 residual: a 1-2 digit signed run is still read as an hour offset")
         XCTAssertTrue(parse("2023-00-10T10:00:00").isEmpty)
+        XCTAssertTrue(parse("2023-00-10").isEmpty)
+        XCTAssertTrue(parse("2023-00-00").isEmpty)
+    }
+
+    /// KNOWN FAILING, tracked as KHAC-9. Asserted rather than omitted so it stays
+    /// visible, and verified strict - forcing it to pass reports an UNEXPECTED
+    /// failure, so it speaks up if the underlying gap ever closes.
+    ///
+    /// Month 13 cannot take the shadow trick above: it MUST keep falling through to
+    /// NumericDateParser to read as 13 January, which the oracle pins. So the time
+    /// portion is still scavenged, and what scavenges it is a gap Khac INHERITS
+    /// from chrono rather than one it introduced. chrono's time-parser guard needs
+    /// 3-4 digits to decline a range, while its timezone refiner accepts 1-2, so a
+    /// two-digit signed run falls between them in chrono too - measured live:
+    /// chrono reads "06:36:02 -10" as a RANGE with no offset, and "06:36:02 -100"
+    /// as a time with offset -600.
+    ///
+    /// Widening the guard to 1-2 digits would diverge from chrono AND start eating
+    /// real range ends like "8 - 11pm" and "1pm-3".
+    func testMonthThirteenTimestampStillScavenges() {
+        XCTExpectFailure("KHAC-9 residual: the 1-2 digit offset gap, inherited from chrono")
+        XCTAssertTrue(parse("2023-13-01T10:00:00").isEmpty)
     }
 
     /// PARITY, not a bug: chrono and Khac both read this as 13 January. Month is

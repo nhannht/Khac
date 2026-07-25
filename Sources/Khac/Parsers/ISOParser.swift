@@ -38,10 +38,18 @@ struct ISOParser: Parser {
         // span and letting the refiner drop the whole result leaves nothing behind
         // to scavenge.
         //
-        // Month stays range-checked here because it must NOT be consumed:
-        // "2023-13-01" has to fall through to NumericDateParser, which reads it as
-        // 13 January, matching chrono.
-        guard (1...12).contains(month), (1...31).contains(day) else { return nil }
+        // Month 0 is accepted DELIBERATELY, and the zero in that range is the whole
+        // point. Accepting it produces a full-span result that SHADOWS the
+        // fragments; UnlikelyFilterRefiner then drops it, since isRealDate already
+        // requires (1...12). Declining it instead left no shadow, so
+        // "2023-00-10T10:00:00" leaked "00-10" with a bogus -600 offset plus a
+        // spurious "00:00". chrono's own lax ISO parser accepts month 00 for
+        // exactly this reason.
+        //
+        // Month 13 must still fall through, so the upper bound stays: "2023-13-01"
+        // has to reach NumericDateParser and read as 13 January, matching chrono
+        // and pinned by the oracle.
+        guard (0...12).contains(month), (1...31).contains(day) else { return nil }
 
         var c = context.createParsingComponents()
         c.certain(.year, year)
