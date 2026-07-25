@@ -82,6 +82,8 @@ struct TimeExpressionParser: Parser {
         let todText = match.string(named: "tod")
         var minute = 0
         var meridiem: Meridiem? = nil
+        /// Whether the text actually stated a minute, as opposed to defaulting to 0.
+        var minuteWasStated = minuteText != nil
 
         // Hours: a 3-4 digit block can be HHMM.
         if hour > 100 {
@@ -89,6 +91,7 @@ struct TimeExpressionParser: Parser {
             if strict || minuteText != nil { return nil }
             minute = hour % 100
             hour = hour / 100
+            minuteWasStated = true   // an HHMM block states both halves
         }
         if hour > 24 { return nil }
 
@@ -134,7 +137,15 @@ struct TimeExpressionParser: Parser {
 
         var comps = context.createParsingComponents()
         comps.certain(.hour, hour)
-        comps.certain(.minute, minute)
+        // Only a STATED minute is certain. Marking the default 0 certain inflated
+        // this parser's certain-count on every bare-hour match, and certain-count
+        // is the first key in the overlap order (SPEC 3a-H0), so a bare hour
+        // could beat a longer, genuinely more specific match from another parser.
+        if minuteWasStated {
+            comps.certain(.minute, minute)
+        } else {
+            comps.imply(.minute, minute)
+        }
         if let meridiem = meridiem {
             comps.certain(.meridiem, meridiem.rawValue)
         } else {

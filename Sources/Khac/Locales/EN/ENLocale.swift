@@ -31,6 +31,7 @@ public struct ENLocale: KhacLocale {
             dayReferences: Self.dayReferences,
             meridiem: Self.meridiem,
             timeOfDay: Self.timeOfDay,
+            meridiemHourRules: Self.meridiemHourRules,
             eraMarkers: Self.eraMarkers,
             fullMonthNames: Self.fullMonthNames,
             fullTimeUnitNames: Self.fullTimeUnitNames,
@@ -59,6 +60,7 @@ public struct ENLocale: KhacLocale {
             rangeConnectorWords: ["to", "until", "till", "through"],
             nowWords: ["now"],
             weekdayPrefixWords: ["on"],
+            timeOfDayConnectorWords: ["at", "in the"],
             durationFillerWords: ["around", "about", "~"],
             durationConnectorWords: ["and"]
         )
@@ -301,6 +303,20 @@ private extension ENLocale {
     static let fullMonthNames: Set<String> = [
         "january", "february", "march", "april", "may", "june",
         "july", "august", "september", "october", "november", "december",
+    ]
+
+    /// "night" attached to a STATED hour is a threshold rule, not a flat pm.
+    /// Source: ENTimeExpressionParser.ts - an hour in [6,12) gains 12 and reads
+    /// pm, an hour below 6 keeps its value and reads am. So "11 at night" is
+    /// 23:00 but "1 at night" stays 1:00, which a flat pm would turn into 13:00.
+    ///
+    /// "night" stays in the flat `timeOfDay` table as well, for the BARE word
+    /// with no hour attached ("tonight", "at night" alone). The two tables are
+    /// read by different parsers and do not conflict: TimeExpressionParser checks
+    /// these rules first, and CasualDateParser only ever reads `timeOfDay`. VI's
+    /// "trưa"/"đêm" already use this same dual registration.
+    static let meridiemHourRules: [String: MeridiemHourRule] = [
+        "night": MeridiemHourRule(baseline: .am, overrides: [6: 18, 7: 19, 8: 20, 9: 21, 10: 22, 11: 23]),
     ]
 
     /// Both dotted and undotted forms kept even though the oracle only exercises
