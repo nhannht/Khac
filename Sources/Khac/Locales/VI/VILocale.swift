@@ -248,7 +248,32 @@ public struct VILocale: KhacLocale {
             // two directions into distinct PatternSet fields.
             relativeFutureWords: ["trong", "trong vòng"],
             futureSuffixWords: ["sau", "tới", "tiếp", "nữa"],
-            rangeConnectorWords: ["đến", "tới", "và"],
+            // KHAC-FIX: "và" is NOT here, though chrono's own
+            // VIMergeDateRangeRefiner lists it bare and unconditional. It is the
+            // ordinary listing conjunction - "A và B" is two items, exactly like
+            // English "and" - while a Vietnamese range is built on "đến"/"tới",
+            // usually anchored by "từ": "từ 7 giờ đến 9 giờ".
+            //
+            // The unambiguous case is non-adjacent days: "thứ hai và thứ sáu"
+            // means Monday and Friday, two days, and read as a range it became
+            // Monday THROUGH Friday. Adjacent-day examples like "hôm nay và ngày
+            // mai" look span-like only because the two items happen to touch.
+            // Worse, the range merge back-propagated a clock: "họp hôm nay và 7
+            // giờ sáng mai" gave "hôm nay" a 07:00 start it never stated.
+            //
+            // chrono's other locales show what chrono MEANT: EN uses
+            // to/until/through, ES and PT a hyphen only, FR à/au and never "et",
+            // DE bis and never "und", IT a/al and never "e", NL tot and never
+            // "en". Russian is the only one with an "and" form and it never
+            // accepts bare "и" - always "и до" / "и по", paired with a real
+            // to-word. VI's chrono source is the outlier that skipped that gate.
+            //
+            // The one genuine range use of "và" is "giữa X và Y" (between X and
+            // Y), the same shape as English "between", where "và" is the second
+            // half of a construction the leading word opens. That needs a
+            // "giữa"-gated mechanism, which no PatternSet field expresses yet -
+            // it is a feature to build, not a reason to keep a bare connector.
+            rangeConnectorWords: ["đến", "tới"],
             nowWords: ["bây giờ", "lúc này"],
             // E2 (engine, confirmed): leave EMPTY, do not add "vào". The VI
             // oracle excludes the preposition from the matched span ("vào

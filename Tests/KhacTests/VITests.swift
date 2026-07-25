@@ -957,6 +957,62 @@ final class VITests: XCTestCase {
         }
     }
 
+    // KHAC-FIX: "và" is a listing conjunction, not a range connector, so two dates
+    // joined by it are two events. chrono's own VIMergeDateRangeRefiner lists it
+    // bare, and every other chrono locale shows that was a slip: EN uses
+    // to/until/through, FR never "et", DE never "und", IT never "e", NL never
+    // "en", and Russian's "and" form is only ever paired with a real to-word.
+    //
+    // The decisive case is NON-adjacent days. Adjacent ones look span-like by
+    // coincidence; "thứ hai và thứ sáu" can only mean two days.
+    func testVaListsRatherThanRanges() {
+        let r0 = ref(2012, 8, 10, 12)
+
+        let twoDays = parseVI("thứ hai và thứ sáu", r0)
+        XCTAssertEqual(twoDays.count, 2, "Monday and Friday are two days, not Monday through Friday")
+        XCTAssertNil(twoDays.first?.end)
+
+        let twoEvents = parseVI("7 giờ sáng mai và 3 giờ chiều mai", r0)
+        XCTAssertEqual(twoEvents.count, 2)
+        XCTAssertEqual(twoEvents.first?.start.get(.hour), 7)
+        XCTAssertEqual(twoEvents.last?.start.get(.hour), 15)
+    }
+
+    /// The harmful half was not the shape but the BACK-PROPAGATION: as a range,
+    /// "hôm nay" inherited an 07:00 start from the other side of the conjunction,
+    /// a clock that half of the sentence never stated.
+    func testVaDoesNotBackPropagateAClock() {
+        let results = parseVI("họp hôm nay và 7 giờ sáng mai", ref(2012, 8, 10, 12))
+        XCTAssertEqual(results.count, 2)
+        XCTAssertEqual(results.first?.text, "hôm nay")
+        XCTAssertEqual(results.first?.start.get(.day), 10)
+        XCTAssertEqual(results.first?.start.get(.hour), 12, "hôm nay keeps its own implied noon")
+        XCTAssertEqual(results.last?.start.get(.day), 11)
+        XCTAssertEqual(results.last?.start.get(.hour), 7)
+    }
+
+    /// Genuine ranges are built on "đến"/"tới" or a hyphen and must be untouched.
+    func testGenuineRangeConnectorsSurvive() {
+        let r0 = ref(2012, 8, 10, 12)
+        XCTAssertEqual(single("từ 7 giờ đến 9 giờ", r0)?.end?.get(.hour), 9)
+        XCTAssertEqual(single("7 giờ đến 9 giờ", r0)?.end?.get(.hour), 9)
+        XCTAssertEqual(single("ngày 3 tháng 9 - ngày 5 tháng 9 năm 1945", r0)?.end?.get(.day), 5)
+        XCTAssertEqual(single("tháng 3 tới tháng 5 năm 1975", r0)?.end?.get(.month), 5)
+    }
+
+    /// KNOWN GAP, accepted deliberately. "giữa X và Y" (between X and Y) is the one
+    /// construction where "và" really does close a range, exactly as English "and"
+    /// does only after "between". It needs a mechanism gated on the leading
+    /// "giữa", which no PatternSet field expresses, so it is a feature to build
+    /// rather than a reason to keep a bare connector that mis-reads ordinary lists.
+    /// Asserted so that building it is visible here rather than silent.
+    func testGiuaVaRangeIsNotYetSupported() {
+        let results = parseVI("giữa 7 giờ và 9 giờ", ref(2012, 8, 10, 12))
+        XCTAssertEqual(results.count, 2, "currently two times, not one range")
+        XCTAssertEqual(results.first?.start.get(.hour), 7)
+        XCTAssertEqual(results.last?.start.get(.hour), 9)
+    }
+
     // MARK: - N. Strict mode
 
     func testStrictRejectsCasual() {

@@ -159,9 +159,9 @@ including negative UTC offsets.
 ## Results
 
 ```
-  swift test        190 tests, 0 failures, exit 0
+  swift test        194 tests, 0 failures, exit 0
   EN oracle         561 / 561 cases
-  VI suite           84 tests
+  VI suite           88 tests
 ```
 
 Verified stable across three consecutive runs. The oracle count is the number
@@ -197,13 +197,17 @@ khac.parse("0 August")                  // "August", day dropped
 ```
 
 Vietnamese is verified by a native speaker against chrono's own Vietnamese
-source, not merely ported. Khắc deliberately diverges from chrono in four places
+source, not merely ported. Khắc deliberately diverges from chrono in five places
 where chrono's Vietnamese is wrong, each marked KHAC-FIX in the source:
 
 - `này` means this period, not next.
 - `12 giờ đêm` is midnight, not noon.
 - `1 giờ đêm` is 1am, not 13:00.
 - `sáng mai` and its siblings resolve to tomorrow, with their own hour.
+- `và` lists, it does not range. `"thứ hai và thứ sáu"` is two days, not Monday
+  through Friday. chrono lists it as a range connector; every other chrono locale
+  shows that was a slip, since none of them accepts a bare "and" without a real
+  to-word beside it.
 
 ## Known limitations
 
