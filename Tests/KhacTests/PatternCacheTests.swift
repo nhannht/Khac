@@ -96,6 +96,26 @@ final class PatternCacheTests: XCTestCase {
         XCTAssertFalse(ra === rb, "and not the same cached object")
     }
 
+    /// The README promises patterns are compiled "once per instance", and this is
+    /// what that costs a caller: reusing one locale VALUE across two instances
+    /// shares nothing, because each wraps its own copy. A server building a fresh
+    /// Khac per request therefore gets no reuse at all, which is why the README
+    /// tells callers to hold the instance rather than the locale.
+    func testEachInstanceCompilesItsOwnPatternsEvenFromOneLocaleValue() {
+        let shared = ENLocale()
+        let first = PreparedLocale(shared)
+        let second = PreparedLocale(shared)
+        let parser = MonthNameParser()
+
+        let a = first.regex(for: parser, context: context(first))
+        let b = second.regex(for: parser, context: context(second))
+
+        XCTAssertEqual(a.pattern, b.pattern, "same locale data, so the same pattern")
+        XCTAssertFalse(a === b, "but compiled separately - caches do not span instances")
+        XCTAssertEqual(first.compileCount, 1)
+        XCTAssertEqual(second.compileCount, 1)
+    }
+
     /// A cache that returned a stale pattern would show up here rather than in a
     /// count. Same input, many times, same answer.
     func testAnswersDoNotDriftAcrossRepeatedParses() {
