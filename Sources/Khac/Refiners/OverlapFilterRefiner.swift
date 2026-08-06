@@ -9,7 +9,8 @@
 //      ("5 days from now"). This is why isPreferred can be certain-count-first
 //      (SPEC 3a-H0) without a fragment beating its container on score.
 //   2. Greedy keep by a TOTAL preference order derived only from each result's
-//      own fields (score, match length, index, parserRank, stable signature).
+//      own fields (score, match length, index, parserRank, localeRank, stable
+//      signature).
 // Two runs over the same result set in any input order produce identical output.
 
 import Foundation

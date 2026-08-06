@@ -21,7 +21,9 @@ public struct Khac {
         self.locales = defaultLocales().map(PreparedLocale.init)
     }
 
-    /// Only the named locales, in the given order.
+    /// Only the named locales, in the given order. The order is meaningful: a
+    /// result tying exactly across locales (a bare "8/5") goes to the locale
+    /// listed first.
     public init(locales ids: [LocaleID]) {
         let byID = Dictionary(defaultLocales().map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         self.locales = ids.compactMap { byID[$0] }.map(PreparedLocale.init)
@@ -43,7 +45,9 @@ public struct Khac {
     }
 }
 
-/// The built-in locales, in the order `Khac()` tries them.
+/// The built-in locales, in the order `Khac()` tries them. The order also
+/// breaks exact cross-locale ties: a reading every other overlap key leaves
+/// open goes to the earlier locale (see ParsedResult.localeRank).
 ///
 /// Both public initializers resolve through here - `Khac()` takes this list whole
 /// and `Khac(locales:)` selects from it by id - so a locale is reachable from the

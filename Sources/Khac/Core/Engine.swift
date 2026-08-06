@@ -66,7 +66,7 @@ enum Engine {
         var allResults: [ParsedResult] = []
         var lastContext: ParsingContext?
 
-        for prepared in locales {
+        for (localeIndex, prepared) in locales.enumerated() {
             let locale = prepared.locale
             let context = ParsingContext(reference: reference, options: options, locale: locale, normalization: normalization)
             lastContext = context
@@ -83,6 +83,12 @@ enum Engine {
                 results = refiner.refine(context, results)
             }
             results = OverlapFilterRefiner().refine(context, results)
+
+            // Stamp AFTER the per-locale pipeline, so within-locale ranking never
+            // sees the rank (every candidate above carries the default) and merged
+            // results are covered without any refiner knowing the field exists.
+            // Only the cross-locale filter below ever compares differing ranks.
+            for i in results.indices { results[i].localeRank = localeIndex }
 
             allResults += results
         }

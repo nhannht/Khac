@@ -106,6 +106,38 @@ final class CoreTests: XCTestCase {
         XCTAssertEqual(out3.map { $0.index }, ids1, "order-independent")
     }
 
+    // MARK: Cross-locale tie precedence (KHAC-16)
+
+    func testLocaleRankBreaksExactTiesAndDefaultsFallThrough() {
+        let ref = ReferencePoint.now
+        func make(localeRank: Int) -> ParsedResult {
+            var c = ParsingComponents(reference: ref)
+            c.certain(.day, 8)
+            c.certain(.month, 5)
+            return ParsedResult(index: 0, text: "8/5", start: c, end: nil, score: 2, localeRank: localeRank)
+        }
+
+        // Identical on every intrinsic key: only localeRank differs. Lower wins,
+        // in both comparison directions.
+        let first = make(localeRank: 0)
+        let second = make(localeRank: 1)
+        XCTAssertTrue(first.isPreferred(over: second), "the earlier-listed locale wins an exact tie")
+        XCTAssertFalse(second.isPreferred(over: first), "the tie must not also break the other way")
+
+        // Two unstamped results tie on localeRank and fall through to the
+        // signature - the pre-KHAC-16 behavior, so results built outside a
+        // locale run (like every other test in this file) are unaffected.
+        let a = make(localeRank: ParsedResult.defaultLocaleRank)
+        let b = make(localeRank: ParsedResult.defaultLocaleRank)
+        XCTAssertEqual(
+            a.isPreferred(over: b), a.stableSignature < b.stableSignature,
+            "default ranks decide nothing; the signature still does"
+        )
+
+        // An unstamped result never outranks a stamped one on this key.
+        XCTAssertTrue(second.isPreferred(over: a), "stamped beats unstamped regardless of index")
+    }
+
     // MARK: Consumer API surface (what en/vi build on)
 
     func testKhacRunsWithAMockLocaleWithoutCrashing() {
