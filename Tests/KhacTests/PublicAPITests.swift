@@ -91,6 +91,38 @@ final class PublicAPITests: XCTestCase {
         }
     }
 
+    // MARK: - Cross-locale ties honor the declared locale order (KHAC-16)
+
+    /// A bare numeric slash date has no locale-independent reading: EN's
+    /// dateOrder says month/day, VI's says day/month, and the two results tie on
+    /// every intrinsic overlap key. Before the localeRank tiebreak, the winner
+    /// was arbitrary with respect to locale and BOTH inputs below answered the
+    /// VI reading through Khac() while EN alone answered correctly.
+    func testBareNumericSlashDateFollowsFirstListedLocale() {
+        let results = Khac().parse(": 8/1/2012", reference: reference())
+        XCTAssertEqual(results.count, 1)
+        guard let first = results.first else { return }
+        XCTAssertEqual(ymd(first.date).0, 2012)
+        XCTAssertEqual(ymd(first.date).1, 8, "EN is listed first, so 8/1 is August 1st")
+        XCTAssertEqual(ymd(first.date).2, 1)
+
+        guard let shortDate = Khac().parseDate("8/5", reference: reference()) else {
+            return XCTFail("8/5 must parse through the default registry")
+        }
+        XCTAssertEqual(ymd(shortDate).1, 8, "EN is listed first, so 8/5 is August 5th")
+        XCTAssertEqual(ymd(shortDate).2, 5)
+    }
+
+    /// The precedence is the DECLARED order, not an English hardcode: list VI
+    /// first and the same tie goes the other way.
+    func testReversedLocaleOrderReversesTheTie() {
+        guard let date = Khac(locales: [.vietnamese, .english]).parseDate("8/5", reference: reference()) else {
+            return XCTFail("8/5 must parse with VI listed first")
+        }
+        XCTAssertEqual(ymd(date).1, 5, "VI is listed first, so 8/5 is May 8th")
+        XCTAssertEqual(ymd(date).2, 8)
+    }
+
     // MARK: - Documented empty behaviour
 
     func testNoLocalesParsesNothing() {

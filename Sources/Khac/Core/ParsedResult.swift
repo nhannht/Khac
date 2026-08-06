@@ -40,9 +40,27 @@ public struct ParsedResult {
     /// `ParsedResult.defaultRank` for results without an assigned producer.
     public var parserRank: Int
 
+    /// Position of the producing locale in the caller's DECLARED locale list,
+    /// compared after `parserRank` and before the stable signature. Lower wins.
+    ///
+    /// This is the key that breaks a cross-locale tie the way the public API
+    /// already promises: `Khac(locales:)` documents "in the given order" and
+    /// `defaultLocales()` documents "the order Khac() tries them", so an exact
+    /// tie - a bare "8/5" read as month/day by one locale and day/month by
+    /// another - goes to the locale listed first instead of falling through to
+    /// a signature that carries no locale information. Deliberate, caller-visible
+    /// precedence, not the accidental registration-order dependence SPEC 3a-H0
+    /// forbids. Stamped by Engine.run; `defaultLocaleRank` outside a locale run.
+    public var localeRank: Int
+
     /// Rank for results with no assigned producer (e.g. an external
     /// additionalParser, or a merged result). Ranks below this win ties.
     public static let defaultRank = 1000
+
+    /// Locale rank for results not produced through a locale run (e.g. built
+    /// directly in tests). An unstamped result never outranks a stamped one,
+    /// and two unstamped results tie here and fall through to the signature.
+    public static let defaultLocaleRank = Int.max
 
     public init(
         index: Int,
@@ -50,7 +68,8 @@ public struct ParsedResult {
         start: ParsingComponents,
         end: ParsingComponents? = nil,
         score: Int,
-        parserRank: Int = ParsedResult.defaultRank
+        parserRank: Int = ParsedResult.defaultRank,
+        localeRank: Int = ParsedResult.defaultLocaleRank
     ) {
         self.index = index
         self.text = text
@@ -58,6 +77,7 @@ public struct ParsedResult {
         self.end = end
         self.score = score
         self.parserRank = parserRank
+        self.localeRank = localeRank
     }
 
     /// The resolved start date.
@@ -113,9 +133,15 @@ public struct ParsedResult {
 
     /// Total preference order for overlap resolution. Returns true when self
     /// should be preferred over other. A LEXICOGRAPHIC tuple, never a scalar sum:
-    /// (certainCount desc, matchLength desc, index asc, parserRank asc, signature
-    /// asc). Certain-component count outranks length outright; parserRank
-    /// guarantees totality.
+    /// (certainCount desc, matchLength desc, index asc, parserRank asc,
+    /// localeRank asc, signature asc). Certain-component count outranks length
+    /// outright; the signature guarantees totality.
+    ///
+    /// localeRank sits between parserRank and the signature so it decides ONLY
+    /// ties everything intrinsic to the results left open - which is exactly the
+    /// cross-locale exact tie (KHAC-16). The signature is unchanged and is only
+    /// reached when localeRank ties, i.e. within one locale's own results, where
+    /// it already distinguished them.
     ///
     /// Ours, not chrono's - chrono keeps the longer text and nothing else - and
     /// the EN oracle does not constrain the key ORDER, only its output. Read the
@@ -126,6 +152,7 @@ public struct ParsedResult {
         if matchLength != other.matchLength { return matchLength > other.matchLength }
         if index != other.index { return index < other.index }
         if parserRank != other.parserRank { return parserRank < other.parserRank }
+        if localeRank != other.localeRank { return localeRank < other.localeRank }
         return stableSignature < other.stableSignature
     }
 }
