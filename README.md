@@ -1,10 +1,12 @@
 # Khắc
 
-A natural-language date and time parser for Swift.
+A natural-language date and time parser for Swift. Fourteen languages.
 
 Khắc reads free text and returns structured dates, intervals, and components. It
-handles casual, relative, and absolute expressions, and it is built so that
-adding a language means filling in data tables, not writing a new parser.
+handles casual, relative, and absolute expressions in English, Vietnamese,
+Chinese, Japanese, German, Dutch, Swedish, French, Spanish, Italian, Portuguese,
+Finnish, Russian, and Ukrainian. It is built so that adding a language means
+filling in data tables, not writing a new parser.
 
 ```swift
 import Khac
@@ -21,14 +23,11 @@ khac.parse("from Aug 10 to Aug 14")         // [ParsedResult], each with .interv
 Swift Package Manager:
 
 ```swift
-.package(url: "https://github.com/nhannht/Khac.git", branch: "master")
+.package(url: "https://github.com/nhannht/Khac.git", from: "0.1.0")
 ```
 
 Then add `Khac` to your target's dependencies. Requires Swift 5.10, macOS 12,
 iOS 15, tvOS 15, or watchOS 8.
-
-Nothing is tagged yet, so there is no version to pin to. Track the branch, or
-pin a commit, until the first release.
 
 ## Usage
 
@@ -99,6 +98,10 @@ Khac(locales: [.vietnamese])
 Khac(locales: [.english, .vietnamese])
 ```
 
+Fourteen locales are built in: `.english`, `.vietnamese`, `.chinese`,
+`.japanese`, `.german`, `.dutch`, `.swedish`, `.french`, `.spanish`, `.italian`,
+`.portuguese`, `.finnish`, `.russian`, and `.ukrainian`.
+
 ### Ranges
 
 A range result has an `end`, and `interval` gives you a `DateInterval`:
@@ -164,16 +167,30 @@ including negative UTC offsets.
 ## Results
 
 ```
-  swift test        219 tests, 0 failures, exit 0
-  EN oracle         561 / 561 cases
-  VI suite           91 tests
+  swift test        364 tests, 0 failures, exit 0
+  oracle total      1927 / 1988 cases across 13 locale oracles
+  VI suite           91 tests, verified by a native speaker
 ```
 
-Verified stable across three consecutive runs. The oracle count is the number
-worth watching, because it is the one held by a ratchet floor that only goes up.
+Each locale's oracle is ported from wanasit/chrono's own test suite, case by
+case. Every oracle holds a ratchet floor that only goes up, so a pass count can
+never quietly regress. Per locale:
 
-The English oracle is ported from wanasit/chrono's own test suite, case by case,
-and reports per source file. It holds a ratchet floor that only goes up.
+```
+  EN   561 / 561     NL   211 / 214     DE   119 / 124
+  ZH   168 / 168     RU   129 / 131     FI    77 /  77
+  IT   147 / 168     UK   129 / 131     ES    75 /  75
+  FR   126 / 154     JA    84 /  84     PT    60 /  60
+                     SV    41 /  41
+```
+
+Every case not passing is held in the suite as an expected failure with a
+written reason, never skipped. Most fall into three classes: named timezone
+abbreviations ("2pm EST", "14 Uhr CET"), which no locale resolves yet; French
+"il y a N jours" durations, which need a past-direction prefix slot the engine
+does not have; and compact clock forms like "8h10m00".
+
+The English oracle also reports per source file:
 
 ```
   en.test.ts                              14 / 14      en_time_exp.test.ts                    56 / 56
@@ -239,9 +256,9 @@ have the feature.
 - **Vietnamese has no weekend concept.** `"cuối tuần này"` resolves as `"tuần
   này"`, this week, with `cuối` dropped from the match. English has a full
   weekend and weekday parser, so this is an internal asymmetry rather than a
-  gap against chrono, whose Vietnamese has no weekend word either. Scheduled
-  with the other 12 locales in Phase 2, so every locale's weekend convention is
-  decided together rather than one at a time.
+  gap against chrono, whose Vietnamese has no weekend word either. Still open
+  after Phase 2: there is nothing in chrono to port, so this needs original
+  vocabulary work, and it stays on the list.
 - **Always use `interval`, never build your own from `start` and `end`.**
   `"August 22 - 10, 2012"` really does resolve to a range whose end precedes its
   start, reported as written rather than silently reordered, because swapping the
@@ -250,6 +267,10 @@ have the feature.
   reversal while the month-name parser does not. `interval` returns nil for
   exactly these, and that nil is the point: `DateInterval(start:end:)` TRAPS on
   end < start, a Swift hazard with no equivalent in the JavaScript original.
+- **Named timezone abbreviations are not resolved.** `"2pm EST"` parses the
+  time and leaves the offset nil. Numeric offsets (`-0500`, `+07:00`, `Z`) and
+  the caller's reference time zone are honored. The boundary is the same in
+  every locale, and the deferred oracle cases above are mostly this.
 - **A malformed timestamp with month 13 can leave a stray time.**
   `"2023-13-01T10:00:00"` yields a spurious `00:00`. This behaviour is inherited
   from chrono.
@@ -280,14 +301,13 @@ Other load-bearing choices:
 
 ## Status
 
-Phase 1 is complete: the core engine plus English and Vietnamese, with the
-adversarial review closed and its findings fixed. Phase 2 adds the remaining 12
-locales as data on the proven engine.
+Phase 1 built the core engine plus English and Vietnamese, with an adversarial
+review closed and its findings fixed. Phase 2 added the remaining twelve locales
+as data on that engine. Both are complete: built, measured, and their known
+gaps written down above rather than discovered later.
 
-Complete means the scope is built, measured, and its known gaps are written down
-above rather than discovered later. It does not mean tagged: this is still early
-development, the API can still move, and the limitations section is the honest
-list of what a caller will hit.
+This is a 0.x release. The API can still move before 1.0, and the limitations
+section is the honest list of what a caller will hit.
 
 ## License
 
