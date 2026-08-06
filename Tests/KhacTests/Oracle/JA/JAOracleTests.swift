@@ -209,19 +209,21 @@ final class JAOracleScoreboardTests: XCTestCase {
 /// A bare numeric slash date has no locale-independent reading, so a locale whose
 /// `dateOrder` differs legitimately disagrees: `8/5` is August 5th in en and ja and
 /// May 8th in vi. Two such results tie on span, certain-count, length, index AND
-/// parserRank (both come from the shared NumericDateParser), so the winner falls
-/// through to a tiebreak that is deterministic but arbitrary with respect to
-/// locale. This is NOT specific to CJK and it is not new: on today's
-/// `defaultLocales()` of en+vi the EN oracle case `": 8/1/2012"` already resolves
-/// to January 8th, and no test catches it because ENOracleTests runs EN alone.
+/// parserRank (both come from the shared NumericDateParser). Before KHAC-16 the
+/// winner fell through to a tiebreak that was deterministic but arbitrary with
+/// respect to locale - the EN oracle case `": 8/1/2012"` answered January 8th
+/// through `Khac()` while ENOracleTests, running EN alone, stayed green. The
+/// localeRank key now sends such a tie to the locale listed first.
 ///
 /// So the conflicts are listed by input rather than absorbed into a lower count. A
 /// NEW conflict fails this test; fixing the tiebreak makes the list shrink and
 /// fails it too, which is the point.
 final class JACompositionTests: XCTestCase {
     /// Inputs whose reading another registered locale legitimately disputes.
-    /// `8/5` is August 5th in Japanese and May 8th in Vietnamese.
-    static let knownCrossLocaleConflicts: Set<String> = ["8/5"]
+    /// Empty since the KHAC-16 localeRank tiebreak: `8/5` was here while an
+    /// exact cross-locale tie broke arbitrarily; it now goes to the locale
+    /// listed first (EN, which agrees with JA's month/day reading).
+    static let knownCrossLocaleConflicts: Set<String> = []
 
     func testComposesWithTheOtherLocales() {
         let composed = Khac(localeInstances: [ENLocale(), VILocale(), JALocale(), ZHLocale()])
