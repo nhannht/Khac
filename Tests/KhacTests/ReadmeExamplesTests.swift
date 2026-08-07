@@ -26,8 +26,10 @@ final class ReadmeExamplesTests: XCTestCase {
     func testOpeningSnippetCompiles() {
         let khac = Khac()
         XCTAssertNotNil(khac.parseDate("next Friday at 5pm", reference: reference()))
-        XCTAssertNotNil(khac.parseDate("sáng mai", reference: reference()))
         XCTAssertFalse(khac.parse("from Aug 10 to Aug 14", reference: reference()).isEmpty)
+
+        let vi = Khac(locales: [.vietnamese])
+        XCTAssertNotNil(vi.parseDate("sáng mai", reference: reference()))
     }
 
     func testMultipleResultsSnippet() {
@@ -104,7 +106,8 @@ final class ReadmeExamplesTests: XCTestCase {
         )
     }
 
-    /// Every Vietnamese line in the "What it parses" table.
+    /// Every Vietnamese line in the "What it parses" table, through the named
+    /// locale the README shows beside the table.
     func testVietnameseTable() {
         let cases: [(String, String)] = [
             ("ngày 15 tháng 3 năm 2020", "2020-03-15 12:00"),
@@ -117,8 +120,9 @@ final class ReadmeExamplesTests: XCTestCase {
             ("hai tuần trước", "2024-05-26 12:00"),
             ("12 giờ đêm", "2024-06-09 00:00"),
         ]
+        let vi = Khac(locales: [.vietnamese])
         for (input, expected) in cases {
-            let r = Khac().parse(input, reference: reference()).first
+            let r = vi.parse(input, reference: reference()).first
             XCTAssertEqual(ymdhm(r?.date ?? .distantPast), expected, "README claims \(input) -> \(expected)")
         }
     }
@@ -168,7 +172,7 @@ final class ReadmeExamplesTests: XCTestCase {
     func testInvalidDayAsymmetryInReadme() {
         let khac = Khac()
         XCTAssertTrue(
-            khac.parse("ngày 0 tháng 4 năm 2000", reference: reference()).isEmpty,
+            Khac(locales: [.vietnamese]).parse("ngày 0 tháng 4 năm 2000", reference: reference()).isEmpty,
             "a MARKED invalid day rejects outright"
         )
         let unmarked = khac.parse("0 August", reference: reference()).first

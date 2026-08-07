@@ -11,14 +11,22 @@ Chinese, Japanese, German, Dutch, Swedish, French, Spanish, Italian, Portuguese,
 Finnish, Russian, and Ukrainian. It is built so that adding a language means
 filling in data tables, not writing a new parser.
 
+One language at a time. `Khac()` parses English; every other language is
+selected by name. Deciding which language a text is in is a different job for a
+different tool - pair Khắc with a language identifier (NLLanguageRecognizer on
+Apple platforms) when the input language is unknown. Khắc parses, it does not
+guess.
+
 ```swift
 import Khac
 
-let khac = Khac()
+let khac = Khac()                           // English
 
 khac.parseDate("next Friday at 5pm")        // Date?
-khac.parseDate("sáng mai")                  // Date?
 khac.parse("from Aug 10 to Aug 14")         // [ParsedResult], each with .interval
+
+let vi = Khac(locales: [.vietnamese])
+vi.parseDate("sáng mai")                    // Date?
 ```
 
 ## Install
@@ -26,7 +34,7 @@ khac.parse("from Aug 10 to Aug 14")         // [ParsedResult], each with .interv
 Swift Package Manager:
 
 ```swift
-.package(url: "https://github.com/nhannht/Khac.git", from: "0.1.0")
+.package(url: "https://github.com/nhannht/Khac.git", from: "0.2.0")
 ```
 
 Then add `Khac` to your target's dependencies. Requires Swift 5.10, macOS 12,
@@ -90,20 +98,32 @@ khac.parse("August 10, 2012", options: strict)   // 1 result
 `forwardDate: true` pushes a bare date that could be past or future into the
 future.
 
-### Selecting locales
+### Selecting the language
 
-`Khac()` uses every built-in locale. Name them to narrow it, which is faster and
-avoids cross-language false positives:
+`Khac()` parses English. Every other language is selected by id:
 
 ```swift
-Khac(locales: [.english])
 Khac(locales: [.vietnamese])
-Khac(locales: [.english, .vietnamese])
+Khac(locales: [.chinese])
 ```
 
 Fourteen locales are built in: `.english`, `.vietnamese`, `.chinese`,
 `.japanese`, `.german`, `.dutch`, `.swedish`, `.french`, `.spanish`, `.italian`,
 `.portuguese`, `.finnish`, `.russian`, and `.ukrainian`.
+
+Passing several ids is a deliberate blend for genuinely mixed text:
+
+```swift
+Khac(locales: [.english, .vietnamese])
+```
+
+The order breaks exact ties - a bare `8/5` follows the first-listed locale's
+date order - and a blend accepts EACH listed language's reading of the text.
+That includes its short vocabulary: Swedish abbreviates onsdag as `on` and
+Finnish abbreviates torstai as `to`, so blended English prose grows phantom
+weekdays. This is why the default is one language, and why "which language is
+this text" is a question to answer before parsing, not one Khắc answers for
+you.
 
 ### Ranges
 
@@ -154,6 +174,8 @@ RFC 2822, RFC 3339, and Apache or nginx access-log timestamps all parse,
 including negative UTC offsets.
 
 ### Vietnamese
+
+Via `Khac(locales: [.vietnamese])`:
 
 ```
   ngày 15 tháng 3 năm 2020            2020-03-15 12:00
@@ -217,7 +239,7 @@ clear claim and a wrong one should fail loudly. When it is unmarked, it is
 ambiguous enough to drop:
 
 ```swift
-khac.parse("ngày 0 tháng 4 năm 2000")   // [] - "ngày" marks the day
+vi.parse("ngày 0 tháng 4 năm 2000")     // [] - "ngày" marks the day
 khac.parse("0 August")                  // "August", day dropped
 ```
 
@@ -270,6 +292,12 @@ have the feature.
   reversal while the month-name parser does not. `interval` returns nil for
   exactly these, and that nil is the point: `DateInterval(start:end:)` TRAPS on
   end < start, a Swift hazard with no equivalent in the JavaScript original.
+- **A blend accepts every listed language's reading.** `Khac(locales:)` with
+  several ids reads Swedish `on` and Finnish `to` as weekday abbreviations
+  inside English prose, because they ARE weekdays in a listed language. The
+  fix is not in the vocabulary - those forms are correct in their languages
+  and asserted by their oracles - it is selection: parse one language, and
+  blend only text that genuinely mixes them.
 - **Named timezone abbreviations are not resolved.** `"2pm EST"` parses the
   time and leaves the offset nil. Numeric offsets (`-0500`, `+07:00`, `Z`) and
   the caller's reference time zone are honored. The boundary is the same in
@@ -278,11 +306,11 @@ have the feature.
   `"2023-13-01T10:00:00"` yields a spurious `00:00`. This behaviour is inherited
   from chrono.
 - **Hold on to your `Khac` instance.** Patterns are compiled once per instance,
-  on first use, and reused after that. A warm `parse` costs about 0.5 ms whether
-  one locale is enabled or both. Constructing a fresh `Khac` for every call
-  instead costs about 5 ms for one locale and 8.8 ms for two, because the
-  compiled patterns are thrown away with the instance. Measured on an Apple M5,
-  release build.
+  on first use, and reused after that. A warm `parse` costs about 0.5 ms with
+  one or two locales, and about 1 ms with all fourteen blended. Constructing a
+  fresh `Khac` for every call instead costs about 5 ms for one locale and 55 ms
+  for all fourteen, because the compiled patterns are thrown away with the
+  instance. Measured on an Apple M5, release build.
 
 ## Design
 

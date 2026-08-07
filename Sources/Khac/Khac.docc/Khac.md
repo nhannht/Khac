@@ -10,14 +10,20 @@ It handles casual, relative, and absolute expressions in English, Vietnamese,
 Chinese, Japanese, German, Dutch, Swedish, French, Spanish, Italian,
 Portuguese, Finnish, Russian, and Ukrainian.
 
+One language at a time. `Khac()` parses English; every other language is
+selected by name. Deciding which language a text is in is a separate job for a
+separate tool - Khắc parses, it does not guess.
+
 ```swift
 import Khac
 
-let khac = Khac()
+let khac = Khac()                           // English
 
 khac.parseDate("next Friday at 5pm")        // Date?
-khac.parseDate("sáng mai")                  // Date?
 khac.parse("from Aug 10 to Aug 14")         // [ParsedResult], each with .interval
+
+let vi = Khac(locales: [.vietnamese])
+vi.parseDate("sáng mai")                    // Date?
 ```
 
 Relative expressions resolve against a ``ReferencePoint``, which defaults to
