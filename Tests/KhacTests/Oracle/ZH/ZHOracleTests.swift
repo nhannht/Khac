@@ -7,11 +7,10 @@
 // asserted field, so one case that gets four components wrong is one failure
 // carrying four reasons.
 //
-// Locale note: ZHLocale is constructed directly here rather than through Khac()
-// or Khac(locales:), because registering it in defaultLocales() is a change to
-// Sources/Khac/Khac.swift, which this work does not own. Until it is registered
-// the locale is reachable only by naming the instance, exactly as this runner
-// does; flagged to engine.
+// Locale note: ZHLocale is constructed directly here so the corpus pins the
+// locale ALONE, independent of the allLocales() registry. Cross-locale
+// composition is covered by ZHCompositionTests below, through a deliberate
+// Khac(locales:) blend.
 //
 // ONE locale for both scripts, so the Simplified and Traditional tables both run
 // against the same ZHLocale(). They stay SEPARATE test methods and separate
@@ -239,7 +238,7 @@ final class ZHCompositionTests: XCTestCase {
     static let knownCrossLocaleConflicts: Set<String> = []
 
     func testComposesWithTheOtherLocales() {
-        let composed = Khac(localeInstances: [ENLocale(), VILocale(), JALocale(), ZHLocale()])
+        let composed = Khac(locales: [.english, .vietnamese, .japanese, .chinese])
         let runner = ZHOracleRunner(khac: composed)
         var unexpected: [String] = []
         for c in zhOracleCases where zhDeferrals[c.input] == nil {

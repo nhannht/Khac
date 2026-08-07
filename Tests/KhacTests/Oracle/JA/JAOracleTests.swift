@@ -7,11 +7,9 @@
 // asserted field, so one case that gets four components wrong is one failure
 // carrying four reasons.
 //
-// Locale note: JALocale is constructed directly here rather than through Khac()
-// or Khac(locales:), because registering it in defaultLocales() is a change to
-// Sources/Khac/Khac.swift, which this work does not own. Until it is registered
-// the locale is reachable only by naming the instance, exactly as this runner
-// does; flagged to engine.
+// Locale note: JALocale is constructed directly here so the corpus pins the
+// locale ALONE, independent of the allLocales() registry. The composition test
+// at the bottom runs the same corpus through a deliberate Khac(locales:) blend.
 
 import Foundation
 import XCTest
@@ -22,7 +20,7 @@ struct JAOracleRunner {
     let khac: Khac
 
     /// Defaults to this locale ALONE, which is what the corpus asserts. The
-    /// composition test below injects a multi-locale instance instead.
+    /// composition test below runs a deliberate multi-locale blend instead.
     init(khac: Khac = Khac(localeInstances: [JALocale()])) {
         self.khac = khac
     }
@@ -226,7 +224,7 @@ final class JACompositionTests: XCTestCase {
     static let knownCrossLocaleConflicts: Set<String> = []
 
     func testComposesWithTheOtherLocales() {
-        let composed = Khac(localeInstances: [ENLocale(), VILocale(), JALocale(), ZHLocale()])
+        let composed = Khac(locales: [.english, .vietnamese, .japanese, .chinese])
         let runner = JAOracleRunner(khac: composed)
         var unexpected: [String] = []
         var conflictsThatNowPass: [String] = []
