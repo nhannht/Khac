@@ -4,9 +4,16 @@ import Foundation
 
 /// Parse free text into structured dates, intervals, and components.
 ///
-///     let k = Khac()
-///     let results = k.parse("next Friday at 5pm")
-///     let date = k.parseDate("họp lúc 3 giờ chiều mai")
+/// One language at a time. `Khac()` parses English; name a different locale to
+/// parse a different language. Deciding WHICH language a text is in is a
+/// separate job for a separate tool (NLLanguageRecognizer or similar) - Khắc
+/// only parses, it never guesses the language.
+///
+///     let en = Khac()
+///     en.parse("next Friday at 5pm")
+///
+///     let vi = Khac(locales: [.vietnamese])
+///     vi.parseDate("họp lúc 3 giờ chiều mai")
 public struct Khac {
     /// Prepared, not raw: each locale carries the patterns compiled from it, so
     /// the first parse compiles and every later one reuses. Hold on to the Khac
@@ -16,16 +23,25 @@ public struct Khac {
     /// which is the intent: the compiled patterns are identical either way.
     private let locales: [PreparedLocale]
 
-    /// All registered locales.
+    /// English. The default is ONE language, deliberately: locale vocabularies
+    /// collide across languages (Swedish abbreviates onsdag as "on", Finnish
+    /// abbreviates torstai as "to"), so a parse-everything default would sprout
+    /// phantom weekdays in ordinary prose. The caller knows the language;
+    /// Khắc does not guess it.
     public init() {
-        self.locales = defaultLocales().map(PreparedLocale.init)
+        self.init(locales: [.english])
     }
 
     /// Only the named locales, in the given order. The order is meaningful: a
     /// result tying exactly across locales (a bare "8/5") goes to the locale
     /// listed first.
+    ///
+    /// Listing more than one locale is a deliberate blend for genuinely mixed
+    /// text. It carries a cost the single-locale default does not: one
+    /// language's short vocabulary is another language's ordinary word, and a
+    /// blend accepts both readings.
     public init(locales ids: [LocaleID]) {
-        let byID = Dictionary(defaultLocales().map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let byID = Dictionary(allLocales().map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         self.locales = ids.compactMap { byID[$0] }.map(PreparedLocale.init)
     }
 
@@ -45,15 +61,19 @@ public struct Khac {
     }
 }
 
-/// The built-in locales, in the order `Khac()` tries them. The order also
-/// breaks exact cross-locale ties: a reading every other overlap key leaves
-/// open goes to the earlier locale (see ParsedResult.localeRank).
-///
-/// Both public initializers resolve through here - `Khac()` takes this list whole
-/// and `Khac(locales:)` selects from it by id - so a locale is reachable from the
-/// public API only once it is listed. A locale type that exists but is missing
-/// here parses nothing for every caller who does not name the instance directly,
-/// which is why PublicAPITests exercises the no-argument initializer.
-func defaultLocales() -> [KhacLocale] {
-    [ENLocale(), VILocale()]
+/// The registry: every locale the package ships, one instance each. This is
+/// availability, not defaults - `Khac()` selects English from it and
+/// `Khac(locales:)` selects by id, so a locale is reachable from the public API
+/// only once it is listed here. A locale type that exists but is missing here
+/// parses nothing for every caller who does not name the instance directly,
+/// which is why PublicAPITests resolves every LocaleID through Khac(locales:).
+func allLocales() -> [KhacLocale] {
+    [
+        ENLocale(), VILocale(),
+        ZHLocale(), JALocale(),
+        DELocale(), NLLocale(), SVLocale(),
+        FRLocale(), ESLocale(), ITLocale(), PTLocale(),
+        FILocale(),
+        RULocale(), UKLocale(),
+    ]
 }

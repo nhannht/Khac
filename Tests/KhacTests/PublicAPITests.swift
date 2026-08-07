@@ -9,7 +9,8 @@
 // So these tests deliberately do NOT use @testable, and deliberately do NOT use
 // Khac(localeInstances:). They import the module the way an external SPM consumer
 // does and go through the no-argument and id-selecting initializers only. A locale
-// that is implemented but left out of defaultLocales() fails here and nowhere else.
+// that is implemented but left out of the allLocales() registry fails here and
+// nowhere else.
 
 import XCTest
 import Khac
@@ -45,13 +46,15 @@ final class PublicAPITests: XCTestCase {
         XCTAssertEqual(ymd(first.date).2, 10)
     }
 
-    func testDefaultInitializerParsesVietnamese() {
-        let results = Khac().parse("ngày 15 tháng 3 năm 2020", reference: reference())
-        XCTAssertGreaterThanOrEqual(results.count, 1, "Khac() must resolve Vietnamese through the built-in locale registry")
-        guard let first = results.first else { return }
-        XCTAssertEqual(ymd(first.date).0, 2020)
-        XCTAssertEqual(ymd(first.date).1, 3)
-        XCTAssertEqual(ymd(first.date).2, 15)
+    /// The default is ONE language, English. Vietnamese - like every other
+    /// locale - is reached by naming it, never by default: locale vocabularies
+    /// collide across languages, so parsing is one language at a time and
+    /// language identification is the caller's job, not Khắc's.
+    func testDefaultIsEnglishOnly() {
+        XCTAssertTrue(
+            Khac().parse("ngày 15 tháng 3 năm 2020", reference: reference()).isEmpty,
+            "Khac() parses English only; Vietnamese is reached via Khac(locales: [.vietnamese])"
+        )
     }
 
     func testDefaultInitializerConvenienceDate() {
@@ -78,12 +81,38 @@ final class PublicAPITests: XCTestCase {
         XCTAssertEqual(ymd(first.date).2, 15)
     }
 
+    /// One phrase per locale, each lifted verbatim from that locale's own oracle
+    /// corpus, so every sample is already asserted to parse single-locale.
+    private static let localeSamples: [LocaleID: String] = [
+        .english: "August 10, 2012",
+        .vietnamese: "ngày 15 tháng 3 năm 2020",
+        .chinese: "2013年12月26日",
+        .japanese: "私は午前6時13分に起きた",
+        .german: "10. August 2012",
+        .dutch: "10 augustus 2012",
+        .swedish: "måndag",
+        .french: "10 Août 2012",
+        .spanish: "Estaremos a las 6.13 AM",
+        .italian: "La scadenza è il 15 marzo 2024",
+        .portuguese: "O prazo é agora",
+        .finnish: "15. elokuuta",
+        .russian: "будет сделано в течение минуты",
+        .ukrainian: "буде зроблено протягом хвилини",
+    ]
+
     /// Every id the registry claims to ship must actually resolve to an instance.
     /// This is the assertion that fails the moment a locale is implemented but not
-    /// registered - the exact shape of the bug this file exists for.
+    /// registered - the exact shape of the bug this file exists for. It slept
+    /// through exactly that bug once, when Phase 2 landed twelve locales and this
+    /// loop still walked a hardcoded Phase 1 list. Hence allCases: a LocaleID
+    /// cannot be added without either a sample here or a failure here.
     func testShippedLocaleIDsAllResolve() {
-        for id in [LocaleID.english, .vietnamese] {
-            let sample = id == .english ? "August 10, 2012" : "ngày 15 tháng 3 năm 2020"
+        XCTAssertEqual(
+            Set(Self.localeSamples.keys), Set(LocaleID.allCases),
+            "every LocaleID needs a sample phrase in localeSamples"
+        )
+        for id in LocaleID.allCases {
+            guard let sample = Self.localeSamples[id] else { continue }
             XCTAssertGreaterThanOrEqual(
                 Khac(locales: [id]).parse(sample, reference: reference()).count, 1,
                 "LocaleID.\(id.rawValue) is not reachable through Khac(locales:)"
@@ -97,17 +126,18 @@ final class PublicAPITests: XCTestCase {
     /// dateOrder says month/day, VI's says day/month, and the two results tie on
     /// every intrinsic overlap key. Before the localeRank tiebreak, the winner
     /// was arbitrary with respect to locale and BOTH inputs below answered the
-    /// VI reading through Khac() while EN alone answered correctly.
+    /// VI reading through an EN-first blend while EN alone answered correctly.
     func testBareNumericSlashDateFollowsFirstListedLocale() {
-        let results = Khac().parse(": 8/1/2012", reference: reference())
+        let blend = Khac(locales: [.english, .vietnamese])
+        let results = blend.parse(": 8/1/2012", reference: reference())
         XCTAssertEqual(results.count, 1)
         guard let first = results.first else { return }
         XCTAssertEqual(ymd(first.date).0, 2012)
         XCTAssertEqual(ymd(first.date).1, 8, "EN is listed first, so 8/1 is August 1st")
         XCTAssertEqual(ymd(first.date).2, 1)
 
-        guard let shortDate = Khac().parseDate("8/5", reference: reference()) else {
-            return XCTFail("8/5 must parse through the default registry")
+        guard let shortDate = blend.parseDate("8/5", reference: reference()) else {
+            return XCTFail("8/5 must parse through an EN-first blend")
         }
         XCTAssertEqual(ymd(shortDate).1, 8, "EN is listed first, so 8/5 is August 5th")
         XCTAssertEqual(ymd(shortDate).2, 5)
