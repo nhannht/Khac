@@ -113,7 +113,16 @@ enum Engine {
         var searchStart = 0
         while searchStart <= ns.length {
             let searchRange = NSRange(location: searchStart, length: ns.length - searchStart)
-            guard let match = regex.firstMatch(in: context.text, options: [], range: searchRange) else { break }
+            // Transparent bounds, explicitly. The resume scan restricts the RANGE,
+            // and every parser's boundary guard is a lookbehind that must still see
+            // the character before it - "14PM" resumed at "4PM" is only rejected if
+            // the guard can see the "1". Apple's NSRegularExpression treats sub-range
+            // bounds as transparent by default; swift-corelibs-foundation defaults to
+            // opaque but honors the explicit flag (measured on swift:5.10 and 6.3.3,
+            // Linux x86_64). Without the flag, Linux admits 111 oracle divergences.
+            guard let match = regex.firstMatch(
+                in: context.text, options: [.withTransparentBounds], range: searchRange
+            ) else { break }
 
             let rank = type(of: parser).overlapRank
             let textMatch = TextMatch(result: match, normalizedNS: ns, normalization: context.normalization)
