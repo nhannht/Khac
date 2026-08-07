@@ -38,7 +38,8 @@ Swift Package Manager:
 ```
 
 Then add `Khac` to your target's dependencies. Requires Swift 5.10, macOS 12,
-iOS 15, tvOS 15, or watchOS 8.
+iOS 15, tvOS 15, or watchOS 8. Linux is supported too: the full test suite
+passes on Ubuntu under Swift 5.10 and 6.3.
 
 ## Usage
 
