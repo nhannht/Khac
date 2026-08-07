@@ -140,7 +140,7 @@ final class JAOracleTests: XCTestCase {
     private func run(_ cases: [OracleCase]) {
         for c in cases {
             if let reason = jaDeferrals[c.input] {
-                XCTExpectFailure("KHAC-6 deferral: " + reason) {
+                expectKnownFailure("KHAC-6 deferral: " + reason) {
                     let reasons = runner.reasons(for: c)
                     if !reasons.isEmpty {
                         XCTFail("[\(c.sourceFile)] \(c.input.debugDescription) - " + reasons.joined(separator: "; "))

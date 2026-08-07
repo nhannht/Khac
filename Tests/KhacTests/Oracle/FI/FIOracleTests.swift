@@ -125,7 +125,7 @@ final class FIOracleTests: XCTestCase {
     private func run(_ cases: [OracleCase]) {
         for c in cases {
             if let reason = deferrals[c.input] {
-                XCTExpectFailure(reason) {
+                expectKnownFailure(reason) {
                     let reasons = runner.reasons(for: c)
                     XCTAssertTrue(
                         reasons.isEmpty,

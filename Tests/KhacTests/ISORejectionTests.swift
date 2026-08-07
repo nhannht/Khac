@@ -62,8 +62,9 @@ final class ISORejectionTests: XCTestCase {
     /// Widening the guard to 1-2 digits would diverge from chrono AND start eating
     /// real range ends like "8 - 11pm" and "1pm-3".
     func testMonthThirteenTimestampStillScavenges() {
-        XCTExpectFailure("KHAC-9 residual: the 1-2 digit offset gap, inherited from chrono")
-        XCTAssertTrue(parse("2023-13-01T10:00:00").isEmpty)
+        expectKnownFailure("KHAC-9 residual: the 1-2 digit offset gap, inherited from chrono") {
+            XCTAssertTrue(parse("2023-13-01T10:00:00").isEmpty)
+        }
     }
 
     /// PARITY, not a bug: chrono and Khac both read this as 13 January. Month is

@@ -126,7 +126,7 @@ final class PTOracleTests: XCTestCase {
     private func run(_ cases: [OracleCase]) {
         for c in cases {
             if let reason = Self.knownDeferrals[c.input] {
-                XCTExpectFailure(reason) {
+                expectKnownFailure(reason) {
                     let reasons = runner.reasons(for: c)
                     XCTAssertTrue(reasons.isEmpty, "[\(c.sourceFile)] \(c.input.debugDescription) - " + reasons.joined(separator: "; "))
                 }

@@ -117,7 +117,7 @@ final class SVOracleTests: XCTestCase {
     private func run(_ cases: [OracleCase], deferrals: [Int: String] = [:]) {
         for (i, c) in cases.enumerated() {
             if let reason = deferrals[i] {
-                XCTExpectFailure(reason) {
+                expectKnownFailure(reason) {
                     let reasons = runner.reasons(for: c)
                     XCTAssertTrue(
                         reasons.isEmpty,
