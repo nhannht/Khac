@@ -161,7 +161,7 @@ evaluated at scoring time against one instant shared by every engine.
 | `{"rule":"abs","dt":"2027-03-14T17:00"}` | a fixed wall-clock time in the pinned zone |
 | `{"rule":"ref","time":"17:00"}` | the reference day at that time |
 | `{"rule":"offset","days":1,"time":"09:00"}` | also `weeks`, `months`, `years` |
-| `{"rule":"offset","hours":3}` | also `minutes`; scored with a one-minute window |
+| `{"rule":"offset","hours":3}` | also `minutes`; scored with a 90-second window |
 | `{"rule":"weekday","name":"fri","dir":"next"}` | `dir` is `next`, `this`, or `last` |
 | `{"rule":"monthDay","month":8,"day":10}` | a date with no year stated, resolved to the occurrence nearest the reference |
 

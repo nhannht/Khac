@@ -122,14 +122,37 @@ function evalRule(rule) {
       const months = rule.months ?? 0;
       const years = rule.years ?? 0;
       const { h, mi } = splitTime(rule.time);
-      // Date.UTC rolls over out-of-range fields, which is the same convention
-      // every engine here uses for "next month" on the 31st.
-      const shifted = new Date(Date.UTC(ref.y + years, ref.mo - 1 + months, ref.d + days));
+
+      // "One month after 31 January" has no agreed answer and the engines here
+      // genuinely split: Khắc and SwiftyChrono CLAMP to 28 February, chrono rolls
+      // over to 3 March. An earlier version of this comment asserted they all
+      // rolled over, and the scorer used Date.UTC, which rolls - so it silently
+      // sided with chrono against the other two.
+      //
+      // Nothing caught it because the reference instant is the wall clock, and on
+      // most days no offset case lands near a month end. Run this benchmark on the
+      // 31st and it would have marked Khắc wrong for a convention, not a defect.
+      //
+      // So: clamp, which is what most date libraries and most people mean, and
+      // report any case where the two conventions differ as convention-disputed,
+      // so it is excluded from the headline number exactly like a hand-flagged one.
+      // The dispute is a property of the DATE, not of the author's judgement, so
+      // the scorer derives it rather than trusting a flag.
+      const monthStart = new Date(Date.UTC(ref.y + years, ref.mo - 1 + months, 1));
+      const targetYear = monthStart.getUTCFullYear();
+      const targetMonth0 = monthStart.getUTCMonth();
+      const daysInTarget = new Date(Date.UTC(targetYear, targetMonth0 + 1, 0)).getUTCDate();
+      const shiftsMonth = months !== 0 || years !== 0;
+      const overflows = shiftsMonth && ref.d > daysInTarget;
+      const anchorDay = overflows ? daysInTarget : ref.d;
+
+      const shifted = new Date(Date.UTC(targetYear, targetMonth0, anchorDay + days));
       return {
         ms: localToInstant(
           shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, shifted.getUTCDate(), h, mi
         ),
         clockSensitive: false,
+        conventionDisputed: overflows,
       };
     }
     case "monthDay": {
@@ -179,9 +202,11 @@ function evalRule(rule) {
   }
 }
 
-// A clock-sensitive gold gets a one-minute window because NSDataDetector reads
+// A clock-sensitive gold gets a 90-SECOND window because NSDataDetector reads
 // its own clock and cannot be handed the harness reference. The window applies
-// to every engine equally.
+// to every engine equally, and the runner refuses to start when the process
+// clock is more than 60s from the reference, so an accepted run is always
+// inside this window.
 function matches(actualMs, gold, granularity) {
   if (granularity === "day") return dayKey(actualMs) === dayKey(gold.ms);
   const tolerance = gold.clockSensitive ? 90000 : 0;
@@ -246,16 +271,22 @@ function judge(record) {
   const startOK = matches(Date.parse(top.start), goldStart, c.gold.granularity);
 
   if (c.gold.kind === "interval") {
-    if (!startOK) return { verdict: "wrong_value", case: c };
-    if (top.end == null) return { verdict: "missing_end", case: c };
-    const goldEnd = evalRule(c.gold.end);
+    const goldEndForFlag = c.gold.end ? evalRule(c.gold.end) : null;
+    const disputed = goldStart.conventionDisputed || goldEndForFlag?.conventionDisputed || false;
+    if (!startOK) return { verdict: "wrong_value", case: c, disputed };
+    if (top.end == null) return { verdict: "missing_end", case: c, disputed };
     return {
-      verdict: matches(Date.parse(top.end), goldEnd, c.gold.granularity) ? "correct" : "wrong_end",
+      verdict: matches(Date.parse(top.end), goldEndForFlag, c.gold.granularity) ? "correct" : "wrong_end",
       case: c,
+      disputed,
     };
   }
 
-  return { verdict: startOK ? "correct" : "wrong_value", case: c };
+  return {
+    verdict: startOK ? "correct" : "wrong_value",
+    case: c,
+    disputed: goldStart.conventionDisputed || false,
+  };
 }
 
 const CORRECT = new Set(["correct", "correct_negative"]);
@@ -299,8 +330,11 @@ for (const [engine, records] of byEngine) {
   const detection = { total: 0, correct: 0, confusions: {} };
 
   for (const record of records) {
-    const { verdict, case: c } = judge(record);
+    const { verdict, case: c, disputed } = judge(record);
     totalNs += record.ns ?? 0;
+    // Hand-flagged by the author, OR derived by the scorer because the engines
+    // genuinely disagree about this particular date.
+    const conventionSensitive = c.conventionSensitive || disputed;
 
     if (record.detectedLang != null) {
       detection.total++;
@@ -317,7 +351,7 @@ for (const [engine, records] of byEngine) {
       if (!c.seededFromSubjectDocs) tally(negativesUnseeded, verdict);
     } else {
       tally(positives, verdict);
-      if (!c.conventionSensitive) tally(positivesStable, verdict);
+      if (!conventionSensitive) tally(positivesStable, verdict);
       byLang[c.lang] ??= blankBucket();
       tally(byLang[c.lang], verdict);
       byCapability[c.capability] ??= blankBucket();
@@ -474,6 +508,11 @@ const allLangs = [...new Set(Object.values(report).flatMap((r) => Object.keys(r.
 if (allLangs.length > 1) {
   lines.push(`## Accuracy by language`);
   lines.push("");
+  lines.push(
+    `Convention-sensitive cases are included here; see the note under the ` +
+    `capability table.`
+  );
+  lines.push("");
   lines.push(`| Engine | ${allLangs.join(" | ")} |`);
   lines.push(`|---|${allLangs.map(() => "---").join("|")}|`);
   for (const e of engines) {
@@ -488,6 +527,12 @@ if (allLangs.length > 1) {
 
 const allCaps = [...new Set(Object.values(report).flatMap((r) => Object.keys(r.byCapability)))].sort();
 lines.push(`## Accuracy by capability`);
+lines.push("");
+lines.push(
+  `These per-capability and per-language tables include convention-sensitive ` +
+  `cases, unlike the headline number above, which is reported both ways. The ` +
+  `weekday and time_of_day columns carry the most of them.`
+);
 lines.push("");
 lines.push(`| Engine | ${allCaps.join(" | ")} |`);
 lines.push(`|---|${allCaps.map(() => "---").join("|")}|`);

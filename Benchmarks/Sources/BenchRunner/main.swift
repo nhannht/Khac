@@ -77,8 +77,13 @@ isoOut.timeZone = TimeZone(identifier: "UTC")!
 // expressions against the system clock. The whole harness therefore runs with
 // reference = wall clock now. Guard the skew rather than assume it.
 if engineName == "nsdatadetector" {
+    // This guard MUST stay tighter than the scorer's clock-sensitive window,
+    // which is 90 seconds. It was 120s, which is the wrong way round: a run with
+    // 100s of skew was accepted and then guaranteed to fail all 29 clock-sensitive
+    // cases for this engine alone, silently, as if NSDataDetector had got them
+    // wrong. A guard looser than the tolerance it protects is not a guard.
     let skew = abs(Date().timeIntervalSince(referenceInstant))
-    if skew > 120 {
+    if skew > 60 {
         fail("""
         --reference is \(Int(skew))s from the system clock. NSDataDetector cannot
         be given a reference date, so it would answer relative cases against a
