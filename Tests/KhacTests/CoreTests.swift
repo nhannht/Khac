@@ -91,7 +91,7 @@ final class CoreTests: XCTestCase {
         let c = make(index: 10, length: 4, score: 6)   // [10,14) independent
 
         let context = ParsingContext(
-            reference: ref, options: Options(), locale: MockLocale(),
+            reference: ref, options: Options(), prepared: PreparedLocale(MockLocale()),
             normalization: NormalizedText(original: String(repeating: "x", count: 20))
         )
         let filter = OverlapFilterRefiner()

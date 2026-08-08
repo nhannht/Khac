@@ -21,7 +21,7 @@ final class PatternCacheTests: XCTestCase {
         ParsingContext(
             reference: ref,
             options: options,
-            locale: prepared.locale,
+            prepared: prepared,
             normalization: NormalizedText(original: text)
         )
     }
@@ -42,20 +42,52 @@ final class PatternCacheTests: XCTestCase {
         XCTAssertTrue(first === second, "the cached NSRegularExpression must be reused, not rebuilt")
     }
 
-    /// The headline invariant: parse once, then parse as much as you like for
-    /// free. Before the cache existed this number grew by ten on every call.
+    /// The headline invariant: parse once, then parse that text as much as you
+    /// like for free. Before the cache existed this number grew by ten on every
+    /// call.
+    ///
+    /// The count after the first parse is READ, not predicted. Derivations are
+    /// lazy, so which keys a first parse warms depends on the paths that text
+    /// takes - a text with no relative duration never asks for the duration
+    /// regexes. Predicting a total would turn this into an assertion about
+    /// today's call sites rather than about caching.
     func testRepeatedParsesCompileNothingAfterTheFirst() {
         let locale = ENLocale()
         let prepared = PreparedLocale(locale)
-        let expected = Engine.genericParsers.count + locale.additionalParsers.count
+        let parserCount = Engine.genericParsers.count + locale.additionalParsers.count
 
         _ = Engine.run(text: "next friday at 5pm", reference: ref, options: Options(), locales: [prepared])
-        XCTAssertEqual(prepared.compileCount, expected, "one compile per parser on the first parse")
+        let afterFirst = prepared.compileCount
+        XCTAssertGreaterThanOrEqual(
+            afterFirst, parserCount, "every parser compiles its pattern on the first parse"
+        )
 
         for _ in 0..<25 {
-            _ = Engine.run(text: "august 10, 2012 at 5pm", reference: ref, options: Options(), locales: [prepared])
+            _ = Engine.run(text: "next friday at 5pm", reference: ref, options: Options(), locales: [prepared])
         }
-        XCTAssertEqual(prepared.compileCount, expected, "25 further parses must compile nothing")
+        XCTAssertEqual(prepared.compileCount, afterFirst, "25 further parses must compile nothing")
+    }
+
+    /// The refiner path specifically. MergeRelativeAnchorRefiner re-reads a
+    /// relative expression through DurationExpression, which compiled three
+    /// direction regexes on every candidate PAIR before those derivations were
+    /// cached - measured at 20.9% of total parse time, the largest single cost
+    /// in the engine. Refiners are not Parsers, so a cache keyed by parser type
+    /// could never have covered this.
+    func testRefinerDerivationsAreWarmAfterOneParse() {
+        let prepared = PreparedLocale(ENLocale())
+        let text = "2 days after tomorrow"
+
+        _ = Engine.run(text: text, reference: ref, options: Options(), locales: [prepared])
+        let afterFirst = prepared.compileCount
+
+        for _ in 0..<25 {
+            _ = Engine.run(text: text, reference: ref, options: Options(), locales: [prepared])
+        }
+        XCTAssertEqual(
+            prepared.compileCount, afterFirst,
+            "the duration derivations a refiner reads must compile once, not once per candidate pair"
+        )
     }
 
     /// Options belong in the key because one parser's pattern really does change

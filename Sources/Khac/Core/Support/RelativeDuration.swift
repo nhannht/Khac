@@ -187,23 +187,37 @@ enum DurationExpression {
         let patterns = context.locale.patterns
         let trimmed = text.trimmingCharacters(in: .whitespaces)
 
-        func ends(with words: [String]) -> Bool {
-            guard let alt = regexAlternation(words) else { return false }
-            return matches(trimmed, "\\s" + alt + "$")
+        // Every regex below is a pure function of the locale, and this method
+        // runs on every candidate PAIR a merging refiner considers. Compiling
+        // them here instead of caching them was 20.9% of total parse time, the
+        // largest single cost in the engine. An empty word list caches a regex
+        // that never matches, which is what the old nil guard meant anyway.
+        func directionRegex(
+            _ derivation: PreparedLocale.Derivation,
+            _ words: [String],
+            _ shape: @escaping (String) -> String
+        ) -> NSRegularExpression {
+            context.cached(derivation) {
+                guard let alt = regexAlternation(words) else { return neverMatchingRegex() }
+                return makeRegex(shape(alt))
+            }
         }
-        func begins(with words: [String]) -> Bool {
-            guard let alt = regexAlternation(words) else { return false }
-            return matches(trimmed, "^" + alt + "(?![\\p{L}\\p{N}_])")
+        func ends(_ derivation: PreparedLocale.Derivation, with words: [String]) -> Bool {
+            matches(trimmed, directionRegex(derivation, words) { "\\s" + $0 + "$" })
+        }
+        func begins(_ derivation: PreparedLocale.Derivation, with words: [String]) -> Bool {
+            matches(trimmed, directionRegex(derivation, words) { "^" + $0 + "(?![\\p{L}\\p{N}_])" })
         }
 
         let direction: RelativeDirection
-        if matches(trimmed, "^-") {
+        if matches(trimmed, context.cached(.durationLeadingMinus) { makeRegex("^-") }) {
             direction = .past
-        } else if matches(trimmed, "^\\+") {
+        } else if matches(trimmed, context.cached(.durationLeadingPlus) { makeRegex("^\\+") }) {
             direction = .future
-        } else if ends(with: patterns.relativePastWords) {
+        } else if ends(.durationPastSuffix, with: patterns.relativePastWords) {
             direction = .past
-        } else if ends(with: patterns.futureSuffixWords) || begins(with: patterns.relativeFutureWords) {
+        } else if ends(.durationFutureSuffix, with: patterns.futureSuffixWords)
+                    || begins(.durationFuturePrefix, with: patterns.relativeFutureWords) {
             direction = .future
         } else {
             return nil
@@ -215,9 +229,9 @@ enum DurationExpression {
         return duration.isEmpty ? nil : duration
     }
 
-    private static func matches(_ text: String, _ pattern: String) -> Bool {
+    private static func matches(_ text: String, _ regex: NSRegularExpression) -> Bool {
         let ns = text as NSString
-        return makeRegex(pattern).firstMatch(in: text, range: NSRange(location: 0, length: ns.length)) != nil
+        return regex.firstMatch(in: text, range: NSRange(location: 0, length: ns.length)) != nil
     }
 
     /// Read the clauses back out of a matched duration substring. Order is
@@ -225,16 +239,20 @@ enum DurationExpression {
     /// whole duration.
     static func clauses(in text: String, _ context: ParsingContext) -> [DurationClause] {
         let vocab = context.locale.vocabulary
-        let units = WordTable(vocab.timeUnits)
-        let quantifiers = WordTable(vocab.casualQuantifiers)
-        let integers = WordTable(vocab.integerWords)
+        let units = context.cached(.durationUnitTable) { WordTable(vocab.timeUnits) }
+        let quantifiers = context.cached(.durationQuantifierTable) { WordTable(vocab.casualQuantifiers) }
+        let integers = context.cached(.durationIntegerTable) { WordTable(vocab.integerWords) }
 
-        let regex = makeRegex(capturingClausePattern(context))
+        let regex = context.cached(.durationCapturingClause) { makeRegex(capturingClausePattern(context)) }
         let ns = text as NSString
         let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
 
+        // One mapping for the whole substring. It is identical for every match,
+        // and building it inside the loop walked the string again per match.
+        let normalization = NormalizedText(original: text)
+
         return matches.compactMap { raw in
-            let match = TextMatch(result: raw, normalizedNS: ns, normalization: NormalizedText(original: text))
+            let match = TextMatch(result: raw, normalizedNS: ns, normalization: normalization)
             guard let unitText = match.string(named: "dunit") ?? match.string(named: "dunitw")
                     ?? match.string(named: "dunite"),
                   let component = units.value(for: unitText)

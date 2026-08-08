@@ -180,9 +180,12 @@ struct MonthNameParser: Parser {
 
     func extract(_ context: ParsingContext, _ match: TextMatch) -> ParserResult? {
         let vocab = context.locale.vocabulary
-        let monthTable = WordTable(vocab.months)
-        let eraTable = WordTable(vocab.eraMarkers)
-        let ordinalTable = WordTable(vocab.ordinals)
+        // Built here rather than in `pattern`, so these are read back on every
+        // match rather than once per parse. They are still pure functions of the
+        // locale, so they belong in the same cache.
+        let monthTable = context.cached(.monthNameMonthTable) { WordTable(vocab.months) }
+        let eraTable = context.cached(.monthNameEraTable) { WordTable(vocab.eraMarkers) }
+        let ordinalTable = context.cached(.monthNameOrdinalTable) { WordTable(vocab.ordinals) }
 
         let monthText: String
         var dayText: String?

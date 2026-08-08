@@ -68,7 +68,7 @@ enum Engine {
 
         for (localeIndex, prepared) in locales.enumerated() {
             let locale = prepared.locale
-            let context = ParsingContext(reference: reference, options: options, locale: locale, normalization: normalization)
+            let context = ParsingContext(reference: reference, options: options, prepared: prepared, normalization: normalization)
             lastContext = context
 
             // Parse: generic parsers plus the locale's bespoke parsers.

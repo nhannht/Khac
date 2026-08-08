@@ -8,7 +8,8 @@ import Foundation
 public final class ParsingContext {
     public let reference: ReferencePoint
     public let options: Options
-    public let locale: KhacLocale
+    /// All configuration a parser or refiner reads.
+    public var locale: KhacLocale { prepared.locale }
     /// The NFC-normalized text parsers match against.
     public let text: String
 
@@ -16,12 +17,27 @@ public final class ParsingContext {
     /// produces.
     let normalization: NormalizedText
 
-    init(reference: ReferencePoint, options: Options, locale: KhacLocale, normalization: NormalizedText) {
+    /// Internal: the locale together with everything already derived from it.
+    /// The context carries it so that ANYTHING holding a context - a parser, a
+    /// refiner, or a shared helper like DurationExpression - can memoize a
+    /// derivation. Reaching the cache only from Engine.runParser was the hole
+    /// that let refiners recompile regexes on every candidate pair.
+    let prepared: PreparedLocale
+
+    init(reference: ReferencePoint, options: Options, prepared: PreparedLocale, normalization: NormalizedText) {
         self.reference = reference
         self.options = options
-        self.locale = locale
+        self.prepared = prepared
         self.text = normalization.normalized
         self.normalization = normalization
+    }
+
+    /// A value derived from this locale and these options, built once.
+    ///
+    /// `build` must be a pure function of the derivation, the locale, and the
+    /// options: never of `text` or of `reference`. See PreparedLocale.
+    func cached<T>(_ derivation: PreparedLocale.Derivation, _ build: () -> T) -> T {
+        prepared.cached(derivation, mode: options.mode, forwardDate: options.forwardDate, build: build)
     }
 
     /// A fresh component set seeded with implied values from the reference.
