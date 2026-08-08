@@ -222,15 +222,55 @@ than Apple's built-in detector, and loses Japanese 52.5% to 77.5%. Those are in
 the table because a benchmark that hides its author's losses is an
 advertisement.
 
-Two findings worth knowing regardless of which parser you pick. **SwiftyChrono
-traps on ordinary input** - full-width Japanese digits and plain Dutch and
-Swedish abbreviated-month dates kill the process. And **NSDataDetector cannot be
-given a reference date at all**, so it cannot parse on behalf of a user in
-another time zone, or against any instant but now.
+Per language, 40 positive cases each, convention-disputed cases included:
+
+```
+        de     en     es     fi     fr     it     ja
+Khắc    82.5   65.0   57.5   75.0   77.5   90.0   52.5
+chrono  85.0   62.5   50.0   82.5   77.5   92.5   47.5
+NSDD    20.0   41.7   20.0   15.0   65.0   17.5   77.5
+
+        nl     pt     ru     sv     uk     vi     zh
+Khắc    75.0   50.0   85.0   45.0   80.0   55.8   77.5
+chrono  70.0   47.5   85.0   27.5   80.0   47.5   65.0
+NSDD    25.0   17.5   12.5   22.5   12.5   53.3   72.5
+```
+
+Khắc leads or ties in 10 of 14, loses German, Finnish and Italian narrowly to
+chrono, and loses Japanese decisively to NSDataDetector. Swedish is the weakest
+language for everyone. Portuguese and Spanish sit near 50% for both Khắc and
+chrono, which is a shared gap in the field rather than a competitive result.
+
+Two findings worth knowing regardless of which parser you pick.
+
+**SwiftyChrono traps on ordinary input.** Five corpus strings did not produce a
+wrong answer, they killed the process, and a Swift trap cannot be caught:
+
+```
+２０１２／８／１０に到着予定です        full-width digits, default Japanese IME output
+午後３時３０分に集合
+下午３点半集合
+Levering gepland op 9 feb. 2012.      plain Dutch
+Leverans planerad till 9 feb 2012.    plain Swedish
+```
+
+The root cause is a class of bug rather than one instance, and in the library's
+default configuration plain English `9 Feb 2012` is enough to reach it. Fixed
+upstream in [quire-io/SwiftyChrono#29](https://github.com/quire-io/SwiftyChrono/pull/29),
+with the two underlying patterns reported as
+[#30](https://github.com/quire-io/SwiftyChrono/issues/30) and
+[#31](https://github.com/quire-io/SwiftyChrono/issues/31).
+
+**NSDataDetector cannot be given a reference date at all.** Its API takes no
+reference instant, so "next Friday" can only mean next Friday from now, on this
+device, in this time zone. It cannot parse on behalf of a user in another zone,
+or against any instant but the present. That does not show up in the accuracy
+column and it is disqualifying for an import or scheduling feature.
 
 `Benchmarks/README.md` is the method, including three ways the benchmark's own
 specification leaked this library's material into the corpus, disclosed by case
-id. Reproduce with `cd Benchmarks && ./run.sh`.
+id. Reproduce with `cd Benchmarks && ./run.sh`; it needs Swift 5.10+ and Node
+18+ and resolves both competitors itself.
 
 Each locale's oracle is ported from wanasit/chrono's own test suite, case by
 case. Every oracle holds a ratchet floor that only goes up, so a pass count can
