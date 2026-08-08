@@ -193,10 +193,44 @@ Via `Khac(locales: [.vietnamese])`:
 ## Results
 
 ```
-  swift test        364 tests, 0 failures, exit 0
+  swift test        365 tests, 0 failures, exit 0
   oracle total      1927 / 1988 cases across 13 locale oracles
   VI suite           91 tests, verified by a native speaker
 ```
+
+### Against the alternatives
+
+The suite above proves Khắc matches chrono, because it *is* chrono's suite. It
+cannot tell you whether Khắc is any good on text nobody ported. So there is a
+separate benchmark in [`Benchmarks/`](Benchmarks/): 1000 cases across all 14
+languages, written by people who never read this source or its tests, frozen and
+hashed before anything was tuned against it.
+
+508 positive cases, convention-disputed ones excluded:
+
+| Engine | Accuracy | Invents dates | Crashes | us/parse |
+|---|---|---|---|---|
+| **Khắc** (language given) | **71.9%** | 17.5% | 0 | 149 |
+| **Khắc** (language detected) | **71.9%** | 17.5% | 0 | 426 |
+| chrono-node 2.10.1 | 68.3% | 15.1% | 0 | 12 |
+| NSDataDetector | 36.0% | **4.4%** | 0 | 58 |
+| SwiftyChrono | 31.9% | 27.4% | **5** | 2201 |
+
+Khắc leads accuracy and wins every capability bucket against chrono. It also
+invents dates in date-free text more often than chrono does, runs 2.7x slower
+than Apple's built-in detector, and loses Japanese 52.5% to 77.5%. Those are in
+the table because a benchmark that hides its author's losses is an
+advertisement.
+
+Two findings worth knowing regardless of which parser you pick. **SwiftyChrono
+traps on ordinary input** - full-width Japanese digits and plain Dutch and
+Swedish abbreviated-month dates kill the process. And **NSDataDetector cannot be
+given a reference date at all**, so it cannot parse on behalf of a user in
+another time zone, or against any instant but now.
+
+`Benchmarks/README.md` is the method, including three ways the benchmark's own
+specification leaked this library's material into the corpus, disclosed by case
+id. Reproduce with `cd Benchmarks && ./run.sh`.
 
 Each locale's oracle is ported from wanasit/chrono's own test suite, case by
 case. Every oracle holds a ratchet floor that only goes up, so a pass count can
