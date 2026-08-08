@@ -11,7 +11,12 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CORPUS="${1:-$HERE/corpus/smoke-en.jsonl}"
+# The default is the real corpus, because both READMEs tell a reader that a bare
+# ./run.sh reproduces the published table. A default that quietly ran the 6-case
+# smoke file instead would make the headline claim false for everyone who took
+# the instruction literally. Pass corpus/smoke-en.jsonl explicitly for the fast
+# development loop.
+CORPUS="${1:-$HERE/corpus/corpus.jsonl}"
 TZ_ID="${2:-Asia/Ho_Chi_Minh}"
 REFERENCE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"

@@ -7,8 +7,14 @@ claims, and the losses are reported next to the wins.
 ```bash
 ./run.sh                                    # full corpus, Asia/Ho_Chi_Minh
 ./run.sh corpus/corpus.jsonl Europe/Berlin  # another zone
+./run.sh corpus/smoke-en.jsonl              # 6 cases, for a fast edit loop
 ./stability.sh                              # does the answer depend on the day?
 ```
+
+Needs Swift 5.10+ and Node 18+, and nothing else. The benchmark package resolves
+SwiftyChrono from GitHub at a pinned revision and `npm install`s chrono-node
+2.10.1 on its own, so a fresh clone reproduces the table with no setup. The
+first run pays for a release build of both Swift packages.
 
 Results land in `results/<timestamp>/`: `RESULTS.md`, `summary.json`, and
 `failures.json`, which lists every case each engine got wrong and what it
