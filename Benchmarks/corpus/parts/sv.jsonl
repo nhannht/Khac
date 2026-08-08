@@ -1,0 +1,60 @@
+{"id":"sv-c-0001","lang":"sv","stratum":"constructed","capability":"numeric_absolute","text":"Mötet är den 2012-08-10.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-08-10T00:00"},"granularity":"day"}}
+{"id":"sv-c-0002","lang":"sv","stratum":"constructed","capability":"numeric_absolute","text":"Betalning ska vara oss tillhanda senast 2012-09-15.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-09-15T00:00"},"granularity":"day"}}
+{"id":"sv-c-0003","lang":"sv","stratum":"constructed","capability":"numeric_absolute","text":"Vi ses 2012-10-03 klockan 14.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-10-03T14:00"},"granularity":"minute"}}
+{"id":"sv-c-0004","lang":"sv","stratum":"constructed","capability":"numeric_absolute","text":"Faktura daterad 2012-08-01.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-08-01T00:00"},"granularity":"day"}}
+{"id":"sv-c-0005","lang":"sv","stratum":"constructed","capability":"numeric_absolute","text":"Deadline: 2012-11-30 kl. 23:59.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-11-30T23:59"},"granularity":"minute"}}
+{"id":"sv-c-0006","lang":"sv","stratum":"constructed","capability":"numeric_absolute","text":"Vi ses vecka 32, 2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-08-06T00:00"},"granularity":"day"}}
+{"id":"sv-c-0007","lang":"sv","stratum":"constructed","capability":"month_name","text":"Konferensen äger rum den 3 oktober 2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-10-03T00:00"},"granularity":"day"}}
+{"id":"sv-c-0008","lang":"sv","stratum":"constructed","capability":"month_name","text":"Ansökningstiden går ut den 15 september 2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-09-15T00:00"},"granularity":"day"}}
+{"id":"sv-c-0009","lang":"sv","stratum":"constructed","capability":"month_name","text":"Vi ses den 22 december 2012 klockan 19.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-12-22T19:00"},"granularity":"minute"}}
+{"id":"sv-c-0010","lang":"sv","stratum":"constructed","capability":"month_name","text":"Fakturadatum: 5 juli 2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-07-05T00:00"},"granularity":"day"}}
+{"id":"sv-c-0011","lang":"sv","stratum":"constructed","capability":"month_name","text":"Avtalet gäller från och med 1 januari 2013.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2013-01-01T00:00"},"granularity":"day"}}
+{"id":"sv-c-0012","lang":"sv","stratum":"constructed","capability":"month_name","text":"Leverans planerad till 9 feb 2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-02-09T00:00"},"granularity":"day"}}
+{"id":"sv-c-0013","lang":"sv","stratum":"constructed","capability":"weekday","text":"Vi ses nästa fredag.","gold":{"kind":"instant","start":{"rule":"weekday","name":"fri","dir":"next"},"granularity":"day"},"conventionSensitive":true}
+{"id":"sv-c-0014","lang":"sv","stratum":"constructed","capability":"weekday","text":"Han skickade det förra måndagen.","gold":{"kind":"instant","start":{"rule":"weekday","name":"mon","dir":"last"},"granularity":"day"}}
+{"id":"sv-c-0015","lang":"sv","stratum":"constructed","capability":"weekday","text":"Kommer du förbi på lördag?","gold":{"kind":"instant","start":{"rule":"weekday","name":"sat","dir":"this"},"granularity":"day"},"conventionSensitive":true}
+{"id":"sv-c-0016","lang":"sv","stratum":"constructed","capability":"weekday","text":"Mötet är på måndag morgon klockan 9.","gold":{"kind":"instant","start":{"rule":"weekday","name":"mon","dir":"this","time":"09:00"},"granularity":"minute"},"conventionSensitive":true}
+{"id":"sv-c-0017","lang":"sv","stratum":"constructed","capability":"weekday","text":"Nästa onsdag har jag tandläkartid.","gold":{"kind":"instant","start":{"rule":"weekday","name":"wed","dir":"next"},"granularity":"day"},"conventionSensitive":true}
+{"id":"sv-c-0018","lang":"sv","stratum":"constructed","capability":"weekday","text":"Hon kommer tillbaka på torsdag.","gold":{"kind":"instant","start":{"rule":"weekday","name":"thu","dir":"this"},"granularity":"day"},"conventionSensitive":true}
+{"id":"sv-c-0019","lang":"sv","stratum":"constructed","capability":"casual_relative","text":"Vi ses i övermorgon.","gold":{"kind":"instant","start":{"rule":"offset","days":2},"granularity":"day"}}
+{"id":"sv-c-0020","lang":"sv","stratum":"constructed","capability":"casual_relative","text":"Han kom förbi i förrgår.","gold":{"kind":"instant","start":{"rule":"offset","days":-2},"granularity":"day"}}
+{"id":"sv-c-0021","lang":"sv","stratum":"constructed","capability":"casual_relative","text":"Ring mig om en timme.","gold":{"kind":"instant","start":{"rule":"offset","hours":1},"granularity":"minute"}}
+{"id":"sv-c-0022","lang":"sv","stratum":"constructed","capability":"casual_relative","text":"Rapporten ska vara klar om tre dagar.","gold":{"kind":"instant","start":{"rule":"offset","days":3},"granularity":"day"}}
+{"id":"sv-c-0023","lang":"sv","stratum":"constructed","capability":"casual_relative","text":"Vi ses om en vecka.","gold":{"kind":"instant","start":{"rule":"offset","weeks":1},"granularity":"day"}}
+{"id":"sv-c-0024","lang":"sv","stratum":"constructed","capability":"casual_relative","text":"Projektet startar om två veckor.","gold":{"kind":"instant","start":{"rule":"offset","weeks":2},"granularity":"day"}}
+{"id":"sv-c-0025","lang":"sv","stratum":"constructed","capability":"casual_relative","text":"Jag hör av mig om 20 minuter.","gold":{"kind":"instant","start":{"rule":"offset","minutes":20},"granularity":"minute"}}
+{"id":"sv-c-0026","lang":"sv","stratum":"constructed","capability":"casual_relative","text":"Nästa vecka har jag semester.","gold":{"kind":"instant","start":{"rule":"offset","weeks":1},"granularity":"day"},"conventionSensitive":true}
+{"id":"sv-c-0027","lang":"sv","stratum":"constructed","capability":"casual_relative","text":"Vi pratade med varandra för tre dagar sedan.","gold":{"kind":"instant","start":{"rule":"offset","days":-3},"granularity":"day"}}
+{"id":"sv-c-0028","lang":"sv","stratum":"constructed","capability":"casual_relative","text":"Leveransen kommer om en månad.","gold":{"kind":"instant","start":{"rule":"offset","months":1},"granularity":"day"},"conventionSensitive":true}
+{"id":"sv-c-0029","lang":"sv","stratum":"constructed","capability":"time_of_day","text":"Mötet är klockan 17.","gold":{"kind":"instant","start":{"rule":"ref","time":"17:00"},"granularity":"minute"}}
+{"id":"sv-c-0030","lang":"sv","stratum":"constructed","capability":"time_of_day","text":"Vi börjar klockan 9:15.","gold":{"kind":"instant","start":{"rule":"ref","time":"09:15"},"granularity":"minute"}}
+{"id":"sv-c-0031","lang":"sv","stratum":"constructed","capability":"time_of_day","text":"Tåget avgår i kväll halv sex.","gold":{"kind":"instant","start":{"rule":"ref","time":"17:30"},"granularity":"minute"}}
+{"id":"sv-c-0032","lang":"sv","stratum":"constructed","capability":"time_of_day","text":"Var där på morgonen klockan åtta prick.","gold":{"kind":"instant","start":{"rule":"ref","time":"08:00"},"granularity":"minute"}}
+{"id":"sv-c-0033","lang":"sv","stratum":"constructed","capability":"time_of_day","text":"Vi äter lunch kvart över tolv.","gold":{"kind":"instant","start":{"rule":"ref","time":"12:15"},"granularity":"minute"}}
+{"id":"sv-c-0034","lang":"sv","stratum":"constructed","capability":"time_of_day","text":"Mötet är klockan 14:45.","gold":{"kind":"instant","start":{"rule":"ref","time":"14:45"},"granularity":"minute"}}
+{"id":"sv-c-0035","lang":"sv","stratum":"constructed","capability":"interval","text":"Semestern är från den 10 till den 14 augusti 2012.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-08-10T00:00"},"end":{"rule":"abs","dt":"2012-08-14T00:00"},"granularity":"day"}}
+{"id":"sv-c-0036","lang":"sv","stratum":"constructed","capability":"interval","text":"Mässan pågår från den 3 till den 6 september 2012.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-09-03T00:00"},"end":{"rule":"abs","dt":"2012-09-06T00:00"},"granularity":"day"}}
+{"id":"sv-c-0037","lang":"sv","stratum":"constructed","capability":"interval","text":"Från klockan 10 till 12 har jag tid.","gold":{"kind":"interval","start":{"rule":"ref","time":"10:00"},"end":{"rule":"ref","time":"12:00"},"granularity":"minute"}}
+{"id":"sv-c-0038","lang":"sv","stratum":"constructed","capability":"interval","text":"Erbjudandet gäller från den 1 till den 31 december 2012.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-12-01T00:00"},"end":{"rule":"abs","dt":"2012-12-31T00:00"},"granularity":"day"}}
+{"id":"sv-c-0039","lang":"sv","stratum":"constructed","capability":"interval","text":"Vi är bortresta från 2012-08-05 till 2012-08-12.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-08-05T00:00"},"end":{"rule":"abs","dt":"2012-08-12T00:00"},"granularity":"day"}}
+{"id":"sv-c-0040","lang":"sv","stratum":"constructed","capability":"interval","text":"Utställningen är öppen från måndag till fredag.","gold":{"kind":"interval","start":{"rule":"weekday","name":"mon","dir":"this"},"end":{"rule":"weekday","name":"fri","dir":"this"},"granularity":"day"},"conventionSensitive":true}
+{"id":"sv-n-0001","lang":"sv","stratum":"negative","capability":"none","text":"Uppdatera från version 10.0 till 10.1, tack.","gold":{"kind":"none"}}
+{"id":"sv-n-0002","lang":"sv","stratum":"negative","capability":"none","text":"Rum 204 är ledigt idag.","gold":{"kind":"none"}}
+{"id":"sv-n-0003","lang":"sv","stratum":"negative","capability":"none","text":"Vi vann matchen med 3-1.","gold":{"kind":"none"}}
+{"id":"sv-n-0004","lang":"sv","stratum":"negative","capability":"none","text":"Det kostar 19,99 kronor.","gold":{"kind":"none"}}
+{"id":"sv-n-0005","lang":"sv","stratum":"negative","capability":"none","text":"Mitt nummer är 08 123 456 78.","gold":{"kind":"none"}}
+{"id":"sv-n-0006","lang":"sv","stratum":"negative","capability":"none","text":"Serienumret är 2012-08-10-445.","gold":{"kind":"none"}}
+{"id":"sv-n-0007","lang":"sv","stratum":"negative","capability":"none","text":"Modellen heter X-3200.","gold":{"kind":"none"}}
+{"id":"sv-n-0008","lang":"sv","stratum":"negative","capability":"none","text":"Rabatten ligger mellan 10-15%.","gold":{"kind":"none"}}
+{"id":"sv-n-0009","lang":"sv","stratum":"negative","capability":"none","text":"Studien jämför siffrorna från 2019 till 2020.","gold":{"kind":"none"},"seededFromSubjectDocs":true}
+{"id":"sv-n-0010","lang":"sv","stratum":"negative","capability":"none","text":"ISBN-numret är 978-3-16-148410-0.","gold":{"kind":"none"}}
+{"id":"sv-n-0011","lang":"sv","stratum":"negative","capability":"none","text":"I halvtid stod det 2-0 till oss.","gold":{"kind":"none"}}
+{"id":"sv-n-0012","lang":"sv","stratum":"negative","capability":"none","text":"TV:n kostar 2012 kronor.","gold":{"kind":"none"}}
+{"id":"sv-n-0013","lang":"sv","stratum":"negative","capability":"none","text":"Aktien delades i förhållandet 3 till 1.","gold":{"kind":"none"}}
+{"id":"sv-n-0014","lang":"sv","stratum":"negative","capability":"none","text":"Postnumret är 111 22 Stockholm.","gold":{"kind":"none"}}
+{"id":"sv-n-0015","lang":"sv","stratum":"negative","capability":"none","text":"Plats 14B är reserverad.","gold":{"kind":"none"}}
+{"id":"sv-n-0016","lang":"sv","stratum":"negative","capability":"none","text":"Beställningsnummer 45-2012 har avbokats.","gold":{"kind":"none"}}
+{"id":"sv-n-0017","lang":"sv","stratum":"negative","capability":"none","text":"Vårt kontonummer slutar på 8823.","gold":{"kind":"none"}}
+{"id":"sv-n-0018","lang":"sv","stratum":"negative","capability":"none","text":"Maratonloppet sprang han på 3:42:10.","gold":{"kind":"none"}}
+{"id":"sv-n-0019","lang":"sv","stratum":"negative","capability":"none","text":"Riktnumret för Stockholm är 08.","gold":{"kind":"none"}}
+{"id":"sv-n-0020","lang":"sv","stratum":"negative","capability":"none","text":"Artikeln har referensen 07-11-92.","gold":{"kind":"none"}}

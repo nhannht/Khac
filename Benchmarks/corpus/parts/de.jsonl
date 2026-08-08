@@ -1,0 +1,60 @@
+{"id":"de-c-0001","lang":"de","stratum":"constructed","capability":"numeric_absolute","text":"Der Termin ist am 10.08.2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-08-10T00:00"},"granularity":"day"}}
+{"id":"de-c-0002","lang":"de","stratum":"constructed","capability":"numeric_absolute","text":"Zahlung fällig bis 15.09.2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-09-15T00:00"},"granularity":"day"}}
+{"id":"de-c-0003","lang":"de","stratum":"constructed","capability":"numeric_absolute","text":"Wir treffen uns am 3.10.2012 um 14 Uhr.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-10-03T14:00"},"granularity":"minute"}}
+{"id":"de-c-0004","lang":"de","stratum":"constructed","capability":"numeric_absolute","text":"Rechnung vom 01.08.2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-08-01T00:00"},"granularity":"day"}}
+{"id":"de-c-0005","lang":"de","stratum":"constructed","capability":"numeric_absolute","text":"Frist: 30.11.2012, 23:59 Uhr.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-11-30T23:59"},"granularity":"minute"}}
+{"id":"de-c-0006","lang":"de","stratum":"constructed","capability":"numeric_absolute","text":"Bitte antworten Sie bis spätestens 5.6.2013.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2013-06-05T00:00"},"granularity":"day"}}
+{"id":"de-c-0007","lang":"de","stratum":"constructed","capability":"month_name","text":"Die Konferenz findet am 3. Oktober 2012 statt.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-10-03T00:00"},"granularity":"day"}}
+{"id":"de-c-0008","lang":"de","stratum":"constructed","capability":"month_name","text":"Die Bewerbungsfrist ist der 15. September 2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-09-15T00:00"},"granularity":"day"}}
+{"id":"de-c-0009","lang":"de","stratum":"constructed","capability":"month_name","text":"Wir sehen uns am 22. Dezember 2012 um 19 Uhr.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-12-22T19:00"},"granularity":"minute"}}
+{"id":"de-c-0010","lang":"de","stratum":"constructed","capability":"month_name","text":"Rechnungsdatum: 5. Juli 2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-07-05T00:00"},"granularity":"day"}}
+{"id":"de-c-0011","lang":"de","stratum":"constructed","capability":"month_name","text":"Der Vertrag läuft ab dem 1. Januar 2013.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2013-01-01T00:00"},"granularity":"day"}}
+{"id":"de-c-0012","lang":"de","stratum":"constructed","capability":"month_name","text":"Lieferung am 9. Feb. 2012 geplant.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-02-09T00:00"},"granularity":"day"}}
+{"id":"de-c-0013","lang":"de","stratum":"constructed","capability":"weekday","text":"Wir treffen uns nächsten Freitag.","gold":{"kind":"instant","start":{"rule":"weekday","name":"fri","dir":"next"},"granularity":"day"},"conventionSensitive":true}
+{"id":"de-c-0014","lang":"de","stratum":"constructed","capability":"weekday","text":"Er hat es letzten Montag abgeschickt.","gold":{"kind":"instant","start":{"rule":"weekday","name":"mon","dir":"last"},"granularity":"day"}}
+{"id":"de-c-0015","lang":"de","stratum":"constructed","capability":"weekday","text":"Kommst du diesen Samstag vorbei?","gold":{"kind":"instant","start":{"rule":"weekday","name":"sat","dir":"this"},"granularity":"day"},"conventionSensitive":true}
+{"id":"de-c-0016","lang":"de","stratum":"constructed","capability":"weekday","text":"Das Meeting ist am Montagmorgen um 9 Uhr.","gold":{"kind":"instant","start":{"rule":"weekday","name":"mon","dir":"this","time":"09:00"},"granularity":"minute"},"conventionSensitive":true}
+{"id":"de-c-0017","lang":"de","stratum":"constructed","capability":"weekday","text":"Nächsten Mittwoch habe ich einen Arzttermin.","gold":{"kind":"instant","start":{"rule":"weekday","name":"wed","dir":"next"},"granularity":"day"},"conventionSensitive":true}
+{"id":"de-c-0018","lang":"de","stratum":"constructed","capability":"weekday","text":"Sie kommt am Donnerstag zurück.","gold":{"kind":"instant","start":{"rule":"weekday","name":"thu","dir":"this"},"granularity":"day"},"conventionSensitive":true}
+{"id":"de-c-0019","lang":"de","stratum":"constructed","capability":"casual_relative","text":"Wir sehen uns übermorgen.","gold":{"kind":"instant","start":{"rule":"offset","days":2},"granularity":"day"}}
+{"id":"de-c-0020","lang":"de","stratum":"constructed","capability":"casual_relative","text":"Er kam vorgestern vorbei.","gold":{"kind":"instant","start":{"rule":"offset","days":-2},"granularity":"day"}}
+{"id":"de-c-0021","lang":"de","stratum":"constructed","capability":"casual_relative","text":"Ruf mich in einer Stunde an.","gold":{"kind":"instant","start":{"rule":"offset","hours":1},"granularity":"minute"}}
+{"id":"de-c-0022","lang":"de","stratum":"constructed","capability":"casual_relative","text":"Der Bericht ist in drei Tagen fällig.","gold":{"kind":"instant","start":{"rule":"offset","days":3},"granularity":"day"}}
+{"id":"de-c-0023","lang":"de","stratum":"constructed","capability":"casual_relative","text":"Wir treffen uns heute in einer Woche.","gold":{"kind":"instant","start":{"rule":"offset","weeks":1},"granularity":"day"}}
+{"id":"de-c-0024","lang":"de","stratum":"constructed","capability":"casual_relative","text":"Das Projekt startet in zwei Wochen.","gold":{"kind":"instant","start":{"rule":"offset","weeks":2},"granularity":"day"}}
+{"id":"de-c-0025","lang":"de","stratum":"constructed","capability":"casual_relative","text":"Ich melde mich in 20 Minuten.","gold":{"kind":"instant","start":{"rule":"offset","minutes":20},"granularity":"minute"}}
+{"id":"de-c-0026","lang":"de","stratum":"constructed","capability":"casual_relative","text":"Nächste Woche habe ich Urlaub.","gold":{"kind":"instant","start":{"rule":"offset","weeks":1},"granularity":"day"},"conventionSensitive":true}
+{"id":"de-c-0027","lang":"de","stratum":"constructed","capability":"casual_relative","text":"Wir haben uns vor drei Tagen gesehen.","gold":{"kind":"instant","start":{"rule":"offset","days":-3},"granularity":"day"}}
+{"id":"de-c-0028","lang":"de","stratum":"constructed","capability":"casual_relative","text":"Die Lieferung kommt in einem Monat.","gold":{"kind":"instant","start":{"rule":"offset","months":1},"granularity":"day"},"conventionSensitive":true}
+{"id":"de-c-0029","lang":"de","stratum":"constructed","capability":"time_of_day","text":"Das Meeting ist um 17 Uhr.","gold":{"kind":"instant","start":{"rule":"ref","time":"17:00"},"granularity":"minute"}}
+{"id":"de-c-0030","lang":"de","stratum":"constructed","capability":"time_of_day","text":"Wir starten um 9:15 Uhr.","gold":{"kind":"instant","start":{"rule":"ref","time":"09:15"},"granularity":"minute"}}
+{"id":"de-c-0031","lang":"de","stratum":"constructed","capability":"time_of_day","text":"Wir treffen uns heute Abend um halb sechs.","gold":{"kind":"instant","start":{"rule":"ref","time":"17:30"},"granularity":"minute"}}
+{"id":"de-c-0032","lang":"de","stratum":"constructed","capability":"time_of_day","text":"Bitte sei morgens um Punkt acht da.","gold":{"kind":"instant","start":{"rule":"ref","time":"08:00"},"granularity":"minute"}}
+{"id":"de-c-0033","lang":"de","stratum":"constructed","capability":"time_of_day","text":"Wir essen zu Mittag um viertel nach zwölf.","gold":{"kind":"instant","start":{"rule":"ref","time":"12:15"},"granularity":"minute"}}
+{"id":"de-c-0034","lang":"de","stratum":"constructed","capability":"time_of_day","text":"Der Termin ist um 14:45 Uhr.","gold":{"kind":"instant","start":{"rule":"ref","time":"14:45"},"granularity":"minute"}}
+{"id":"de-c-0035","lang":"de","stratum":"constructed","capability":"interval","text":"Der Urlaub geht vom 10. bis 14. August 2012.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-08-10T00:00"},"end":{"rule":"abs","dt":"2012-08-14T00:00"},"granularity":"day"}}
+{"id":"de-c-0036","lang":"de","stratum":"constructed","capability":"interval","text":"Die Messe läuft vom 3. bis zum 6. September 2012.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-09-03T00:00"},"end":{"rule":"abs","dt":"2012-09-06T00:00"},"granularity":"day"}}
+{"id":"de-c-0037","lang":"de","stratum":"constructed","capability":"interval","text":"Von 10 bis 12 Uhr habe ich Zeit.","gold":{"kind":"interval","start":{"rule":"ref","time":"10:00"},"end":{"rule":"ref","time":"12:00"},"granularity":"minute"}}
+{"id":"de-c-0038","lang":"de","stratum":"constructed","capability":"interval","text":"Das Angebot gilt vom 1. bis 31. Dezember 2012.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-12-01T00:00"},"end":{"rule":"abs","dt":"2012-12-31T00:00"},"granularity":"day"}}
+{"id":"de-c-0039","lang":"de","stratum":"constructed","capability":"interval","text":"Wir sind vom 5.8.2012 bis 12.8.2012 verreist.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-08-05T00:00"},"end":{"rule":"abs","dt":"2012-08-12T00:00"},"granularity":"day"}}
+{"id":"de-c-0040","lang":"de","stratum":"constructed","capability":"interval","text":"Die Ausstellung ist von Montag bis Freitag geöffnet.","gold":{"kind":"interval","start":{"rule":"weekday","name":"mon","dir":"this"},"end":{"rule":"weekday","name":"fri","dir":"this"},"granularity":"day"},"conventionSensitive":true}
+{"id":"de-n-0001","lang":"de","stratum":"negative","capability":"none","text":"Bitte aktualisiere von Version 10.0 auf 10.1.","gold":{"kind":"none"}}
+{"id":"de-n-0002","lang":"de","stratum":"negative","capability":"none","text":"Raum 204 ist heute frei.","gold":{"kind":"none"}}
+{"id":"de-n-0003","lang":"de","stratum":"negative","capability":"none","text":"Wir haben das Spiel 3:1 gewonnen.","gold":{"kind":"none"}}
+{"id":"de-n-0004","lang":"de","stratum":"negative","capability":"none","text":"Das kostet 19,99 Euro.","gold":{"kind":"none"}}
+{"id":"de-n-0005","lang":"de","stratum":"negative","capability":"none","text":"Meine Nummer ist 030 12345678.","gold":{"kind":"none"}}
+{"id":"de-n-0006","lang":"de","stratum":"negative","capability":"none","text":"Die Seriennummer lautet 2012-08-10-445.","gold":{"kind":"none"}}
+{"id":"de-n-0007","lang":"de","stratum":"negative","capability":"none","text":"Das Modell heißt X-3200.","gold":{"kind":"none"}}
+{"id":"de-n-0008","lang":"de","stratum":"negative","capability":"none","text":"Der Rabatt liegt bei 10-15%.","gold":{"kind":"none"}}
+{"id":"de-n-0009","lang":"de","stratum":"negative","capability":"none","text":"Die Studie vergleicht die Werte von 2019 zu 2020.","gold":{"kind":"none"},"seededFromSubjectDocs":true}
+{"id":"de-n-0010","lang":"de","stratum":"negative","capability":"none","text":"Die ISBN lautet 978-3-16-148410-0.","gold":{"kind":"none"}}
+{"id":"de-n-0011","lang":"de","stratum":"negative","capability":"none","text":"Zur Halbzeit stand es 2:0 für uns.","gold":{"kind":"none"}}
+{"id":"de-n-0012","lang":"de","stratum":"negative","capability":"none","text":"Der Fernseher kostet 2012 Euro.","gold":{"kind":"none"}}
+{"id":"de-n-0013","lang":"de","stratum":"negative","capability":"none","text":"Die Aktie wurde im Verhältnis 3 zu 1 gesplittet.","gold":{"kind":"none"}}
+{"id":"de-n-0014","lang":"de","stratum":"negative","capability":"none","text":"Die Postleitzahl lautet 10115 Berlin.","gold":{"kind":"none"}}
+{"id":"de-n-0015","lang":"de","stratum":"negative","capability":"none","text":"Sitzplatz 14B ist reserviert.","gold":{"kind":"none"}}
+{"id":"de-n-0016","lang":"de","stratum":"negative","capability":"none","text":"Die Bestellnummer 45-2012 wurde storniert.","gold":{"kind":"none"}}
+{"id":"de-n-0017","lang":"de","stratum":"negative","capability":"none","text":"Unsere Kontonummer endet auf 8823.","gold":{"kind":"none"}}
+{"id":"de-n-0018","lang":"de","stratum":"negative","capability":"none","text":"Der Marathon wurde in 3:42:10 gelaufen.","gold":{"kind":"none"}}
+{"id":"de-n-0019","lang":"de","stratum":"negative","capability":"none","text":"Die Vorwahl für München ist 089.","gold":{"kind":"none"}}
+{"id":"de-n-0020","lang":"de","stratum":"negative","capability":"none","text":"Der Artikel trägt die Referenz 07-11-92.","gold":{"kind":"none"}}

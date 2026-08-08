@@ -1,0 +1,60 @@
+{"id":"nl-c-0001","lang":"nl","stratum":"constructed","capability":"numeric_absolute","text":"De afspraak is op 10-08-2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-08-10T00:00"},"granularity":"day"}}
+{"id":"nl-c-0002","lang":"nl","stratum":"constructed","capability":"numeric_absolute","text":"Betaling moet binnen zijn voor 15-09-2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-09-15T00:00"},"granularity":"day"}}
+{"id":"nl-c-0003","lang":"nl","stratum":"constructed","capability":"numeric_absolute","text":"We spreken af op 3-10-2012 om 14 uur.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-10-03T14:00"},"granularity":"minute"}}
+{"id":"nl-c-0004","lang":"nl","stratum":"constructed","capability":"numeric_absolute","text":"Factuur van 01-08-2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-08-01T00:00"},"granularity":"day"}}
+{"id":"nl-c-0005","lang":"nl","stratum":"constructed","capability":"numeric_absolute","text":"Deadline: 30-11-2012 om 23:59 uur.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-11-30T23:59"},"granularity":"minute"}}
+{"id":"nl-c-0006","lang":"nl","stratum":"constructed","capability":"numeric_absolute","text":"Reageer uiterlijk 5-6-2013.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2013-06-05T00:00"},"granularity":"day"}}
+{"id":"nl-c-0007","lang":"nl","stratum":"constructed","capability":"month_name","text":"De conferentie is op 3 oktober 2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-10-03T00:00"},"granularity":"day"}}
+{"id":"nl-c-0008","lang":"nl","stratum":"constructed","capability":"month_name","text":"De sollicitatietermijn eindigt op 15 september 2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-09-15T00:00"},"granularity":"day"}}
+{"id":"nl-c-0009","lang":"nl","stratum":"constructed","capability":"month_name","text":"We zien elkaar op 22 december 2012 om 19 uur.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-12-22T19:00"},"granularity":"minute"}}
+{"id":"nl-c-0010","lang":"nl","stratum":"constructed","capability":"month_name","text":"Factuurdatum: 5 juli 2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-07-05T00:00"},"granularity":"day"}}
+{"id":"nl-c-0011","lang":"nl","stratum":"constructed","capability":"month_name","text":"Het contract loopt vanaf 1 januari 2013.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2013-01-01T00:00"},"granularity":"day"}}
+{"id":"nl-c-0012","lang":"nl","stratum":"constructed","capability":"month_name","text":"Levering gepland op 9 feb. 2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-02-09T00:00"},"granularity":"day"}}
+{"id":"nl-c-0013","lang":"nl","stratum":"constructed","capability":"weekday","text":"We spreken elkaar aanstaande vrijdag.","gold":{"kind":"instant","start":{"rule":"weekday","name":"fri","dir":"next"},"granularity":"day"},"conventionSensitive":true}
+{"id":"nl-c-0014","lang":"nl","stratum":"constructed","capability":"weekday","text":"Hij heeft het afgelopen maandag verstuurd.","gold":{"kind":"instant","start":{"rule":"weekday","name":"mon","dir":"last"},"granularity":"day"}}
+{"id":"nl-c-0015","lang":"nl","stratum":"constructed","capability":"weekday","text":"Kom je aankomende zaterdag langs?","gold":{"kind":"instant","start":{"rule":"weekday","name":"sat","dir":"next"},"granularity":"day"},"conventionSensitive":true}
+{"id":"nl-c-0016","lang":"nl","stratum":"constructed","capability":"weekday","text":"De vergadering is maandagochtend om 9 uur.","gold":{"kind":"instant","start":{"rule":"weekday","name":"mon","dir":"this","time":"09:00"},"granularity":"minute"},"conventionSensitive":true}
+{"id":"nl-c-0017","lang":"nl","stratum":"constructed","capability":"weekday","text":"Volgende week woensdag heb ik een afspraak bij de tandarts.","gold":{"kind":"instant","start":{"rule":"weekday","name":"wed","dir":"next"},"granularity":"day"},"conventionSensitive":true}
+{"id":"nl-c-0018","lang":"nl","stratum":"constructed","capability":"weekday","text":"Ze komt op donderdag terug.","gold":{"kind":"instant","start":{"rule":"weekday","name":"thu","dir":"this"},"granularity":"day"},"conventionSensitive":true}
+{"id":"nl-c-0019","lang":"nl","stratum":"constructed","capability":"casual_relative","text":"We zien elkaar overmorgen.","gold":{"kind":"instant","start":{"rule":"offset","days":2},"granularity":"day"}}
+{"id":"nl-c-0020","lang":"nl","stratum":"constructed","capability":"casual_relative","text":"Hij kwam eergisteren langs.","gold":{"kind":"instant","start":{"rule":"offset","days":-2},"granularity":"day"}}
+{"id":"nl-c-0021","lang":"nl","stratum":"constructed","capability":"casual_relative","text":"Bel me over een uur.","gold":{"kind":"instant","start":{"rule":"offset","hours":1},"granularity":"minute"}}
+{"id":"nl-c-0022","lang":"nl","stratum":"constructed","capability":"casual_relative","text":"Het rapport moet over drie dagen klaar zijn.","gold":{"kind":"instant","start":{"rule":"offset","days":3},"granularity":"day"}}
+{"id":"nl-c-0023","lang":"nl","stratum":"constructed","capability":"casual_relative","text":"We spreken af over een week.","gold":{"kind":"instant","start":{"rule":"offset","weeks":1},"granularity":"day"}}
+{"id":"nl-c-0024","lang":"nl","stratum":"constructed","capability":"casual_relative","text":"Het project start over twee weken.","gold":{"kind":"instant","start":{"rule":"offset","weeks":2},"granularity":"day"}}
+{"id":"nl-c-0025","lang":"nl","stratum":"constructed","capability":"casual_relative","text":"Ik laat het over 20 minuten weten.","gold":{"kind":"instant","start":{"rule":"offset","minutes":20},"granularity":"minute"}}
+{"id":"nl-c-0026","lang":"nl","stratum":"constructed","capability":"casual_relative","text":"Volgende week heb ik vakantie.","gold":{"kind":"instant","start":{"rule":"offset","weeks":1},"granularity":"day"},"conventionSensitive":true}
+{"id":"nl-c-0027","lang":"nl","stratum":"constructed","capability":"casual_relative","text":"We hebben elkaar drie dagen geleden gesproken.","gold":{"kind":"instant","start":{"rule":"offset","days":-3},"granularity":"day"}}
+{"id":"nl-c-0028","lang":"nl","stratum":"constructed","capability":"casual_relative","text":"De levering komt over een maand.","gold":{"kind":"instant","start":{"rule":"offset","months":1},"granularity":"day"},"conventionSensitive":true}
+{"id":"nl-c-0029","lang":"nl","stratum":"constructed","capability":"time_of_day","text":"De vergadering is om 17 uur.","gold":{"kind":"instant","start":{"rule":"ref","time":"17:00"},"granularity":"minute"}}
+{"id":"nl-c-0030","lang":"nl","stratum":"constructed","capability":"time_of_day","text":"We beginnen om 9:15 uur.","gold":{"kind":"instant","start":{"rule":"ref","time":"09:15"},"granularity":"minute"}}
+{"id":"nl-c-0031","lang":"nl","stratum":"constructed","capability":"time_of_day","text":"We eten om half zes vanavond.","gold":{"kind":"instant","start":{"rule":"ref","time":"17:30"},"granularity":"minute"}}
+{"id":"nl-c-0032","lang":"nl","stratum":"constructed","capability":"time_of_day","text":"Wees 's ochtends om klokslag acht uur aanwezig.","gold":{"kind":"instant","start":{"rule":"ref","time":"08:00"},"granularity":"minute"}}
+{"id":"nl-c-0033","lang":"nl","stratum":"constructed","capability":"time_of_day","text":"We lunchen om kwart over twaalf.","gold":{"kind":"instant","start":{"rule":"ref","time":"12:15"},"granularity":"minute"}}
+{"id":"nl-c-0034","lang":"nl","stratum":"constructed","capability":"time_of_day","text":"De afspraak is om 14:45 uur.","gold":{"kind":"instant","start":{"rule":"ref","time":"14:45"},"granularity":"minute"}}
+{"id":"nl-c-0035","lang":"nl","stratum":"constructed","capability":"interval","text":"De vakantie loopt van 10 tot 14 augustus 2012.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-08-10T00:00"},"end":{"rule":"abs","dt":"2012-08-14T00:00"},"granularity":"day"}}
+{"id":"nl-c-0036","lang":"nl","stratum":"constructed","capability":"interval","text":"De beurs duurt van 3 tot en met 6 september 2012.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-09-03T00:00"},"end":{"rule":"abs","dt":"2012-09-06T00:00"},"granularity":"day"}}
+{"id":"nl-c-0037","lang":"nl","stratum":"constructed","capability":"interval","text":"Van 10 tot 12 uur heb ik tijd.","gold":{"kind":"interval","start":{"rule":"ref","time":"10:00"},"end":{"rule":"ref","time":"12:00"},"granularity":"minute"}}
+{"id":"nl-c-0038","lang":"nl","stratum":"constructed","capability":"interval","text":"De aanbieding geldt van 1 tot 31 december 2012.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-12-01T00:00"},"end":{"rule":"abs","dt":"2012-12-31T00:00"},"granularity":"day"}}
+{"id":"nl-c-0039","lang":"nl","stratum":"constructed","capability":"interval","text":"We zijn van 5-8-2012 tot 12-8-2012 op reis.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-08-05T00:00"},"end":{"rule":"abs","dt":"2012-08-12T00:00"},"granularity":"day"}}
+{"id":"nl-c-0040","lang":"nl","stratum":"constructed","capability":"interval","text":"De tentoonstelling is open van maandag tot en met vrijdag.","gold":{"kind":"interval","start":{"rule":"weekday","name":"mon","dir":"this"},"end":{"rule":"weekday","name":"fri","dir":"this"},"granularity":"day"},"conventionSensitive":true}
+{"id":"nl-n-0001","lang":"nl","stratum":"negative","capability":"none","text":"Update van versie 10.0 naar 10.1 alsjeblieft.","gold":{"kind":"none"}}
+{"id":"nl-n-0002","lang":"nl","stratum":"negative","capability":"none","text":"Zaal 204 is vandaag vrij.","gold":{"kind":"none"}}
+{"id":"nl-n-0003","lang":"nl","stratum":"negative","capability":"none","text":"We hebben de wedstrijd met 3-1 gewonnen.","gold":{"kind":"none"}}
+{"id":"nl-n-0004","lang":"nl","stratum":"negative","capability":"none","text":"Dat kost 19,99 euro.","gold":{"kind":"none"}}
+{"id":"nl-n-0005","lang":"nl","stratum":"negative","capability":"none","text":"Mijn nummer is 030 12345678.","gold":{"kind":"none"}}
+{"id":"nl-n-0006","lang":"nl","stratum":"negative","capability":"none","text":"Het serienummer is 2012-08-10-445.","gold":{"kind":"none"}}
+{"id":"nl-n-0007","lang":"nl","stratum":"negative","capability":"none","text":"Het model heet X-3200.","gold":{"kind":"none"}}
+{"id":"nl-n-0008","lang":"nl","stratum":"negative","capability":"none","text":"De korting ligt tussen 10-15%.","gold":{"kind":"none"}}
+{"id":"nl-n-0009","lang":"nl","stratum":"negative","capability":"none","text":"Het onderzoek vergelijkt de cijfers van 2019 tot 2020.","gold":{"kind":"none"},"seededFromSubjectDocs":true}
+{"id":"nl-n-0010","lang":"nl","stratum":"negative","capability":"none","text":"Het ISBN-nummer is 978-3-16-148410-0.","gold":{"kind":"none"}}
+{"id":"nl-n-0011","lang":"nl","stratum":"negative","capability":"none","text":"Bij rust stond het 2-0 voor ons.","gold":{"kind":"none"}}
+{"id":"nl-n-0012","lang":"nl","stratum":"negative","capability":"none","text":"De televisie kost 2012 euro.","gold":{"kind":"none"}}
+{"id":"nl-n-0013","lang":"nl","stratum":"negative","capability":"none","text":"Het aandeel werd gesplitst in de verhouding 3 tot 1.","gold":{"kind":"none"}}
+{"id":"nl-n-0014","lang":"nl","stratum":"negative","capability":"none","text":"De postcode is 1011 AB Amsterdam.","gold":{"kind":"none"}}
+{"id":"nl-n-0015","lang":"nl","stratum":"negative","capability":"none","text":"Stoel 14B is gereserveerd.","gold":{"kind":"none"}}
+{"id":"nl-n-0016","lang":"nl","stratum":"negative","capability":"none","text":"Bestelnummer 45-2012 is geannuleerd.","gold":{"kind":"none"}}
+{"id":"nl-n-0017","lang":"nl","stratum":"negative","capability":"none","text":"Ons rekeningnummer eindigt op 8823.","gold":{"kind":"none"}}
+{"id":"nl-n-0018","lang":"nl","stratum":"negative","capability":"none","text":"De marathon werd gelopen in 3:42:10.","gold":{"kind":"none"}}
+{"id":"nl-n-0019","lang":"nl","stratum":"negative","capability":"none","text":"Het netnummer voor Amsterdam is 020.","gold":{"kind":"none"}}
+{"id":"nl-n-0020","lang":"nl","stratum":"negative","capability":"none","text":"Het artikel draagt de referentie 07-11-92.","gold":{"kind":"none"}}

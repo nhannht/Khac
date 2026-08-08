@@ -1,0 +1,60 @@
+{"id":"ru-c-0001","lang":"ru","stratum":"constructed","capability":"numeric_absolute","text":"Встреча назначена на 10.08.2012.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-08-10T00:00"},"granularity":"day"}}
+{"id":"ru-c-0002","lang":"ru","stratum":"constructed","capability":"numeric_absolute","text":"Оплатить счёт нужно до 05.03.2021.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2021-03-05T00:00"},"granularity":"day"}}
+{"id":"ru-c-0003","lang":"ru","stratum":"constructed","capability":"numeric_absolute","text":"Собрание перенесли на 15.11.2019 в 14:30.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2019-11-15T14:30"},"granularity":"minute"}}
+{"id":"ru-c-0004","lang":"ru","stratum":"constructed","capability":"numeric_absolute","text":"Договор подписали 01.01.2020.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2020-01-01T00:00"},"granularity":"day"}}
+{"id":"ru-c-0005","lang":"ru","stratum":"constructed","capability":"numeric_absolute","text":"Рейс вылетает 23.12.2022 в 06:45.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2022-12-23T06:45"},"granularity":"minute"}}
+{"id":"ru-c-0006","lang":"ru","stratum":"constructed","capability":"numeric_absolute","text":"Заявку нужно подать не позднее 30.09.2018.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2018-09-30T00:00"},"granularity":"day"}}
+{"id":"ru-c-0007","lang":"ru","stratum":"constructed","capability":"month_name","text":"Конференция пройдёт 10 августа 2012 года.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-08-10T00:00"},"granularity":"day"}}
+{"id":"ru-c-0008","lang":"ru","stratum":"constructed","capability":"month_name","text":"День рождения у неё 23 февраля 1995 года.","gold":{"kind":"instant","start":{"rule":"abs","dt":"1995-02-23T00:00"},"granularity":"day"}}
+{"id":"ru-c-0009","lang":"ru","stratum":"constructed","capability":"month_name","text":"Отчёт нужно сдать до 3 июня 2020 года в 18:00.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2020-06-03T18:00"},"granularity":"minute"}}
+{"id":"ru-c-0010","lang":"ru","stratum":"constructed","capability":"month_name","text":"Свадьба назначена на 14 сентября 2024 года.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2024-09-14T00:00"},"granularity":"day"}}
+{"id":"ru-c-0011","lang":"ru","stratum":"constructed","capability":"month_name","text":"Он вернулся из командировки 1 мая 2019 года.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2019-05-01T00:00"},"granularity":"day"}}
+{"id":"ru-c-0012","lang":"ru","stratum":"constructed","capability":"month_name","text":"Презентация состоится 7 декабря 2021 года в 10 утра.","gold":{"kind":"instant","start":{"rule":"abs","dt":"2021-12-07T10:00"},"granularity":"minute"}}
+{"id":"ru-c-0013","lang":"ru","stratum":"constructed","capability":"weekday","text":"Встретимся в следующую пятницу.","gold":{"kind":"instant","start":{"rule":"weekday","name":"fri","dir":"next"},"granularity":"day"},"conventionSensitive":true}
+{"id":"ru-c-0014","lang":"ru","stratum":"constructed","capability":"weekday","text":"Он уехал в прошлый вторник.","gold":{"kind":"instant","start":{"rule":"weekday","name":"tue","dir":"last"},"granularity":"day"},"conventionSensitive":true}
+{"id":"ru-c-0015","lang":"ru","stratum":"constructed","capability":"weekday","text":"Давай созвонимся в эту субботу.","gold":{"kind":"instant","start":{"rule":"weekday","name":"sat","dir":"this"},"granularity":"day"},"conventionSensitive":true}
+{"id":"ru-c-0016","lang":"ru","stratum":"constructed","capability":"weekday","text":"Совещание в следующий понедельник в 09:30.","gold":{"kind":"instant","start":{"rule":"weekday","name":"mon","dir":"next","time":"09:30"},"granularity":"minute"},"conventionSensitive":true}
+{"id":"ru-c-0017","lang":"ru","stratum":"constructed","capability":"weekday","text":"Мы виделись в прошлое воскресенье.","gold":{"kind":"instant","start":{"rule":"weekday","name":"sun","dir":"last"},"granularity":"day"},"conventionSensitive":true}
+{"id":"ru-c-0018","lang":"ru","stratum":"constructed","capability":"weekday","text":"Занятие перенесли на следующую среду в 19:00.","gold":{"kind":"instant","start":{"rule":"weekday","name":"wed","dir":"next","time":"19:00"},"granularity":"minute"},"conventionSensitive":true}
+{"id":"ru-c-0019","lang":"ru","stratum":"constructed","capability":"casual_relative","text":"Увидимся послезавтра.","gold":{"kind":"instant","start":{"rule":"offset","days":2},"granularity":"day"}}
+{"id":"ru-c-0020","lang":"ru","stratum":"constructed","capability":"casual_relative","text":"Он приехал позавчера.","gold":{"kind":"instant","start":{"rule":"offset","days":-2},"granularity":"day"}}
+{"id":"ru-c-0021","lang":"ru","stratum":"constructed","capability":"casual_relative","text":"Перезвоню через полчаса.","gold":{"kind":"instant","start":{"rule":"offset","minutes":30},"granularity":"minute"}}
+{"id":"ru-c-0022","lang":"ru","stratum":"constructed","capability":"casual_relative","text":"Мы поговорим через две недели.","gold":{"kind":"instant","start":{"rule":"offset","weeks":2},"granularity":"day"}}
+{"id":"ru-c-0023","lang":"ru","stratum":"constructed","capability":"casual_relative","text":"Отчёт был готов два дня назад.","gold":{"kind":"instant","start":{"rule":"offset","days":-2},"granularity":"day"}}
+{"id":"ru-c-0024","lang":"ru","stratum":"constructed","capability":"casual_relative","text":"Встреча будет через час.","gold":{"kind":"instant","start":{"rule":"offset","hours":1},"granularity":"minute"}}
+{"id":"ru-c-0025","lang":"ru","stratum":"constructed","capability":"casual_relative","text":"Начнём через 10 минут.","gold":{"kind":"instant","start":{"rule":"offset","minutes":10},"granularity":"minute"}}
+{"id":"ru-c-0026","lang":"ru","stratum":"constructed","capability":"casual_relative","text":"Он вернётся через месяц.","gold":{"kind":"instant","start":{"rule":"offset","months":1},"granularity":"day"},"conventionSensitive":true}
+{"id":"ru-c-0027","lang":"ru","stratum":"constructed","capability":"casual_relative","text":"Заказ придёт через три дня.","gold":{"kind":"instant","start":{"rule":"offset","days":3},"granularity":"day"}}
+{"id":"ru-c-0028","lang":"ru","stratum":"constructed","capability":"casual_relative","text":"Мы подписали контракт год назад.","gold":{"kind":"instant","start":{"rule":"offset","years":-1},"granularity":"day"}}
+{"id":"ru-c-0029","lang":"ru","stratum":"constructed","capability":"time_of_day","text":"Позвони мне в 17:00.","gold":{"kind":"instant","start":{"rule":"ref","time":"17:00"},"granularity":"minute"}}
+{"id":"ru-c-0030","lang":"ru","stratum":"constructed","capability":"time_of_day","text":"Встретимся в пять вечера.","gold":{"kind":"instant","start":{"rule":"ref","time":"17:00"},"granularity":"minute"}}
+{"id":"ru-c-0031","lang":"ru","stratum":"constructed","capability":"time_of_day","text":"Обед сегодня в полдень.","gold":{"kind":"instant","start":{"rule":"ref","time":"12:00"},"granularity":"minute"}}
+{"id":"ru-c-0032","lang":"ru","stratum":"constructed","capability":"time_of_day","text":"Заеду за тобой в девять утра.","gold":{"kind":"instant","start":{"rule":"ref","time":"09:00"},"granularity":"minute"}}
+{"id":"ru-c-0033","lang":"ru","stratum":"constructed","capability":"time_of_day","text":"Ложусь спать в полночь.","gold":{"kind":"instant","start":{"rule":"ref","time":"00:00"},"granularity":"minute"},"conventionSensitive":true}
+{"id":"ru-c-0034","lang":"ru","stratum":"constructed","capability":"time_of_day","text":"Заберу документы в половине третьего.","gold":{"kind":"instant","start":{"rule":"ref","time":"14:30"},"granularity":"minute"}}
+{"id":"ru-c-0035","lang":"ru","stratum":"constructed","capability":"interval","text":"Конференция пройдёт с 10 по 14 августа 2012 года.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-08-10T00:00"},"end":{"rule":"abs","dt":"2012-08-14T00:00"},"granularity":"day"}}
+{"id":"ru-c-0036","lang":"ru","stratum":"constructed","capability":"interval","text":"Отпуск у меня с 1 по 15 июля 2023 года.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2023-07-01T00:00"},"end":{"rule":"abs","dt":"2023-07-15T00:00"},"granularity":"day"}}
+{"id":"ru-c-0037","lang":"ru","stratum":"constructed","capability":"interval","text":"Встреча пройдёт с 10:00 до 12:30 15 марта 2021 года.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2021-03-15T10:00"},"end":{"rule":"abs","dt":"2021-03-15T12:30"},"granularity":"minute"}}
+{"id":"ru-c-0038","lang":"ru","stratum":"constructed","capability":"interval","text":"Командировка с 5 по 9 сентября 2022 года.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2022-09-05T00:00"},"end":{"rule":"abs","dt":"2022-09-09T00:00"},"granularity":"day"}}
+{"id":"ru-c-0039","lang":"ru","stratum":"constructed","capability":"interval","text":"Ремонт офиса запланирован с 20.01.2020 по 05.02.2020.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2020-01-20T00:00"},"end":{"rule":"abs","dt":"2020-02-05T00:00"},"granularity":"day"}}
+{"id":"ru-c-0040","lang":"ru","stratum":"constructed","capability":"interval","text":"Курс лекций пройдёт с 1 по 30 ноября 2019 года.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2019-11-01T00:00"},"end":{"rule":"abs","dt":"2019-11-30T00:00"},"granularity":"day"}}
+{"id":"ru-n-0001","lang":"ru","stratum":"negative","capability":"none","text":"Обновление с версии 10 до 10.1.","gold":{"kind":"none"}}
+{"id":"ru-n-0002","lang":"ru","stratum":"negative","capability":"none","text":"Совещание пройдёт в кабинете 204.","gold":{"kind":"none"}}
+{"id":"ru-n-0003","lang":"ru","stratum":"negative","capability":"none","text":"Наша команда выиграла со счётом 3:1.","gold":{"kind":"none"}}
+{"id":"ru-n-0004","lang":"ru","stratum":"negative","capability":"none","text":"Товар стоит 1500 рублей.","gold":{"kind":"none"}}
+{"id":"ru-n-0005","lang":"ru","stratum":"negative","capability":"none","text":"Мой номер телефона: +7 916 123 45 67.","gold":{"kind":"none"}}
+{"id":"ru-n-0006","lang":"ru","stratum":"negative","capability":"none","text":"ISBN этой книги: 978-5-17-090521-8.","gold":{"kind":"none"}}
+{"id":"ru-n-0007","lang":"ru","stratum":"negative","capability":"none","text":"У меня старый телевизор Samsung UE40.","gold":{"kind":"none"}}
+{"id":"ru-n-0008","lang":"ru","stratum":"negative","capability":"none","text":"Скидка составит от 10 до 15 процентов.","gold":{"kind":"none"}}
+{"id":"ru-n-0009","lang":"ru","stratum":"negative","capability":"none","text":"Сравниваем показатели 2019 и 2020 годов.","gold":{"kind":"none"},"seededFromSubjectDocs":true}
+{"id":"ru-n-0010","lang":"ru","stratum":"negative","capability":"none","text":"Мы перешли с версии 2.0 на версию 3.5.","gold":{"kind":"none"}}
+{"id":"ru-n-0011","lang":"ru","stratum":"negative","capability":"none","text":"Ваше место 15 в ряду 7.","gold":{"kind":"none"}}
+{"id":"ru-n-0012","lang":"ru","stratum":"negative","capability":"none","text":"Счёт после первого тайма 2:0.","gold":{"kind":"none"}}
+{"id":"ru-n-0013","lang":"ru","stratum":"negative","capability":"none","text":"Аренда квартиры обойдётся в 25000 рублей в месяц.","gold":{"kind":"none"}}
+{"id":"ru-n-0014","lang":"ru","stratum":"negative","capability":"none","text":"Позвоните по номеру 8 800 555 35 35.","gold":{"kind":"none"}}
+{"id":"ru-n-0015","lang":"ru","stratum":"negative","capability":"none","text":"Модель принтера HP LaserJet 1020.","gold":{"kind":"none"}}
+{"id":"ru-n-0016","lang":"ru","stratum":"negative","capability":"none","text":"Инфляция составила от 5 до 8 процентов за год.","gold":{"kind":"none"}}
+{"id":"ru-n-0017","lang":"ru","stratum":"negative","capability":"none","text":"На складе осталось 12 коробок.","gold":{"kind":"none"}}
+{"id":"ru-n-0018","lang":"ru","stratum":"negative","capability":"none","text":"Серийный номер устройства: 4521-9987-001.","gold":{"kind":"none"}}
+{"id":"ru-n-0019","lang":"ru","stratum":"negative","capability":"none","text":"Рост продаж составил 12 процентов.","gold":{"kind":"none"}}
+{"id":"ru-n-0020","lang":"ru","stratum":"negative","capability":"none","text":"Спасибо за быстрый ответ на моё письмо.","gold":{"kind":"none"}}

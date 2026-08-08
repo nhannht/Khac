@@ -7,6 +7,46 @@ results can check the method rather than take the numbers on faith.
 
 **No author read Khắc's source or its test suite.**
 
+## What leaked anyway, disclosed
+
+Two channels defeated that rule in part. Both are recorded here rather than
+quietly cleaned up, because a disclosed bias can be measured around and a hidden
+one cannot.
+
+**1. The subject's engine documentation reached every author automatically.**
+Khắc's repository `CLAUDE.md` is injected into an agent's context by the tooling,
+not opened by choice. It describes architecture and invariants - overlap
+ordering, the NFC boundary, how a backwards interval is reported - and names no
+vocabulary, no patterns, and no test data. Its practical effect was small and
+visible. Asked to list every case whose content it shaped, the English author
+named exactly three, and volunteered the most damaging one unprompted:
+
+- `en-c-0038` - a backwards interval. Khắc's documentation gives "August 22 - 10,
+  2012" as its own example of that invariant, and the case was the same month and
+  the same two days with only the year changed. That is the cited example
+  re-skinned, so its dates were replaced. The shape was kept, because a backwards
+  range is a legitimate input and dropping it would lose real coverage.
+- `en-w-0078` - the same shape with different months and days, reached by knowing
+  the invariant exists rather than by copying it. Kept as written.
+- `en-n-0001` and `en-n-0008` - covered by the seeding disclosure below.
+
+No other author reported a case shaped by it. The Japanese and Chinese author
+disclosed the same automatic injection and stated it changed no case, having
+drawn its vocabulary from the language rather than from the file.
+
+**2. The worse one, and it came from this document.** Earlier drafts of the
+hard-negative list below used `10 - 10.1` and `2019 to 2020` as examples. Both
+were lifted from Khắc's own documented test conventions, which name exactly those
+two strings. Every author used them, so **21 of 280 negatives, 8%, are shapes the
+subject was specifically built to reject** - and the measured consequence is real:
+Khắc rejects `10-10.1` while chrono and SwiftyChrono both false-positive on it.
+
+That is flattering selection in a headline metric, introduced by the spec rather
+than by any author. Rather than delete the cases, which are perfectly good
+negatives, they carry `"seededFromSubjectDocs": true` and the scorer reports the
+false-positive rate twice: over all negatives, and over the unseeded ones only.
+The second number is the one to trust.
+
 Khắc's oracle cases are ported from wanasit/chrono. A corpus written by someone
 looking at Khắc's vocabulary tables would contain exactly the phrasings Khắc
 already knows, and scoring Khắc against it would prove nothing at all. Authors
@@ -38,6 +78,22 @@ middle of a clause, ordinals, bare month-day, times without a meridiem.
 Constructed cases are spread across capabilities: 6 `numeric_absolute`,
 6 `month_name`, 6 `weekday`, 10 `casual_relative`, 6 `time_of_day`, 6 `interval`.
 
+**`month_name` means the MARKED form of a date, not literally a month's name.**
+Japanese and Chinese write months as ordinals, so 八月 is "eighth month" and
+there is no name to read. The distinction that actually carries across all 14
+languages is marked against unmarked: `month_name` is the form carrying a
+locale marker (August, ottobre, and equally the 年月日 morphemes, since 月 is
+what names the month), while `numeric_absolute` is the separator-driven form
+with no marker at all (2012/8/10, 2012.8.10).
+
+This was got wrong twice before it was got right. The first draft mapped
+`month_name` onto kanji and hanzi numerals, which conflated numeral FORM with
+date form. The correction, which came from the Japanese and Chinese author
+overruling the instruction it had been given, is the axis above: it keeps every
+language populating the same buckets, which is the only way the by-capability
+table stays comparable. Kanji-numeral dates (二千十二年八月十日) therefore sit in
+`month_name` alongside 2012年8月10日, because both are the marked form.
+
 **Negatives are the point, not filler.** Plain prose with no numbers is a weak
 negative that every engine passes. The hard ones, and what every author was
 asked to include: version numbers (`upgrade to 10 - 10.1`), room and seat numbers
@@ -63,13 +119,37 @@ evaluated at scoring time against one instant shared by every engine.
 | `{"rule":"offset","days":1,"time":"09:00"}` | also `weeks`, `months`, `years` |
 | `{"rule":"offset","hours":3}` | also `minutes`; scored with a one-minute window |
 | `{"rule":"weekday","name":"fri","dir":"next"}` | `dir` is `next`, `this`, or `last` |
+| `{"rule":"monthDay","month":8,"day":10}` | a date with no year stated, resolved to the occurrence nearest the reference |
 
 `name` is one of `sun mon tue wed thu fri sat`. Omitting `time` means the case is
 scored at day granularity.
 
 **A constructed case that states an absolute date always carries an explicit
 year.** Month-and-day without a year resolves by a heuristic that differs between
-engines, so scoring it here would measure convention rather than capability.
+engines, so scoring it in the constructed stratum would measure convention rather
+than capability.
+
+The `wild` stratum is the exception, and deliberately so. Real people write "see
+you Aug 10" constantly, and a wild stratum that banned it would not be wild. Those
+cases use the `monthDay` rule and carry `conventionSensitive: true`, so they are
+measured but never counted in the headline number.
+
+### Known gaps: phrasings this rule vocabulary cannot express
+
+Two authors hit these independently, so they are recorded rather than left to be
+rediscovered. Cases of these shapes were DROPPED rather than labelled with a rule
+that does not mean what the text means.
+
+- **Weekday plus offset.** "a week from Tuesday", "the Monday after next". These
+  need "the next occurrence of X, then shift", and no rule composes.
+- **End of a period.** "end of next month", "end of the quarter". `offset` with
+  `months: 1` lands on the same day-number in the next month, not on its last day.
+
+Both are real phrasings and their absence is a real gap in coverage. Neither was
+worth adding mid-flight: they would have arrived after most languages were already
+written, so only the last few would have carried them, and an unevenly populated
+capability makes the by-language table incomparable, which costs more than the
+gap does. Worth adding before a second edition, with every language covered.
 
 ## Convention-sensitive cases
 

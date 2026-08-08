@@ -1,0 +1,60 @@
+{"id":"it-c-0001","lang":"it","stratum":"constructed","capability":"numeric_absolute","text":"la scadenza è il 10/08/2012","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-08-10T00:00"},"granularity":"day"}}
+{"id":"it-c-0002","lang":"it","stratum":"constructed","capability":"numeric_absolute","text":"consegna prevista per il 03-10-2012","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-10-03T00:00"},"granularity":"day"}}
+{"id":"it-c-0003","lang":"it","stratum":"constructed","capability":"numeric_absolute","text":"riunione il 15.09.2012 alle 15","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-09-15T15:00"},"granularity":"minute"}}
+{"id":"it-c-0004","lang":"it","stratum":"constructed","capability":"numeric_absolute","text":"il pagamento è dovuto entro il 2012-08-10","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-08-10T00:00"},"granularity":"day"}}
+{"id":"it-c-0005","lang":"it","stratum":"constructed","capability":"numeric_absolute","text":"nato il 25/12/2012","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-12-25T00:00"},"granularity":"day"}}
+{"id":"it-c-0006","lang":"it","stratum":"constructed","capability":"numeric_absolute","text":"scadenza fattura: 01/02/2012","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-02-01T00:00"},"granularity":"day"}}
+{"id":"it-c-0007","lang":"it","stratum":"constructed","capability":"month_name","text":"il 3 ottobre 2012 partiamo per Roma","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-10-03T00:00"},"granularity":"day"}}
+{"id":"it-c-0008","lang":"it","stratum":"constructed","capability":"month_name","text":"l'evento è il primo maggio 2012","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-05-01T00:00"},"granularity":"day"}}
+{"id":"it-c-0009","lang":"it","stratum":"constructed","capability":"month_name","text":"ci vediamo il 22 luglio 2012 alle 18:30","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-07-22T18:30"},"granularity":"minute"}}
+{"id":"it-c-0010","lang":"it","stratum":"constructed","capability":"month_name","text":"la riunione è fissata per il 5 gen 2012","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-01-05T00:00"},"granularity":"day"}}
+{"id":"it-c-0011","lang":"it","stratum":"constructed","capability":"month_name","text":"il compleanno è il 30 novembre 2012","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-11-30T00:00"},"granularity":"day"}}
+{"id":"it-c-0012","lang":"it","stratum":"constructed","capability":"month_name","text":"scadenza: 2 marzo 2012","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-03-02T00:00"},"granularity":"day"}}
+{"id":"it-c-0013","lang":"it","stratum":"constructed","capability":"weekday","text":"ci vediamo venerdì prossimo alle 17","gold":{"kind":"instant","start":{"rule":"weekday","name":"fri","dir":"next","time":"17:00"},"granularity":"minute"},"conventionSensitive":true}
+{"id":"it-c-0014","lang":"it","stratum":"constructed","capability":"weekday","text":"l'ho consegnato lunedì scorso","gold":{"kind":"instant","start":{"rule":"weekday","name":"mon","dir":"last"},"granularity":"day"}}
+{"id":"it-c-0015","lang":"it","stratum":"constructed","capability":"weekday","text":"il corso inizia mercoledì prossimo alle 14:30","gold":{"kind":"instant","start":{"rule":"weekday","name":"wed","dir":"next","time":"14:30"},"granularity":"minute"},"conventionSensitive":true}
+{"id":"it-c-0016","lang":"it","stratum":"constructed","capability":"weekday","text":"partiamo sabato","gold":{"kind":"instant","start":{"rule":"weekday","name":"sat","dir":"next"},"granularity":"day"},"conventionSensitive":true}
+{"id":"it-c-0017","lang":"it","stratum":"constructed","capability":"weekday","text":"questo giovedì ho un appuntamento dal dentista","gold":{"kind":"instant","start":{"rule":"weekday","name":"thu","dir":"this"},"granularity":"day"},"conventionSensitive":true}
+{"id":"it-c-0018","lang":"it","stratum":"constructed","capability":"weekday","text":"domenica scorsa abbiamo giocato a calcio","gold":{"kind":"instant","start":{"rule":"weekday","name":"sun","dir":"last"},"granularity":"day"}}
+{"id":"it-c-0019","lang":"it","stratum":"constructed","capability":"casual_relative","text":"ci vediamo domani","gold":{"kind":"instant","start":{"rule":"offset","days":1},"granularity":"day"}}
+{"id":"it-c-0020","lang":"it","stratum":"constructed","capability":"casual_relative","text":"l'ho fatto ieri","gold":{"kind":"instant","start":{"rule":"offset","days":-1},"granularity":"day"}}
+{"id":"it-c-0021","lang":"it","stratum":"constructed","capability":"casual_relative","text":"arriviamo dopodomani","gold":{"kind":"instant","start":{"rule":"offset","days":2},"granularity":"day"}}
+{"id":"it-c-0022","lang":"it","stratum":"constructed","capability":"casual_relative","text":"l'altro ieri pioveva","gold":{"kind":"instant","start":{"rule":"offset","days":-2},"granularity":"day"}}
+{"id":"it-c-0023","lang":"it","stratum":"constructed","capability":"casual_relative","text":"tra due settimane parto per le vacanze","gold":{"kind":"instant","start":{"rule":"offset","weeks":2},"granularity":"day"}}
+{"id":"it-c-0024","lang":"it","stratum":"constructed","capability":"casual_relative","text":"ci sentiamo tra un'ora","gold":{"kind":"instant","start":{"rule":"offset","hours":1},"granularity":"minute"}}
+{"id":"it-c-0025","lang":"it","stratum":"constructed","capability":"casual_relative","text":"chiamami fra 20 minuti","gold":{"kind":"instant","start":{"rule":"offset","minutes":20},"granularity":"minute"}}
+{"id":"it-c-0026","lang":"it","stratum":"constructed","capability":"casual_relative","text":"la settimana prossima ho un colloquio","gold":{"kind":"instant","start":{"rule":"offset","weeks":1},"granularity":"day"},"conventionSensitive":true}
+{"id":"it-c-0027","lang":"it","stratum":"constructed","capability":"casual_relative","text":"il mese prossimo cambio lavoro","gold":{"kind":"instant","start":{"rule":"offset","months":1},"granularity":"day"},"conventionSensitive":true}
+{"id":"it-c-0028","lang":"it","stratum":"constructed","capability":"casual_relative","text":"tra tre giorni scade il contratto","gold":{"kind":"instant","start":{"rule":"offset","days":3},"granularity":"day"}}
+{"id":"it-c-0029","lang":"it","stratum":"constructed","capability":"time_of_day","text":"ci vediamo alle 17","gold":{"kind":"instant","start":{"rule":"ref","time":"17:00"},"granularity":"minute"}}
+{"id":"it-c-0030","lang":"it","stratum":"constructed","capability":"time_of_day","text":"pranziamo a mezzogiorno","gold":{"kind":"instant","start":{"rule":"ref","time":"12:00"},"granularity":"minute"}}
+{"id":"it-c-0031","lang":"it","stratum":"constructed","capability":"time_of_day","text":"l'appuntamento è alle 17:30","gold":{"kind":"instant","start":{"rule":"ref","time":"17:30"},"granularity":"minute"}}
+{"id":"it-c-0032","lang":"it","stratum":"constructed","capability":"time_of_day","text":"ci sentiamo stasera alle 21","gold":{"kind":"instant","start":{"rule":"ref","time":"21:00"},"granularity":"minute"}}
+{"id":"it-c-0033","lang":"it","stratum":"constructed","capability":"time_of_day","text":"svegliati alle 6 del mattino","gold":{"kind":"instant","start":{"rule":"ref","time":"06:00"},"granularity":"minute"}}
+{"id":"it-c-0034","lang":"it","stratum":"constructed","capability":"time_of_day","text":"chiudiamo a mezzanotte","gold":{"kind":"instant","start":{"rule":"ref","time":"00:00"},"granularity":"minute"}}
+{"id":"it-c-0035","lang":"it","stratum":"constructed","capability":"interval","text":"la mostra è aperta dal 10 al 14 agosto 2012","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-08-10T00:00"},"end":{"rule":"abs","dt":"2012-08-14T00:00"},"granularity":"day"}}
+{"id":"it-c-0036","lang":"it","stratum":"constructed","capability":"interval","text":"il corso va dal 3 al 7 settembre 2012","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-09-03T00:00"},"end":{"rule":"abs","dt":"2012-09-07T00:00"},"granularity":"day"}}
+{"id":"it-c-0037","lang":"it","stratum":"constructed","capability":"interval","text":"siamo in ufficio dalle 9 alle 18","gold":{"kind":"interval","start":{"rule":"ref","time":"09:00"},"end":{"rule":"ref","time":"18:00"},"granularity":"minute"}}
+{"id":"it-c-0038","lang":"it","stratum":"constructed","capability":"interval","text":"il volo è dal 22/07/2012 al 26/07/2012","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-07-22T00:00"},"end":{"rule":"abs","dt":"2012-07-26T00:00"},"granularity":"day"}}
+{"id":"it-c-0039","lang":"it","stratum":"constructed","capability":"interval","text":"la fiera si tiene dal 1 al 3 ottobre 2012","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-10-01T00:00"},"end":{"rule":"abs","dt":"2012-10-03T00:00"},"granularity":"day"}}
+{"id":"it-c-0040","lang":"it","stratum":"constructed","capability":"interval","text":"il progetto dura dal 28 dicembre 2012 al 2 gennaio 2013","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-12-28T00:00"},"end":{"rule":"abs","dt":"2013-01-02T00:00"},"granularity":"day"}}
+{"id":"it-n-0001","lang":"it","stratum":"negative","capability":"none","text":"abbiamo vinto 3 a 1","gold":{"kind":"none"}}
+{"id":"it-n-0002","lang":"it","stratum":"negative","capability":"none","text":"il modello è il TX-450","gold":{"kind":"none"}}
+{"id":"it-n-0003","lang":"it","stratum":"negative","capability":"none","text":"la stanza è la 204","gold":{"kind":"none"}}
+{"id":"it-n-0004","lang":"it","stratum":"negative","capability":"none","text":"il prezzo è sceso del 10-15%","gold":{"kind":"none"}}
+{"id":"it-n-0005","lang":"it","stratum":"negative","capability":"none","text":"chiamami al 348 555 2020","gold":{"kind":"none"}}
+{"id":"it-n-0006","lang":"it","stratum":"negative","capability":"none","text":"il codice ISBN è 978-88-04-12345-6","gold":{"kind":"none"}}
+{"id":"it-n-0007","lang":"it","stratum":"negative","capability":"none","text":"il changelog copre le versioni 10-10.1","gold":{"kind":"none"},"seededFromSubjectDocs":true}
+{"id":"it-n-0008","lang":"it","stratum":"negative","capability":"none","text":"sia il 2019 che il 2020 sono stati anni difficili","gold":{"kind":"none"},"seededFromSubjectDocs":true}
+{"id":"it-n-0009","lang":"it","stratum":"negative","capability":"none","text":"il totale è 1.234,56 euro","gold":{"kind":"none"}}
+{"id":"it-n-0010","lang":"it","stratum":"negative","capability":"none","text":"punteggio finale 21-14","gold":{"kind":"none"}}
+{"id":"it-n-0011","lang":"it","stratum":"negative","capability":"none","text":"posto 15B fila 3","gold":{"kind":"none"}}
+{"id":"it-n-0012","lang":"it","stratum":"negative","capability":"none","text":"il volo AZ 1234 è in ritardo","gold":{"kind":"none"}}
+{"id":"it-n-0013","lang":"it","stratum":"negative","capability":"none","text":"sconto del 20-30% per i soci","gold":{"kind":"none"}}
+{"id":"it-n-0014","lang":"it","stratum":"negative","capability":"none","text":"il codice fiscale è RSSMRA85M01H501U","gold":{"kind":"none"}}
+{"id":"it-n-0015","lang":"it","stratum":"negative","capability":"none","text":"abbiamo ordinato il modello 4090 Ti","gold":{"kind":"none"}}
+{"id":"it-n-0016","lang":"it","stratum":"negative","capability":"none","text":"il totale delle fatture è di 2500 euro","gold":{"kind":"none"}}
+{"id":"it-n-0017","lang":"it","stratum":"negative","capability":"none","text":"il codice prodotto è 20120810","gold":{"kind":"none"}}
+{"id":"it-n-0018","lang":"it","stratum":"negative","capability":"none","text":"abbiamo giocato in 11 contro 11","gold":{"kind":"none"}}
+{"id":"it-n-0019","lang":"it","stratum":"negative","capability":"none","text":"il libro costa 24,90 euro","gold":{"kind":"none"}}
+{"id":"it-n-0020","lang":"it","stratum":"negative","capability":"none","text":"la password deve contenere 8-12 caratteri","gold":{"kind":"none"}}

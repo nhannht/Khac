@@ -1,0 +1,60 @@
+{"id":"fi-c-0001","lang":"fi","stratum":"constructed","capability":"numeric_absolute","text":"erääntyy 10.8.2012","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-08-10T00:00"},"granularity":"day"}}
+{"id":"fi-c-0002","lang":"fi","stratum":"constructed","capability":"numeric_absolute","text":"kokous on 3.10.2012 klo 17.30","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-10-03T17:30"},"granularity":"minute"}}
+{"id":"fi-c-0003","lang":"fi","stratum":"constructed","capability":"numeric_absolute","text":"maksu suoritettava viimeistään 25.12.2012","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-12-25T00:00"},"granularity":"day"}}
+{"id":"fi-c-0004","lang":"fi","stratum":"constructed","capability":"numeric_absolute","text":"syntynyt 1.2.2012","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-02-01T00:00"},"granularity":"day"}}
+{"id":"fi-c-0005","lang":"fi","stratum":"constructed","capability":"numeric_absolute","text":"laskun eräpäivä on 2012-08-10","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-08-10T00:00"},"granularity":"day"}}
+{"id":"fi-c-0006","lang":"fi","stratum":"constructed","capability":"numeric_absolute","text":"tapaaminen 15.9.2012 kello 15","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-09-15T15:00"},"granularity":"minute"}}
+{"id":"fi-c-0007","lang":"fi","stratum":"constructed","capability":"month_name","text":"lähdemme Roomaan 3. lokakuuta 2012","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-10-03T00:00"},"granularity":"day"}}
+{"id":"fi-c-0008","lang":"fi","stratum":"constructed","capability":"month_name","text":"juhla on 1. toukokuuta 2012","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-05-01T00:00"},"granularity":"day"}}
+{"id":"fi-c-0009","lang":"fi","stratum":"constructed","capability":"month_name","text":"tapaamme 22. heinäkuuta 2012 kello 18.30","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-07-22T18:30"},"granularity":"minute"}}
+{"id":"fi-c-0010","lang":"fi","stratum":"constructed","capability":"month_name","text":"eräpäivä on 5. tammikuuta 2012","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-01-05T00:00"},"granularity":"day"}}
+{"id":"fi-c-0011","lang":"fi","stratum":"constructed","capability":"month_name","text":"syntymäpäivä on 30. marraskuuta 2012","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-11-30T00:00"},"granularity":"day"}}
+{"id":"fi-c-0012","lang":"fi","stratum":"constructed","capability":"month_name","text":"määräaika päättyy 2. maaliskuuta 2012","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-03-02T00:00"},"granularity":"day"}}
+{"id":"fi-c-0013","lang":"fi","stratum":"constructed","capability":"weekday","text":"nähdään ensi perjantaina kello 17","gold":{"kind":"instant","start":{"rule":"weekday","name":"fri","dir":"next","time":"17:00"},"granularity":"minute"},"conventionSensitive":true}
+{"id":"fi-c-0014","lang":"fi","stratum":"constructed","capability":"weekday","text":"toimitin sen viime maanantaina","gold":{"kind":"instant","start":{"rule":"weekday","name":"mon","dir":"last"},"granularity":"day"}}
+{"id":"fi-c-0015","lang":"fi","stratum":"constructed","capability":"weekday","text":"kurssi alkaa ensi keskiviikkona klo 14.30","gold":{"kind":"instant","start":{"rule":"weekday","name":"wed","dir":"next","time":"14:30"},"granularity":"minute"},"conventionSensitive":true}
+{"id":"fi-c-0016","lang":"fi","stratum":"constructed","capability":"weekday","text":"lähdemme lauantaina","gold":{"kind":"instant","start":{"rule":"weekday","name":"sat","dir":"next"},"granularity":"day"},"conventionSensitive":true}
+{"id":"fi-c-0017","lang":"fi","stratum":"constructed","capability":"weekday","text":"tänä torstaina minulla on hammaslääkärissä","gold":{"kind":"instant","start":{"rule":"weekday","name":"thu","dir":"this"},"granularity":"day"},"conventionSensitive":true}
+{"id":"fi-c-0018","lang":"fi","stratum":"constructed","capability":"weekday","text":"viime sunnuntaina pelasimme jalkapalloa","gold":{"kind":"instant","start":{"rule":"weekday","name":"sun","dir":"last"},"granularity":"day"}}
+{"id":"fi-c-0019","lang":"fi","stratum":"constructed","capability":"casual_relative","text":"nähdään huomenna","gold":{"kind":"instant","start":{"rule":"offset","days":1},"granularity":"day"}}
+{"id":"fi-c-0020","lang":"fi","stratum":"constructed","capability":"casual_relative","text":"tein sen eilen","gold":{"kind":"instant","start":{"rule":"offset","days":-1},"granularity":"day"}}
+{"id":"fi-c-0021","lang":"fi","stratum":"constructed","capability":"casual_relative","text":"saavumme ylihuomenna","gold":{"kind":"instant","start":{"rule":"offset","days":2},"granularity":"day"}}
+{"id":"fi-c-0022","lang":"fi","stratum":"constructed","capability":"casual_relative","text":"toissapäivänä satoi","gold":{"kind":"instant","start":{"rule":"offset","days":-2},"granularity":"day"}}
+{"id":"fi-c-0023","lang":"fi","stratum":"constructed","capability":"casual_relative","text":"kahden viikon päästä lähden lomalle","gold":{"kind":"instant","start":{"rule":"offset","weeks":2},"granularity":"day"}}
+{"id":"fi-c-0024","lang":"fi","stratum":"constructed","capability":"casual_relative","text":"soitan sinulle tunnin päästä","gold":{"kind":"instant","start":{"rule":"offset","hours":1},"granularity":"minute"}}
+{"id":"fi-c-0025","lang":"fi","stratum":"constructed","capability":"casual_relative","text":"soita minulle 20 minuutin päästä","gold":{"kind":"instant","start":{"rule":"offset","minutes":20},"granularity":"minute"}}
+{"id":"fi-c-0026","lang":"fi","stratum":"constructed","capability":"casual_relative","text":"ensi viikolla minulla on haastattelu","gold":{"kind":"instant","start":{"rule":"offset","weeks":1},"granularity":"day"},"conventionSensitive":true}
+{"id":"fi-c-0027","lang":"fi","stratum":"constructed","capability":"casual_relative","text":"ensi kuussa vaihdan työpaikkaa","gold":{"kind":"instant","start":{"rule":"offset","months":1},"granularity":"day"},"conventionSensitive":true}
+{"id":"fi-c-0028","lang":"fi","stratum":"constructed","capability":"casual_relative","text":"sopimus päättyy kolmen päivän päästä","gold":{"kind":"instant","start":{"rule":"offset","days":3},"granularity":"day"}}
+{"id":"fi-c-0029","lang":"fi","stratum":"constructed","capability":"time_of_day","text":"nähdään kello 17","gold":{"kind":"instant","start":{"rule":"ref","time":"17:00"},"granularity":"minute"}}
+{"id":"fi-c-0030","lang":"fi","stratum":"constructed","capability":"time_of_day","text":"syömme lounasta kello 12","gold":{"kind":"instant","start":{"rule":"ref","time":"12:00"},"granularity":"minute"}}
+{"id":"fi-c-0031","lang":"fi","stratum":"constructed","capability":"time_of_day","text":"tapaaminen on klo 17.30","gold":{"kind":"instant","start":{"rule":"ref","time":"17:30"},"granularity":"minute"}}
+{"id":"fi-c-0032","lang":"fi","stratum":"constructed","capability":"time_of_day","text":"soitellaan illalla kello 21","gold":{"kind":"instant","start":{"rule":"ref","time":"21:00"},"granularity":"minute"}}
+{"id":"fi-c-0033","lang":"fi","stratum":"constructed","capability":"time_of_day","text":"herää kello 6 aamulla","gold":{"kind":"instant","start":{"rule":"ref","time":"06:00"},"granularity":"minute"}}
+{"id":"fi-c-0034","lang":"fi","stratum":"constructed","capability":"time_of_day","text":"suljemme keskiyöllä","gold":{"kind":"instant","start":{"rule":"ref","time":"00:00"},"granularity":"minute"}}
+{"id":"fi-c-0035","lang":"fi","stratum":"constructed","capability":"interval","text":"näyttely on avoinna 10.-14. elokuuta 2012","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-08-10T00:00"},"end":{"rule":"abs","dt":"2012-08-14T00:00"},"granularity":"day"}}
+{"id":"fi-c-0036","lang":"fi","stratum":"constructed","capability":"interval","text":"kurssi kestää 3.-7. syyskuuta 2012","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-09-03T00:00"},"end":{"rule":"abs","dt":"2012-09-07T00:00"},"granularity":"day"}}
+{"id":"fi-c-0037","lang":"fi","stratum":"constructed","capability":"interval","text":"olemme toimistolla kello 9-18","gold":{"kind":"interval","start":{"rule":"ref","time":"09:00"},"end":{"rule":"ref","time":"18:00"},"granularity":"minute"}}
+{"id":"fi-c-0038","lang":"fi","stratum":"constructed","capability":"interval","text":"lento on 22.7.2012-26.7.2012","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-07-22T00:00"},"end":{"rule":"abs","dt":"2012-07-26T00:00"},"granularity":"day"}}
+{"id":"fi-c-0039","lang":"fi","stratum":"constructed","capability":"interval","text":"messut järjestetään 1.-3. lokakuuta 2012","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-10-01T00:00"},"end":{"rule":"abs","dt":"2012-10-03T00:00"},"granularity":"day"}}
+{"id":"fi-c-0040","lang":"fi","stratum":"constructed","capability":"interval","text":"projekti kestää 28.12.2012-2.1.2013","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-12-28T00:00"},"end":{"rule":"abs","dt":"2013-01-02T00:00"},"granularity":"day"}}
+{"id":"fi-n-0001","lang":"fi","stratum":"negative","capability":"none","text":"voitimme 3-1","gold":{"kind":"none"}}
+{"id":"fi-n-0002","lang":"fi","stratum":"negative","capability":"none","text":"malli on TX-450","gold":{"kind":"none"}}
+{"id":"fi-n-0003","lang":"fi","stratum":"negative","capability":"none","text":"huone on 204","gold":{"kind":"none"}}
+{"id":"fi-n-0004","lang":"fi","stratum":"negative","capability":"none","text":"hinta laski 10-15%","gold":{"kind":"none"}}
+{"id":"fi-n-0005","lang":"fi","stratum":"negative","capability":"none","text":"soita minulle numeroon 040 555 2020","gold":{"kind":"none"}}
+{"id":"fi-n-0006","lang":"fi","stratum":"negative","capability":"none","text":"ISBN-koodi on 978-951-0-12345-6","gold":{"kind":"none"}}
+{"id":"fi-n-0007","lang":"fi","stratum":"negative","capability":"none","text":"muutosloki kattaa versiot 10-10.1","gold":{"kind":"none"},"seededFromSubjectDocs":true}
+{"id":"fi-n-0008","lang":"fi","stratum":"negative","capability":"none","text":"sekä 2019 että 2020 olivat vaikeita vuosia","gold":{"kind":"none"},"seededFromSubjectDocs":true}
+{"id":"fi-n-0009","lang":"fi","stratum":"negative","capability":"none","text":"hinta on yhteensä 1 234,56 euroa","gold":{"kind":"none"}}
+{"id":"fi-n-0010","lang":"fi","stratum":"negative","capability":"none","text":"loppulukema 21-14","gold":{"kind":"none"}}
+{"id":"fi-n-0011","lang":"fi","stratum":"negative","capability":"none","text":"paikka 15B rivi 3","gold":{"kind":"none"}}
+{"id":"fi-n-0012","lang":"fi","stratum":"negative","capability":"none","text":"lento AY 1234 myöhästyy","gold":{"kind":"none"}}
+{"id":"fi-n-0013","lang":"fi","stratum":"negative","capability":"none","text":"alennus 20-30% jäsenille","gold":{"kind":"none"}}
+{"id":"fi-n-0014","lang":"fi","stratum":"negative","capability":"none","text":"henkilötunnus on 010101-123N","gold":{"kind":"none"}}
+{"id":"fi-n-0015","lang":"fi","stratum":"negative","capability":"none","text":"tuote on malli 4090 Ti","gold":{"kind":"none"}}
+{"id":"fi-n-0016","lang":"fi","stratum":"negative","capability":"none","text":"laskujen summa on 2500 euroa","gold":{"kind":"none"}}
+{"id":"fi-n-0017","lang":"fi","stratum":"negative","capability":"none","text":"tuotekoodi on 20120810","gold":{"kind":"none"}}
+{"id":"fi-n-0018","lang":"fi","stratum":"negative","capability":"none","text":"pelasimme 11 vastaan 11","gold":{"kind":"none"}}
+{"id":"fi-n-0019","lang":"fi","stratum":"negative","capability":"none","text":"kirja maksaa 24,90 euroa","gold":{"kind":"none"}}
+{"id":"fi-n-0020","lang":"fi","stratum":"negative","capability":"none","text":"salasanassa on oltava 8-12 merkkiä","gold":{"kind":"none"}}
