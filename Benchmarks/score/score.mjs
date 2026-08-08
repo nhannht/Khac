@@ -131,6 +131,21 @@ function evalRule(rule) {
         clockSensitive: false,
       };
     }
+    case "monthDay": {
+      // A date with no year stated ("Aug 10"), which is ordinary in real text.
+      // Resolved as the occurrence nearest the reference, which is chrono's
+      // documented behaviour and the only defensible reading. Engines differ
+      // here, so every monthDay case is marked conventionSensitive and is
+      // reported separately from the headline number.
+      const { h, mi } = splitTime(rule.time);
+      const candidates = [ref.y - 1, ref.y, ref.y + 1].map((y) =>
+        localToInstant(y, rule.month, rule.day, h, mi)
+      );
+      const nearest = candidates.reduce((best, ms) =>
+        Math.abs(ms - referenceMs) < Math.abs(best - referenceMs) ? ms : best
+      );
+      return { ms: nearest, clockSensitive: false };
+    }
     case "weekday": {
       const target = WEEKDAYS[rule.name];
       if (target == null) fail(`bad weekday name "${rule.name}"`);
@@ -204,6 +219,11 @@ if (!byEngine.size) fail("result files contained no accuracy records");
 function judge(record) {
   const c = corpus.get(record.id);
   if (!c) fail(`result for unknown case id ${record.id}`);
+
+  // The engine did not return a wrong answer here; it died. That is worse than
+  // wrong and is counted separately, never as a pass.
+  if (record.crashed) return { verdict: "crashed", case: c };
+
   const hits = record.results ?? [];
 
   if (c.gold.kind === "none") {
@@ -234,7 +254,10 @@ function judge(record) {
 const CORRECT = new Set(["correct", "correct_negative"]);
 
 function blankBucket() {
-  return { total: 0, correct: 0, missed: 0, wrong: 0, falsePositive: 0, wrongEnd: 0, missingEnd: 0 };
+  return {
+    total: 0, correct: 0, missed: 0, wrong: 0,
+    falsePositive: 0, wrongEnd: 0, missingEnd: 0, crashed: 0,
+  };
 }
 
 function tally(bucket, verdict) {
@@ -245,6 +268,7 @@ function tally(bucket, verdict) {
   if (verdict === "false_positive") bucket.falsePositive++;
   if (verdict === "wrong_end") bucket.wrongEnd++;
   if (verdict === "missing_end") bucket.missingEnd++;
+  if (verdict === "crashed") bucket.crashed++;
 }
 
 const report = {};
@@ -254,6 +278,10 @@ for (const [engine, records] of byEngine) {
   const positives = blankBucket();
   const positivesStable = blankBucket(); // convention-sensitive cases excluded
   const negatives = blankBucket();
+  // Negatives whose SHAPE was seeded, via the authoring spec, from Khac's own
+  // documented test conventions. They favour Khac by construction, so the
+  // false-positive rate is reported with and without them.
+  const negativesUnseeded = blankBucket();
   const byLang = {};
   const byCapability = {};
   const failures = [];
@@ -279,6 +307,7 @@ for (const [engine, records] of byEngine) {
 
     if (c.gold.kind === "none") {
       tally(negatives, verdict);
+      if (!c.seededFromSubjectDocs) tally(negativesUnseeded, verdict);
     } else {
       tally(positives, verdict);
       if (!c.conventionSensitive) tally(positivesStable, verdict);
@@ -299,7 +328,7 @@ for (const [engine, records] of byEngine) {
   }
 
   report[engine] = {
-    positives, positivesStable, negatives, byLang, byCapability, detection,
+    positives, positivesStable, negatives, negativesUnseeded, byLang, byCapability, detection,
     meanUsPerCase: totalNs / Math.max(records.length, 1) / 1000,
   };
   failuresByEngine[engine] = failures;
@@ -344,6 +373,35 @@ for (const e of engines) {
 }
 lines.push("");
 
+const crashers = engines.filter(
+  (e) => report[e].positives.crashed + report[e].negatives.crashed > 0
+);
+if (crashers.length) {
+  lines.push(`## Crashes`);
+  lines.push("");
+  lines.push(
+    `An engine that traps cannot be caught in-process, so the harness records ` +
+    `which input killed it and resumes after that case. A crash is counted ` +
+    `against the engine and never as a pass: a parser that dies on text a user ` +
+    `can type is a more serious defect than one that answers wrongly.`
+  );
+  lines.push("");
+  lines.push(`| Engine | Inputs that killed the process |`);
+  lines.push(`|---|---|`);
+  for (const e of engines) {
+    const n = report[e].positives.crashed + report[e].negatives.crashed;
+    lines.push(`| ${e} | ${n} |`);
+  }
+  lines.push("");
+  for (const e of crashers) {
+    const which = failuresByEngine[e].filter((f) => f.verdict === "crashed");
+    for (const f of which.slice(0, 10)) {
+      lines.push(`- \`${e}\` died on \`${f.id}\` (${f.lang}): ${JSON.stringify(f.text)}`);
+    }
+  }
+  lines.push("");
+}
+
 lines.push(`## Secondary: false positives on text containing no date`);
 lines.push("");
 lines.push(`| Engine | Negative cases | Hallucinated a date | Rate |`);
@@ -353,6 +411,23 @@ for (const e of engines) {
   lines.push(`| ${e} | ${n.total} | ${n.falsePositive} | **${pct(n.falsePositive, n.total)}** |`);
 }
 lines.push("");
+
+const seededCount = report[engines[0]].negatives.total - report[engines[0]].negativesUnseeded.total;
+if (seededCount > 0) {
+  lines.push(
+    `${seededCount} of those negatives use a shape the authoring spec seeded from ` +
+    `Khắc's own documented test conventions, so they favour Khắc by construction. ` +
+    `The same measurement with those cases removed:`
+  );
+  lines.push("");
+  lines.push(`| Engine | Unseeded negatives | Hallucinated a date | Rate |`);
+  lines.push(`|---|---|---|---|`);
+  for (const e of engines) {
+    const n = report[e].negativesUnseeded;
+    lines.push(`| ${e} | ${n.total} | ${n.falsePositive} | **${pct(n.falsePositive, n.total)}** |`);
+  }
+  lines.push("");
+}
 
 const detectors = engines.filter((e) => report[e].detection.total > 0);
 if (detectors.length) {

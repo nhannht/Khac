@@ -36,6 +36,16 @@ let corpusPath = requireArgument("corpus")
 let referenceISO = requireArgument("reference")
 let tzIdentifier = requireArgument("tz")
 let throughputRounds = Int(argument("throughput") ?? "0") ?? 0
+// Set when a previous attempt died on a specific input: skip everything up to
+// and including that case and carry on. An engine that crashes on user input
+// is reporting a real property, and the harness measures it rather than
+// letting one bad case take the whole run down.
+let resumeAfter = argument("resume-after")
+
+// Line-buffer stdout. Block buffering loses the last few records when the
+// process traps, which makes the surviving output lie about how far the engine
+// actually got - and that is exactly the moment the output has to be trusted.
+setvbuf(stdout, nil, _IOLBF, 0)
 
 guard let timeZone = TimeZone(identifier: tzIdentifier) else {
     fail("unknown time zone \(tzIdentifier)")
@@ -99,6 +109,13 @@ for line in corpusData.split(separator: "\n", omittingEmptySubsequences: true) {
         fail("malformed corpus line: \(trimmed.prefix(120))")
     }
     cases.append(Case(id: id, lang: lang, text: text))
+}
+
+if let resumeAfter {
+    guard let index = cases.firstIndex(where: { $0.id == resumeAfter }) else {
+        fail("--resume-after names \(resumeAfter), which is not in this corpus")
+    }
+    cases = Array(cases[(index + 1)...])
 }
 
 // MARK: - Engine output

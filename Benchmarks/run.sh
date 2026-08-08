@@ -28,11 +28,48 @@ echo
 swift build --package-path "$HERE" -c release >/dev/null
 RUNNER="$(swift build --package-path "$HERE" -c release --show-bin-path)/BenchRunner"
 
+# An engine that traps on an input takes the whole process with it, and Swift
+# runtime traps cannot be caught in-process. So a death is treated as a RESULT:
+# record which case killed it, resume after that case, and carry on. A parser
+# that crashes on text a user can type is reporting something a benchmark should
+# measure, not something that should silently drop it from the comparison.
+run_engine() {
+  local engine="$1"
+  local out="$OUT/$engine.jsonl"
+  local resume=""
+  local deaths=0
+
+  : > "$out"
+  while : ; do
+    # Subshell so the shell's own "Trace/BPT trap" notice is suppressed too;
+    # the death is already being reported deliberately below.
+    if [ -z "$resume" ]; then
+      ( TZ="$TZ_ID" "$RUNNER" --engine "$engine" --corpus "$CORPUS" \
+          --reference "$REFERENCE" --tz "$TZ_ID" >> "$out" ) 2>/dev/null && break
+    else
+      ( TZ="$TZ_ID" "$RUNNER" --engine "$engine" --corpus "$CORPUS" \
+          --reference "$REFERENCE" --tz "$TZ_ID" --resume-after "$resume" >> "$out" ) 2>/dev/null && break
+    fi
+
+    deaths=$((deaths + 1))
+    if [ "$deaths" -gt 40 ]; then
+      echo "  $engine died more than 40 times, giving up" >&2
+      break
+    fi
+
+    resume="$(node "$HERE/score/recordcrash.mjs" "$CORPUS" "$out" "$engine")" || {
+      echo "  $engine died and the crashing case could not be identified" >&2
+      break
+    }
+    echo "  $engine died on $resume, resuming after it"
+  done
+  [ "$deaths" -gt 0 ] && echo "  $engine: $deaths case(s) killed the process"
+  return 0
+}
+
 for engine in khac-oracle khac-auto nsdatadetector swiftychrono; do
   echo "running $engine"
-  TZ="$TZ_ID" "$RUNNER" \
-    --engine "$engine" --corpus "$CORPUS" \
-    --reference "$REFERENCE" --tz "$TZ_ID" > "$OUT/$engine.jsonl"
+  run_engine "$engine"
 done
 
 echo "running chrono-node"
@@ -42,13 +79,37 @@ TZ="$TZ_ID" node "$HERE/node/chrono-runner.mjs" \
 
 echo
 echo "throughput"
+# Measured on the corpus MINUS every case that killed any engine, so all five
+# time the identical workload. Timing one engine on inputs another cannot
+# survive would not be a comparison.
+THROUGHPUT_CORPUS="$OUT/throughput-corpus.jsonl"
+node -e '
+const fs = require("fs");
+const [corpusPath, outDir, dest] = process.argv.slice(1);
+const crashed = new Set();
+for (const f of fs.readdirSync(outDir)) {
+  if (!f.endsWith(".jsonl")) continue;
+  for (const line of fs.readFileSync(outDir + "/" + f, "utf8").split("\n")) {
+    if (!line.trim()) continue;
+    try { const r = JSON.parse(line); if (r.crashed) crashed.add(r.id); } catch {}
+  }
+}
+const kept = fs.readFileSync(corpusPath, "utf8").split("\n")
+  .filter(l => l.trim())
+  .filter(l => !crashed.has(JSON.parse(l).id));
+fs.writeFileSync(dest, kept.join("\n") + "\n");
+process.stderr.write(`  timing on ${kept.length} cases (${crashed.size} excluded as fatal to some engine)\n`);
+' "$CORPUS" "$OUT" "$THROUGHPUT_CORPUS"
+
 for engine in khac-oracle khac-auto nsdatadetector swiftychrono; do
-  TZ="$TZ_ID" "$RUNNER" \
-    --engine "$engine" --corpus "$CORPUS" \
-    --reference "$REFERENCE" --tz "$TZ_ID" --throughput 5 >> "$OUT/throughput.jsonl"
+  if ! ( TZ="$TZ_ID" "$RUNNER" \
+      --engine "$engine" --corpus "$THROUGHPUT_CORPUS" \
+      --reference "$REFERENCE" --tz "$TZ_ID" --throughput 5 >> "$OUT/throughput.jsonl" ) 2>/dev/null; then
+    echo "  $engine could not be timed: it died even on the crash-free subset"
+  fi
 done
 TZ="$TZ_ID" node "$HERE/node/chrono-runner.mjs" \
-  --corpus "$CORPUS" --reference "$REFERENCE" --tz "$TZ_ID" --throughput 5 >> "$OUT/throughput.jsonl"
+  --corpus "$THROUGHPUT_CORPUS" --reference "$REFERENCE" --tz "$TZ_ID" --throughput 5 >> "$OUT/throughput.jsonl"
 
 echo
 node "$HERE/score/score.mjs" \
