@@ -484,7 +484,7 @@
 {"id":"ja-n-0004","lang":"ja","stratum":"negative","capability":"none","text":"価格は1980円です","gold":{"kind":"none"}}
 {"id":"ja-n-0005","lang":"ja","stratum":"negative","capability":"none","text":"電話番号は03-1234-5678です","gold":{"kind":"none"}}
 {"id":"ja-n-0006","lang":"ja","stratum":"negative","capability":"none","text":"モデル番号はABC-2012です","gold":{"kind":"none"}}
-{"id":"ja-n-0007","lang":"ja","stratum":"negative","capability":"none","text":"2019年の売上は2020年より少なかった","gold":{"kind":"none"}}
+{"id":"ja-n-0007","lang":"ja","stratum":"negative","capability":"none","text":"2019年の売上は2020年より少なかった","gold":{"kind":"none"},"seededFromSubjectDocs":true}
 {"id":"ja-n-0008","lang":"ja","stratum":"negative","capability":"none","text":"割引率は10%から20%です","gold":{"kind":"none"}}
 {"id":"ja-n-0009","lang":"ja","stratum":"negative","capability":"none","text":"郵便番号は150-0001です","gold":{"kind":"none"}}
 {"id":"ja-n-0010","lang":"ja","stratum":"negative","capability":"none","text":"点数は85点でした","gold":{"kind":"none"}}

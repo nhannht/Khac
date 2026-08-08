@@ -10,6 +10,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 
 function argument(name) {
   const i = process.argv.indexOf(`--${name}`);
@@ -202,6 +203,12 @@ function readJSONL(file) {
 
 const corpus = new Map(readJSONL(corpusPath).map((c) => [c.id, c]));
 
+// Stamp the corpus hash into every artifact this produces. The methodology says
+// a results table citing a different hash is stale - which is worth nothing
+// unless the table actually cites one. It did not, and a stale run went
+// unnoticed until someone compared file timestamps by hand.
+const corpusHash = crypto.createHash("sha256").update(fs.readFileSync(corpusPath)).digest("hex");
+
 const byEngine = new Map();
 for (const file of resultFiles) {
   for (const record of readJSONL(file)) {
@@ -346,7 +353,13 @@ lines.push(`# Benchmark results`);
 lines.push("");
 lines.push(`Reference instant: \`${referenceISO}\`  `);
 lines.push(`Time zone: \`${tz}\`  `);
-lines.push(`Corpus: \`${path.basename(corpusPath)}\`, ${corpus.size} cases`);
+lines.push(`Corpus: \`${path.basename(corpusPath)}\`, ${corpus.size} cases  `);
+lines.push(`Corpus sha256: \`${corpusHash}\``);
+lines.push("");
+lines.push(
+  `If that hash does not match \`corpus/CORPUS.sha256\` in the repository, this ` +
+  `table was scored against a different corpus and should not be believed.`
+);
 lines.push("");
 
 lines.push(`## Primary: top-1 resolved-instant accuracy`);
@@ -495,7 +508,7 @@ if (outDir) {
   fs.writeFileSync(path.join(outDir, "RESULTS.md"), markdown + "\n");
   fs.writeFileSync(
     path.join(outDir, "summary.json"),
-    JSON.stringify({ referenceISO, tz, corpus: path.basename(corpusPath), report }, null, 2) + "\n"
+    JSON.stringify({ referenceISO, tz, corpus: path.basename(corpusPath), corpusHash, report }, null, 2) + "\n"
   );
   fs.writeFileSync(
     path.join(outDir, "failures.json"),
