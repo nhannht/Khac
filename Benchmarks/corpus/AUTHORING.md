@@ -186,6 +186,19 @@ that does not mean what the text means.
 
 - **Weekday plus offset.** "a week from Tuesday", "the Monday after next". These
   need "the next occurrence of X, then shift", and no rule composes.
+- **A weekday named by its WEEK.** Vietnamese "thứ sáu tuần sau", Japanese
+  "来週の金曜日", Chinese "下周五", Spanish "el sábado pasado" - Friday *of next
+  week*, not *next* Friday. Those differ whenever the reference day falls early
+  in the week, and `{"rule":"weekday","dir":"next"}` expresses only the second
+  one. Twenty cases across six languages were written with this phrasing and
+  labelled with the approximation. They are now marked convention-sensitive and
+  excluded from the headline number rather than scored against a rule that does
+  not mean what the text means.
+
+  This was found empirically, not by reading: `stability.sh` scores the corpus at
+  one reference per weekday and reports any case whose verdict is not the same on
+  all seven. Those twenty flipped. A label that is right on Tuesday and wrong on
+  Saturday is not a label.
 - **End of a period.** "end of next month", "end of the quarter". `offset` with
   `months: 1` lands on the same day-number in the next month, not on its last day.
 

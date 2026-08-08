@@ -10,9 +10,9 @@
 {"id":"ja-c-0010","lang":"ja","stratum":"constructed","capability":"month_name","text":"2012年三月三日は休業日です","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-03-03T00:00"},"granularity":"day"}}
 {"id":"ja-c-0011","lang":"ja","stratum":"constructed","capability":"month_name","text":"2012年十二月三十一日の午後十一時","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-12-31T23:00"},"granularity":"minute"}}
 {"id":"ja-c-0012","lang":"ja","stratum":"constructed","capability":"month_name","text":"西暦2012年九月一日から開始","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-09-01T00:00"},"granularity":"day"}}
-{"id":"ja-c-0013","lang":"ja","stratum":"constructed","capability":"weekday","text":"来週の金曜日に会いましょう","gold":{"kind":"instant","start":{"rule":"weekday","name":"fri","dir":"next"},"granularity":"day"}}
+{"id":"ja-c-0013","lang":"ja","stratum":"constructed","capability":"weekday","text":"来週の金曜日に会いましょう","gold":{"kind":"instant","start":{"rule":"weekday","name":"fri","dir":"next"},"granularity":"day"},"conventionSensitive":true}
 {"id":"ja-c-0014","lang":"ja","stratum":"constructed","capability":"weekday","text":"金曜日に提出してください","gold":{"kind":"instant","start":{"rule":"weekday","name":"fri","dir":"next"},"granularity":"day"},"conventionSensitive":true}
-{"id":"ja-c-0015","lang":"ja","stratum":"constructed","capability":"weekday","text":"先週の月曜日に始まった","gold":{"kind":"instant","start":{"rule":"weekday","name":"mon","dir":"last"},"granularity":"day"}}
+{"id":"ja-c-0015","lang":"ja","stratum":"constructed","capability":"weekday","text":"先週の月曜日に始まった","gold":{"kind":"instant","start":{"rule":"weekday","name":"mon","dir":"last"},"granularity":"day"},"conventionSensitive":true}
 {"id":"ja-c-0016","lang":"ja","stratum":"constructed","capability":"weekday","text":"今週の土曜日は空いてる","gold":{"kind":"instant","start":{"rule":"weekday","name":"sat","dir":"this"},"granularity":"day"},"conventionSensitive":true}
 {"id":"ja-c-0017","lang":"ja","stratum":"constructed","capability":"weekday","text":"木曜の夜に電話する","gold":{"kind":"instant","start":{"rule":"weekday","name":"thu","dir":"next"},"granularity":"day"},"conventionSensitive":true}
 {"id":"ja-c-0018","lang":"ja","stratum":"constructed","capability":"weekday","text":"次の金曜日はどう？","gold":{"kind":"instant","start":{"rule":"weekday","name":"fri","dir":"next"},"granularity":"day"},"conventionSensitive":true}

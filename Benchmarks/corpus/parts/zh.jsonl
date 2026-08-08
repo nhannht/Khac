@@ -10,9 +10,9 @@
 {"id":"zh-c-0010","lang":"zh","stratum":"constructed","capability":"month_name","text":"2012年三月三日是他的生日","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-03-03T00:00"},"granularity":"day"}}
 {"id":"zh-c-0011","lang":"zh","stratum":"constructed","capability":"month_name","text":"2012年十二月三十一日晚上十一点","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-12-31T23:00"},"granularity":"minute"}}
 {"id":"zh-c-0012","lang":"zh","stratum":"constructed","capability":"month_name","text":"西元2012年九月一日起生效","gold":{"kind":"instant","start":{"rule":"abs","dt":"2012-09-01T00:00"},"granularity":"day"}}
-{"id":"zh-c-0013","lang":"zh","stratum":"constructed","capability":"weekday","text":"下周五见面吧","gold":{"kind":"instant","start":{"rule":"weekday","name":"fri","dir":"next"},"granularity":"day"}}
+{"id":"zh-c-0013","lang":"zh","stratum":"constructed","capability":"weekday","text":"下周五见面吧","gold":{"kind":"instant","start":{"rule":"weekday","name":"fri","dir":"next"},"granularity":"day"},"conventionSensitive":true}
 {"id":"zh-c-0014","lang":"zh","stratum":"constructed","capability":"weekday","text":"星期五之前提交","gold":{"kind":"instant","start":{"rule":"weekday","name":"fri","dir":"next"},"granularity":"day"},"conventionSensitive":true}
-{"id":"zh-c-0015","lang":"zh","stratum":"constructed","capability":"weekday","text":"上週一開始的","gold":{"kind":"instant","start":{"rule":"weekday","name":"mon","dir":"last"},"granularity":"day"}}
+{"id":"zh-c-0015","lang":"zh","stratum":"constructed","capability":"weekday","text":"上週一開始的","gold":{"kind":"instant","start":{"rule":"weekday","name":"mon","dir":"last"},"granularity":"day"},"conventionSensitive":true}
 {"id":"zh-c-0016","lang":"zh","stratum":"constructed","capability":"weekday","text":"这周六有空","gold":{"kind":"instant","start":{"rule":"weekday","name":"sat","dir":"this"},"granularity":"day"},"conventionSensitive":true}
 {"id":"zh-c-0017","lang":"zh","stratum":"constructed","capability":"weekday","text":"禮拜四晚上打電話","gold":{"kind":"instant","start":{"rule":"weekday","name":"thu","dir":"next"},"granularity":"day"},"conventionSensitive":true}
 {"id":"zh-c-0018","lang":"zh","stratum":"constructed","capability":"weekday","text":"下個星期五怎麼樣？","gold":{"kind":"instant","start":{"rule":"weekday","name":"fri","dir":"next"},"granularity":"day"},"conventionSensitive":true}

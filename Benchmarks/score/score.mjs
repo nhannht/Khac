@@ -98,7 +98,17 @@ function splitTime(time) {
   return { h, mi };
 }
 
-function evalRule(rule) {
+// `notBefore` is supplied only for the END of an interval. Without it, a
+// monthDay pair resolves each endpoint independently by nearest-occurrence, and
+// "Dec 28 to Jan 3" scored from late June resolves the start into next December
+// and the end into THIS January - a 359-day backwards interval that no engine
+// could ever match and nothing would flag. The corpus has no such case today;
+// it needs one ordinary future case and one ordinary run date to fire.
+//
+// Note this deliberately does NOT apply to `abs` endpoints. A backwards range is
+// a real reading of text like "22 to 10 November" and the corpus tests it on
+// purpose, so only the year-less rule gets chronology imposed on it.
+function evalRule(rule, notBefore = null) {
   const ref = localParts(referenceMs);
 
   switch (rule.rule) {
@@ -162,9 +172,19 @@ function evalRule(rule) {
       // here, so every monthDay case is marked conventionSensitive and is
       // reported separately from the headline number.
       const { h, mi } = splitTime(rule.time);
-      const candidates = [ref.y - 1, ref.y, ref.y + 1].map((y) =>
-        localToInstant(y, rule.month, rule.day, h, mi)
-      );
+      const years = [ref.y - 1, ref.y, ref.y + 1, ref.y + 2];
+      const candidates = years.map((y) => localToInstant(y, rule.month, rule.day, h, mi));
+
+      if (notBefore != null) {
+        // Interval end: the first occurrence at or after the start, which is what
+        // "Dec 28 to Jan 3" plainly means.
+        const forward = candidates.filter((ms) => ms >= notBefore).sort((a, b) => a - b);
+        if (!forward.length) {
+          fail(`monthDay end ${rule.month}/${rule.day} has no occurrence at or after the interval start`);
+        }
+        return { ms: forward[0], clockSensitive: false };
+      }
+
       const nearest = candidates.reduce((best, ms) =>
         Math.abs(ms - referenceMs) < Math.abs(best - referenceMs) ? ms : best
       );
@@ -271,7 +291,11 @@ function judge(record) {
   const startOK = matches(Date.parse(top.start), goldStart, c.gold.granularity);
 
   if (c.gold.kind === "interval") {
-    const goldEndForFlag = c.gold.end ? evalRule(c.gold.end) : null;
+    // The end is resolved RELATIVE to the start when it is year-less, so the pair
+    // cannot silently invert. See the note on evalRule.
+    const goldEndForFlag = c.gold.end
+      ? evalRule(c.gold.end, c.gold.end.rule === "monthDay" ? goldStart.ms : null)
+      : null;
     const disputed = goldStart.conventionDisputed || goldEndForFlag?.conventionDisputed || false;
     if (!startOK) return { verdict: "wrong_value", case: c, disputed };
     if (top.end == null) return { verdict: "missing_end", case: c, disputed };
