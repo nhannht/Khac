@@ -38,7 +38,7 @@
 {"id":"uk-c-0038","lang":"uk","stratum":"constructed","capability":"interval","text":"Відрядження з 5 по 9 вересня 2022 року.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2022-09-05T00:00"},"end":{"rule":"abs","dt":"2022-09-09T00:00"},"granularity":"day"}}
 {"id":"uk-c-0039","lang":"uk","stratum":"constructed","capability":"interval","text":"Ремонт офісу заплановано з 20.01.2020 по 05.02.2020.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2020-01-20T00:00"},"end":{"rule":"abs","dt":"2020-02-05T00:00"},"granularity":"day"}}
 {"id":"uk-c-0040","lang":"uk","stratum":"constructed","capability":"interval","text":"Курс лекцій триватиме з 1 по 30 листопада 2019 року.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2019-11-01T00:00"},"end":{"rule":"abs","dt":"2019-11-30T00:00"},"granularity":"day"}}
-{"id":"uk-n-0001","lang":"uk","stratum":"negative","capability":"none","text":"Оновлення з версії 10 до 10.1.","gold":{"kind":"none"}}
+{"id":"uk-n-0001","lang":"uk","stratum":"negative","capability":"none","text":"Оновлення з версії 10 до 10.1.","gold":{"kind":"none"},"seededFromSubjectDocs":true}
 {"id":"uk-n-0002","lang":"uk","stratum":"negative","capability":"none","text":"Нарада відбудеться в кабінеті 204.","gold":{"kind":"none"}}
 {"id":"uk-n-0003","lang":"uk","stratum":"negative","capability":"none","text":"Наша команда виграла з рахунком 3:1.","gold":{"kind":"none"}}
 {"id":"uk-n-0004","lang":"uk","stratum":"negative","capability":"none","text":"Товар коштує 1500 гривень.","gold":{"kind":"none"}}

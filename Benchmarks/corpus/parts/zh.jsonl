@@ -38,7 +38,7 @@
 {"id":"zh-c-0038","lang":"zh","stratum":"constructed","capability":"interval","text":"今天起連續3天出差","gold":{"kind":"interval","start":{"rule":"ref"},"end":{"rule":"offset","days":3},"granularity":"day"},"conventionSensitive":true}
 {"id":"zh-c-0039","lang":"zh","stratum":"constructed","capability":"interval","text":"2012年8月10日至8月14日","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-08-10T00:00"},"end":{"rule":"abs","dt":"2012-08-14T00:00"},"granularity":"day"}}
 {"id":"zh-c-0040","lang":"zh","stratum":"constructed","capability":"interval","text":"2012年8月10日17點至19點開會","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-08-10T17:00"},"end":{"rule":"abs","dt":"2012-08-10T19:00"},"granularity":"minute"}}
-{"id":"zh-n-0001","lang":"zh","stratum":"negative","capability":"none","text":"把版本从10升级到10.1","gold":{"kind":"none"}}
+{"id":"zh-n-0001","lang":"zh","stratum":"negative","capability":"none","text":"把版本从10升级到10.1","gold":{"kind":"none"},"seededFromSubjectDocs":true}
 {"id":"zh-n-0002","lang":"zh","stratum":"negative","capability":"none","text":"204號房請稍等","gold":{"kind":"none"}}
 {"id":"zh-n-0003","lang":"zh","stratum":"negative","capability":"none","text":"比赛以3比1获胜","gold":{"kind":"none"}}
 {"id":"zh-n-0004","lang":"zh","stratum":"negative","capability":"none","text":"价格是1980元","gold":{"kind":"none"}}

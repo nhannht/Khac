@@ -38,7 +38,7 @@
 {"id":"ja-c-0038","lang":"ja","stratum":"constructed","capability":"interval","text":"今日から3日間出張です","gold":{"kind":"interval","start":{"rule":"ref"},"end":{"rule":"offset","days":3},"granularity":"day"},"conventionSensitive":true}
 {"id":"ja-c-0039","lang":"ja","stratum":"constructed","capability":"interval","text":"2012年8月10日から8月14日まで","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-08-10T00:00"},"end":{"rule":"abs","dt":"2012-08-14T00:00"},"granularity":"day"}}
 {"id":"ja-c-0040","lang":"ja","stratum":"constructed","capability":"interval","text":"2012年8月10日の17時から19時まで会議です","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-08-10T17:00"},"end":{"rule":"abs","dt":"2012-08-10T19:00"},"granularity":"minute"}}
-{"id":"ja-n-0001","lang":"ja","stratum":"negative","capability":"none","text":"バージョンを10から10.1にアップグレードしてください","gold":{"kind":"none"}}
+{"id":"ja-n-0001","lang":"ja","stratum":"negative","capability":"none","text":"バージョンを10から10.1にアップグレードしてください","gold":{"kind":"none"},"seededFromSubjectDocs":true}
 {"id":"ja-n-0002","lang":"ja","stratum":"negative","capability":"none","text":"204号室でお待ちしております","gold":{"kind":"none"}}
 {"id":"ja-n-0003","lang":"ja","stratum":"negative","capability":"none","text":"試合は3対1で勝ちました","gold":{"kind":"none"}}
 {"id":"ja-n-0004","lang":"ja","stratum":"negative","capability":"none","text":"価格は1980円です","gold":{"kind":"none"}}

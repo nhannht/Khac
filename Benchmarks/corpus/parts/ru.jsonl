@@ -38,7 +38,7 @@
 {"id":"ru-c-0038","lang":"ru","stratum":"constructed","capability":"interval","text":"Командировка с 5 по 9 сентября 2022 года.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2022-09-05T00:00"},"end":{"rule":"abs","dt":"2022-09-09T00:00"},"granularity":"day"}}
 {"id":"ru-c-0039","lang":"ru","stratum":"constructed","capability":"interval","text":"Ремонт офиса запланирован с 20.01.2020 по 05.02.2020.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2020-01-20T00:00"},"end":{"rule":"abs","dt":"2020-02-05T00:00"},"granularity":"day"}}
 {"id":"ru-c-0040","lang":"ru","stratum":"constructed","capability":"interval","text":"Курс лекций пройдёт с 1 по 30 ноября 2019 года.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2019-11-01T00:00"},"end":{"rule":"abs","dt":"2019-11-30T00:00"},"granularity":"day"}}
-{"id":"ru-n-0001","lang":"ru","stratum":"negative","capability":"none","text":"Обновление с версии 10 до 10.1.","gold":{"kind":"none"}}
+{"id":"ru-n-0001","lang":"ru","stratum":"negative","capability":"none","text":"Обновление с версии 10 до 10.1.","gold":{"kind":"none"},"seededFromSubjectDocs":true}
 {"id":"ru-n-0002","lang":"ru","stratum":"negative","capability":"none","text":"Совещание пройдёт в кабинете 204.","gold":{"kind":"none"}}
 {"id":"ru-n-0003","lang":"ru","stratum":"negative","capability":"none","text":"Наша команда выиграла со счётом 3:1.","gold":{"kind":"none"}}
 {"id":"ru-n-0004","lang":"ru","stratum":"negative","capability":"none","text":"Товар стоит 1500 рублей.","gold":{"kind":"none"}}

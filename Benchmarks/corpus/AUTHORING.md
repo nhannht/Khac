@@ -37,9 +37,18 @@ drawn its vocabulary from the language rather than from the file.
 **2. The worse one, and it came from this document.** Earlier drafts of the
 hard-negative list below used `10 - 10.1` and `2019 to 2020` as examples. Both
 were lifted from Khắc's own documented test conventions, which name exactly those
-two strings. Every author used them, so **21 of 280 negatives, 8%, are shapes the
+two strings. Every author used them, so **28 of 280 negatives, 10%, are shapes the
 subject was specifically built to reject** - and the measured consequence is real:
-Khắc rejects `10-10.1` while chrono and SwiftyChrono both false-positive on it.
+Khắc rejects all of them while chrono and SwiftyChrono false-positive on several.
+
+That count reached 28 only after an adversarial reviewer read every negative by
+hand. The automated check had been written to spot a DASH between the two version
+numbers, which is how English writes it, and it silently missed the seven
+languages that use a word instead: `10.0 auf 10.1`, `10 до 10.1`, `10から10.1`.
+Those eight cases sat untagged inside the very metric the disclosure exists to
+protect, quietly flattering Khắc by about 0.6 points and penalising chrono by the
+same. The check is now two tiers, and the second only warns, because the broader
+pattern also matches IP addresses and money and must never decide alone.
 
 That is flattering selection in a headline metric, introduced by the spec rather
 than by any author. Rather than delete the cases, which are perfectly good

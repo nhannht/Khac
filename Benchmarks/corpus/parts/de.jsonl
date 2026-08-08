@@ -38,7 +38,7 @@
 {"id":"de-c-0038","lang":"de","stratum":"constructed","capability":"interval","text":"Das Angebot gilt vom 1. bis 31. Dezember 2012.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-12-01T00:00"},"end":{"rule":"abs","dt":"2012-12-31T00:00"},"granularity":"day"}}
 {"id":"de-c-0039","lang":"de","stratum":"constructed","capability":"interval","text":"Wir sind vom 5.8.2012 bis 12.8.2012 verreist.","gold":{"kind":"interval","start":{"rule":"abs","dt":"2012-08-05T00:00"},"end":{"rule":"abs","dt":"2012-08-12T00:00"},"granularity":"day"}}
 {"id":"de-c-0040","lang":"de","stratum":"constructed","capability":"interval","text":"Die Ausstellung ist von Montag bis Freitag geöffnet.","gold":{"kind":"interval","start":{"rule":"weekday","name":"mon","dir":"this"},"end":{"rule":"weekday","name":"fri","dir":"this"},"granularity":"day"},"conventionSensitive":true}
-{"id":"de-n-0001","lang":"de","stratum":"negative","capability":"none","text":"Bitte aktualisiere von Version 10.0 auf 10.1.","gold":{"kind":"none"}}
+{"id":"de-n-0001","lang":"de","stratum":"negative","capability":"none","text":"Bitte aktualisiere von Version 10.0 auf 10.1.","gold":{"kind":"none"},"seededFromSubjectDocs":true}
 {"id":"de-n-0002","lang":"de","stratum":"negative","capability":"none","text":"Raum 204 ist heute frei.","gold":{"kind":"none"}}
 {"id":"de-n-0003","lang":"de","stratum":"negative","capability":"none","text":"Wir haben das Spiel 3:1 gewonnen.","gold":{"kind":"none"}}
 {"id":"de-n-0004","lang":"de","stratum":"negative","capability":"none","text":"Das kostet 19,99 Euro.","gold":{"kind":"none"}}
