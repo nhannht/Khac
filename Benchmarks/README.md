@@ -136,6 +136,27 @@ Leverans planerad till 9 feb 2012.  plain Swedish
 The Dutch and Swedish ones matter most. An abbreviated month name is not exotic
 input, and any app built on SwiftyChrono dies on it.
 
+**The five figure understates it, because this benchmark is generous to
+SwiftyChrono.** It is told the language wherever it ships one, which is its most
+favourable configuration. In its DEFAULT configuration - `preferredLanguage` left
+`nil`, which is what a developer gets out of the box - every language's parsers
+run, and plain English crashes:
+
+```swift
+Chrono().parse(text: "Meeting on 9 Feb 2012", refDate: Date())   // traps
+```
+
+Root cause, reproducible in fifteen lines: `CAMonthNameLittleEndianParser.swift:34`
+force-unwraps a dictionary lookup that can be nil. The Catalan pattern accepts
+`Feb(?:rer|\.)?` and `Ago(?:st|\.)?`, so it matches `feb`, `feb.`, `ago` and
+`ago.`, but `CA_MONTH_OFFSET` contains `febr`, `febr.`, `ag` and `ag.` instead.
+The regex matches, the lookup returns nil, the `!` traps. Two of twelve months
+are affected, and the Catalan parser runs against every input regardless of
+language.
+
+This is reported here as a measured fact rather than a jab: it is a recent
+regression, it is a one-line fix, and it is being raised with the maintainer.
+
 ## Reproducibility across reference days
 
 The reference instant is the wall clock, so a relative case is resolved against
