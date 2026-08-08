@@ -7,3 +7,5 @@ Packages/
 xcuserdata/
 DerivedData/
 .netrc
+Benchmarks/results/
+Benchmarks/node/node_modules/

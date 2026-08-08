@@ -1,0 +1,9 @@
+{
+  "name": "khac-benchmark-chrono-runner",
+  "private": true,
+  "type": "module",
+  "description": "Runs chrono-node over the Khac benchmark corpus as a reference implementation.",
+  "dependencies": {
+    "chrono-node": "2.10.1"
+  }
+}

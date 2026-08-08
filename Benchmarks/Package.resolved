@@ -1,0 +1,14 @@
+{
+  "originHash" : "47146333069f79a2b086c7629ed3c2c930a91f97a9a208d4eea519c827d292d3",
+  "pins" : [
+    {
+      "identity" : "swiftychrono",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/quire-io/SwiftyChrono.git",
+      "state" : {
+        "revision" : "0d5da73cc59de3efe2bbb0c0ef77d0f8ff8c6c99"
+      }
+    }
+  ],
+  "version" : 3
+}
