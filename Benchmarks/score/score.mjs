@@ -433,7 +433,19 @@ for (const e of engines) {
 lines.push("");
 lines.push(
   `Convention-sensitive cases excluded (cases where engines legitimately disagree, ` +
-  `such as whether "next Friday" means the coming Friday or the one after):`
+  `such as whether "next Friday" means the coming Friday or the one after). This ` +
+  `is the number to quote: \`stability.sh\` scores the corpus at one reference per ` +
+  `weekday, and every case whose verdict depends on the day the harness runs is ` +
+  `inside the excluded set rather than this one.`
+);
+lines.push("");
+lines.push(
+  `That reproducibility is established for **three of the five engines** - ` +
+  `\`khac-oracle\`, \`khac-auto\` and \`chrono-node\`. NSDataDetector cannot be given ` +
+  `a reference date at all, so it is protected by the runner's clock-skew guard ` +
+  `instead of by the sweep. SwiftyChrono is excluded from the sweep because its ` +
+  `crashes confound the resume machinery, so its reference-day stability has ` +
+  `never been tested in either direction.`
 );
 lines.push("");
 lines.push(`| Engine | Cases | Accuracy |`);
