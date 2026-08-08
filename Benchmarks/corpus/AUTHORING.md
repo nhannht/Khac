@@ -7,11 +7,22 @@ results can check the method rather than take the numbers on faith.
 
 **No author read Khắc's source or its test suite.**
 
+Khắc's oracle cases are ported from wanasit/chrono. A corpus written by someone
+looking at Khắc's vocabulary tables would contain exactly the phrasings Khắc
+already knows, and scoring Khắc against it would prove nothing at all. Authors
+worked from their own knowledge of the language and from realistic text, and
+were given the schema but never the parser.
+
+The corpus is frozen and hashed in `CORPUS.sha256` before any engine is tuned
+against it. A results table citing a different hash is stale, and every table
+the scorer writes stamps the hash it scored so that claim can be checked.
+
 ## What leaked anyway, disclosed
 
-Two channels defeated that rule in part. Both are recorded here rather than
-quietly cleaned up, because a disclosed bias can be measured around and a hidden
-one cannot.
+Three channels defeated that rule in part, and all three trace back to this
+document rather than to any author. They are recorded here rather than quietly
+cleaned up, because a disclosed bias can be measured around and a hidden one
+cannot.
 
 **1. The subject's engine documentation reached every author automatically.**
 Khắc's repository `CLAUDE.md` is injected into an agent's context by the tooling,
@@ -50,20 +61,44 @@ protect, quietly flattering Khắc by about 0.6 points and penalising chrono by 
 same. The check is now two tiers, and the second only warns, because the broader
 pattern also matches IP addresses and money and must never decide alone.
 
-That is flattering selection in a headline metric, introduced by the spec rather
-than by any author. Rather than delete the cases, which are perfectly good
-negatives, they carry `"seededFromSubjectDocs": true` and the scorer reports the
-false-positive rate twice: over all negatives, and over the unseeded ones only.
-The second number is the one to trust.
+**3. The spec seeded a reference year too, and this one was invisible.** Seven of
+fourteen languages use the year 2012 for nearly every constructed absolute date.
+`2012-08-10` is chrono's canonical test instant, baked into every ported oracle
+file in Khắc's test suite, so the clustering looks like authors having read the
+suite they were told not to read. They had not. This document's own gold-rule
+example is `{"rule":"abs","dt":"2027-03-14T17:00"}`, and `smoke-en.jsonl`, given
+to every author as the format reference, is 2012 dates end to end. They copied
+the year out of the spec. The five languages that did not cluster are precisely
+the ones whose assignment pushed them elsewhere: the two with a wild stratum,
+which forces realistic message text, and one author who chose near-future dates
+deliberately.
 
-Khắc's oracle cases are ported from wanasit/chrono. A corpus written by someone
-looking at Khắc's vocabulary tables would contain exactly the phrasings Khắc
-already knows, and scoring Khắc against it would prove nothing at all. Authors
-worked from their own knowledge of the language and from realistic text, and
-were given the schema but never the parser.
+Unlike the first two channels, this one **cost nothing measurable**, and that is
+established rather than assumed. Comparing engine accuracy on the 115 cases dated
+2012 against the 139 other constructed absolute-date cases, every engine scores
+slightly WORSE on the 2012 subset - Khắc by 3.5 points, chrono by 5.4,
+SwiftyChrono by 8.8, NSDataDetector by 2.9. A rule-based parser gets no
+memorisation benefit from a literal calendar date appearing in its own fixtures,
+and the numbers demonstrate it instead of asserting it.
 
-The corpus is frozen and hashed in `CORPUS.sha256` before any engine is tuned
-against it. A results table citing a different hash is stale.
+The example year in this document has been changed so a future run cannot repeat
+the effect. The corpus was left alone, because there is no bias to correct.
+
+## How the seeded cases are handled
+
+Channels 1 and 2 put flattering selection into a headline metric. Rather than
+delete the cases, which are perfectly good negatives, they carry
+`"seededFromSubjectDocs": true` and the scorer reports the false-positive rate
+twice: over all negatives, and over the unseeded ones only. **The second number
+is the one to trust, and it is worse for Khắc** - correcting the tagging inverted
+the ordering, putting Khắc above chrono on invented dates rather than below it.
+
+Cases traceable to channel 1 are disclosed by id above and kept, except where the
+case was the cited example with only its year changed. Two were: `en-c-0038` and
+`vi-c-0038`, both backwards intervals reusing Khắc's documented "August 22 - 10"
+day pair. Both had their dates replaced and their shape kept, because a backwards
+range is a legitimate input and losing the coverage would cost more than the
+overlap did.
 
 ## The second rule
 
@@ -123,7 +158,7 @@ evaluated at scoring time against one instant shared by every engine.
 
 | Rule | Meaning |
 |---|---|
-| `{"rule":"abs","dt":"2012-08-10T17:00"}` | a fixed wall-clock time in the pinned zone |
+| `{"rule":"abs","dt":"2027-03-14T17:00"}` | a fixed wall-clock time in the pinned zone |
 | `{"rule":"ref","time":"17:00"}` | the reference day at that time |
 | `{"rule":"offset","days":1,"time":"09:00"}` | also `weeks`, `months`, `years` |
 | `{"rule":"offset","hours":3}` | also `minutes`; scored with a one-minute window |
